@@ -82,6 +82,8 @@ module Api
         # the key always being present (nil = recorded before Phase C).
         payload["created_by"] = nil unless payload.key?("created_by")
         payload["account"] = nil unless payload.key?("account")
+        payload["organisation_memberships"] = organisation_membership_payloads(@coach.account)
+        payload["group_memberships"] = group_membership_payloads(@coach.account)
         redact_contact!(payload, @coach)
 
         # Attribution history (plan 4.2): the count and a recent slice of the
@@ -228,6 +230,50 @@ module Api
         payload["created_by"] = nil unless payload.key?("created_by")
         payload["account"] = nil unless payload.key?("account")
         payload
+      end
+
+      def organisation_membership_payloads(account)
+        return [] unless account
+
+        account.organisation_memberships.includes(:organisation).order(:id).map do |membership|
+          {
+            id: membership.id,
+            account_id: membership.account_id,
+            organisation_id: membership.organisation_id,
+            role: membership.role,
+            status: membership.status,
+            joined_at: membership.joined_at,
+            left_at: membership.left_at,
+            organisation: {
+              id: membership.organisation.id,
+              name: membership.organisation.name,
+              status: membership.organisation.status
+            }
+          }
+        end
+      end
+
+      def group_membership_payloads(account)
+        return [] unless account
+
+        account.group_memberships.includes(group: :organisation).order(:id).map do |membership|
+          group = membership.group
+          {
+            id: membership.id,
+            account_id: membership.account_id,
+            group_id: membership.group_id,
+            role: membership.role,
+            status: membership.status,
+            joined_at: membership.joined_at,
+            left_at: membership.left_at,
+            group: {
+              id: group.id,
+              name: group.name,
+              status: group.status,
+              organisation: group.organisation && { id: group.organisation.id, name: group.organisation.name }
+            }
+          }
+        end
       end
 
       def can_view_contact_details?(profile)

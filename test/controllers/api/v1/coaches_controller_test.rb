@@ -84,6 +84,22 @@ class Api::V1::CoachesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "coach@example.com", coach.email
   end
 
+  test "show exposes linked account memberships at the profile level" do
+    coach = coach_profiles(:maria_coach)
+    sign_in_as(@admin)
+
+    get api_v1_coach_path(coach)
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    organisation_membership = body.fetch("organisation_memberships").find { |row| row.fetch("id") == organisation_memberships(:owner_of_sydney_club).id }
+    group_membership = body.fetch("group_memberships").find { |row| row.fetch("id") == group_memberships(:u19_squad_owner).id }
+
+    assert_equal organisations(:sydney_club).name, organisation_membership.dig("organisation", "name")
+    assert_equal groups(:u19_squad).name, group_membership.dig("group", "name")
+    assert_nil group_membership.dig("group", "organisation")
+  end
+
   test "private coaches are hidden from unrelated coaches but visible to owner and curator" do
     private_coach = private_coach_owned_by(@trainer)
     sign_in_as(@other_coach)

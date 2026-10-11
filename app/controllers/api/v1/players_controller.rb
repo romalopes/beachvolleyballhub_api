@@ -78,17 +78,7 @@ module Api
           only: PROFILE_ONLY,
           include: {
             created_by: { only: %i[id name] },
-            account: {
-              only: :id,
-              methods: :full_name,
-              include: {
-                organisation_memberships: {
-                  include: {
-                    organisation: { only: %i[id name] }
-                  }
-                }
-              }
-            },
+            account: { only: :id, methods: :full_name },
             training_session_participants: {
               only: %i[id status notes created_at],
               include: {
@@ -102,6 +92,8 @@ module Api
         # the key always being present (nil = recorded before Phase C).
         payload["created_by"] = nil unless payload.key?("created_by")
         payload["account"] = nil unless payload.key?("account")
+        payload["organisation_memberships"] = organisation_membership_payloads(@player.account)
+        payload["group_memberships"] = group_membership_payloads(@player.account)
         redact_contact!(payload, @player)
 
         # Coaching history (plan 4.2): the count is published rows only, and
@@ -115,11 +107,6 @@ module Api
                                          .includes(:category, :created_by, :coach_profile)
                                          .map(&:metadata)
 
-        if payload["account"] && payload["account"]["organisation_memberships"]
-          payload["account"]["organisation_memberships"].each do |membership|
-            membership["can_leave"] = can_leave_membership?(membership)
-          end
-        end
         render json: payload
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Player not found" }, status: :not_found
@@ -263,6 +250,50 @@ module Api
         payload
       end
 
+      def organisation_membership_payloads(account)
+        return [] unless account
+
+        account.organisation_memberships.includes(:organisation).order(:id).map do |membership|
+          {
+            id: membership.id,
+            account_id: membership.account_id,
+            organisation_id: membership.organisation_id,
+            role: membership.role,
+            status: membership.status,
+            joined_at: membership.joined_at,
+            left_at: membership.left_at,
+            organisation: {
+              id: membership.organisation.id,
+              name: membership.organisation.name,
+              status: membership.organisation.status
+            }
+          }
+        end
+      end
+
+      def group_membership_payloads(account)
+        return [] unless account
+
+        account.group_memberships.includes(group: :organisation).order(:id).map do |membership|
+          group = membership.group
+          {
+            id: membership.id,
+            account_id: membership.account_id,
+            group_id: membership.group_id,
+            role: membership.role,
+            status: membership.status,
+            joined_at: membership.joined_at,
+            left_at: membership.left_at,
+            group: {
+              id: group.id,
+              name: group.name,
+              status: group.status,
+              organisation: group.organisation && { id: group.organisation.id, name: group.organisation.name }
+            }
+          }
+        end
+      end
+
       def can_view_contact_details?(profile)
         user = Current.user
         return false unless user
@@ -299,34 +330,6 @@ module Api
           source.stringify_keys.slice(*allowed.map(&:to_s))
         end
       end
-       private
-
-       def can_leave_membership?(membership)
-         organisation_id = membership["organisation_id"]
-         organisation = Organisation.find_by(id: organisation_id)
-         return false unless organisation
-         return false if organisation.archived?
-         
-         account = Current.user&.account
-         return false unless account
-         
-         # Check if this membership belongs to the current user and is active
-         return false unless membership["account_id"] == account.id
-         return false unless membership["status"] == "active"
-         
-         # If it's an owner membership, check for other active owners
-         if membership["role"] == "owner"
-           other_owners = OrganisationMembership.where(
-             organisation_id: organisation_id,
-             role: "owner",
-             status: "active"
-           ).where.not(account_id: account.id).exists?
-           return false unless other_owners
-         end
-         
-         true
-       end
-
     end
   end
 end
