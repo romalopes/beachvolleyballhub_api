@@ -1,9 +1,8 @@
 # Phase 6 (Assessment Sessions), plan §2: roster rows.
 #
-# Keyed on `person`, not `player_profile` (§2.2). `accountless_player` has no
-# player profile at all, which is the point: under the old key this row could not
-# have existed, and neither could an owner row for anybody who is not a
-# registered player.
+# Keyed on a polymorphic `memberable` (§4.4). A subject is normally an Account,
+# but an accountless PlayerProfile/CoachProfile can sit on a roster in its own
+# right — the same way it can on an organisation roster.
 #
 # Both fixture groups carry an explicit owner, because ownership is a membership
 # (§2.6) and a group without one cannot be managed by anybody.
@@ -11,11 +10,13 @@
 u19_squad_pedro:
   group: u19_squad
   account: one
+  memberable: one (Account)
 
 # users(:six) created u19_squad and owns it.
 u19_squad_owner:
   group: u19_squad
   account: two
+  memberable: two (Account)
   role: owner
 
 # users(:three) created private_squad and owns it. That roster is otherwise left
@@ -23,4 +24,5 @@ u19_squad_owner:
 private_squad_owner:
   group: private_squad
   account: three
+  memberable: three (Account)
   role: owner

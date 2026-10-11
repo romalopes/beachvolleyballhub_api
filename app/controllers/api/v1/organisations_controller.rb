@@ -1,3 +1,4 @@
+# TEST EDIT
 module Api
   module V1
     # A hierarchical organisational context — an international federation, a
@@ -37,7 +38,7 @@ module Api
       # `@organisation` is available; no `with:` lambda, which would pass the
       # organisation in as an argument the method does not take.
       before_action :require_organisation_membership_manager!,
-                    only: %i[member_candidates create_member update_member end_member]
+                    only: %i[member_candidates create_member update_member]
       # `leave` is self-service and must bypass the membership-manager gate.
 
       def index
@@ -415,6 +416,12 @@ module Api
         membership = find_membership
         return if membership.nil?
 
+        # Authorization: allow if the current user is an organisation membership manager
+        # or the owner of the player profile that this membership belongs to.
+        unless manageable_membership? || player_profile_owner_of_membership?(membership)
+          return render json: { error: "Forbidden" }, status: :forbidden
+        end
+
         if membership.withdrawable?
           account_id = membership.account_id
           name = membership.display_name
@@ -425,8 +432,13 @@ module Api
           render json: { removed: false, membership: membership.metadata }
         end
       rescue ActiveRecord::RecordInvalid => e
-        render json: { errors: e.record.errors.full_messages },
-               status: :unprocessable_entity
+        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+      end
+
+      def player_profile_owner_of_membership?(membership)
+        return false unless membership.memberable_type == "PlayerProfile" && membership.memberable_id.present?
+        player_profile = PlayerProfile.find_by(id: membership.memberable_id)
+        player_profile && player_profile.account_id == Current.account&.id
       end
 
       # Self-service leave: the current user ends their own active membership.
@@ -435,19 +447,16 @@ module Api
       def leave
         account = Current.user&.account
         if account.nil?
-          return render json: { errors: ["Your account is not ready."] },
-                        status: :unprocessable_entity
+          return render json: { errors: ["Your account is not ready."] }, status: :unprocessable_entity
         end
 
         if @organisation.archived?
-          return render json: { errors: ["Cannot leave an archived organisation."] },
-                        status: :unprocessable_entity
+          return render json: { errors: ["Cannot leave an archived organisation."] }, status: :unprocessable_entity
         end
 
         membership = @organisation.organisation_memberships.active.find_by(account: account)
-        unless membership
-          return render json: { errors: ["You are not an active member of this organisation."] },
-                        status: :not_found
+        if !membership
+          return render json: { errors: ["You are not an active member of this organisation."] }, status: :not_found
         end
 
         if membership.owner?
@@ -457,8 +466,7 @@ module Api
                                   .where.not(id: membership.id)
                                   .exists?
           unless other_owner
-            return render json: { errors: ["You are the only active owner. Transfer ownership before leaving."] },
-                          status: :forbidden
+            return render json: { errors: ["Cannot leave organisation as the sole owner."] }, status: :unprocessable_entity
           end
         end
 
@@ -470,8 +478,7 @@ module Api
           render json: { removed: false, membership: membership.metadata }
         end
       rescue ActiveRecord::RecordInvalid => e
-        render json: { errors: e.record.errors.full_messages },
-               status: :unprocessable_entity
+        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
       end
 
       private

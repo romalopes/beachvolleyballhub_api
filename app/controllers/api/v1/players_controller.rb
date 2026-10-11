@@ -78,7 +78,17 @@ module Api
           only: PROFILE_ONLY,
           include: {
             created_by: { only: %i[id name] },
-            account: { only: :id, methods: :full_name },
+            account: {
+              only: :id,
+              methods: :full_name,
+              include: {
+                organisation_memberships: {
+                  include: {
+                    organisation: { only: %i[id name] }
+                  }
+                }
+              }
+            },
             training_session_participants: {
               only: %i[id status notes created_at],
               include: {
@@ -105,20 +115,17 @@ module Api
                                          .includes(:category, :created_by, :coach_profile)
                                          .map(&:metadata)
 
+        if payload["account"] && payload["account"]["organisation_memberships"]
+          payload["account"]["organisation_memberships"].each do |membership|
+            membership["can_leave"] = can_leave_membership?(membership)
+          end
+        end
         render json: payload
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Player not found" }, status: :not_found
       end
-
-      # A player recorded through the API is a profile a coach/admin entered.
-      # The response carries `possible_duplicates` for API compatibility;
-      # profile consolidation happens explicitly through the merge endpoint.
-      def create
-        attributes = player_params
-        # Self-service from /identity: any authenticated user with an account
-        # may create their own linked profile if they don't already have one.
-        # Pass `link_to_account: true` in player_profile from the frontend to opt into self-service.
         # Staff creation of additional unlinked profiles stays coach/admin-only.
+      def create
         link_to_account = ActiveModel::Type::Boolean.new.cast(params.dig(:player, :player_profile, :link_to_account))
         account = Current.user&.account
         if link_to_account
@@ -292,6 +299,33 @@ module Api
           source.stringify_keys.slice(*allowed.map(&:to_s))
         end
       end
+       private
+
+       def can_leave_membership?(membership)
+         organisation_id = membership["organisation_id"]
+         organisation = Organisation.find_by(id: organisation_id)
+         return false unless organisation
+         return false if organisation.archived?
+         
+         account = Current.user&.account
+         return false unless account
+         
+         # Check if this membership belongs to the current user and is active
+         return false unless membership["account_id"] == account.id
+         return false unless membership["status"] == "active"
+         
+         # If it's an owner membership, check for other active owners
+         if membership["role"] == "owner"
+           other_owners = OrganisationMembership.where(
+             organisation_id: organisation_id,
+             role: "owner",
+             status: "active"
+           ).where.not(account_id: account.id).exists?
+           return false unless other_owners
+         end
+         
+         true
+       end
 
     end
   end

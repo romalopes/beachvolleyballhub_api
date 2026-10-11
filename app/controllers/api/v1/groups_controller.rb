@@ -140,24 +140,32 @@ module Api
         render json: { message: "Group deleted successfully", id: @group.id }
       end
 
-      # Add one or more accounts to the group's roster. Accounts may be unclaimed,
-      # so a squad can still contain somebody without a login or profile.
+      # Add one or more members to the group's roster. Members may be Accounts
+      # (`account_ids`/`account_id`) or an accountless PlayerProfile/CoachProfile
+      # (`memberable_type` + `memberable_id`), so a squad can hold somebody the
+      # staff just recorded before they ever claim an account (§4.4).
       def add_members
         account_ids = Array(params[:account_ids] || params[:account_id]).compact.map(&:to_i)
-        if account_ids.empty?
+        memberable = resolve_memberable
+        return if performed?
+
+        if account_ids.empty? && memberable.nil?
           return render json: { errors: [ "No roster members specified" ] }, status: :unprocessable_entity
         end
 
         # The rule that makes a group "members who share an Organisation" (§10): only
         # somebody actually in it can be added. 422 rather than 403 — the request
-        # was well formed, the account simply does not belong.
-        unless @group.shares_organisation?([], @group.organisation_id, account_ids: account_ids)
+        # was well formed, the subject simply does not belong.
+        unless @group.shares_organisation?([], @group.organisation_id,
+                                           account_ids: account_ids, memberables: [memberable].compact)
           return render json: {
             errors: [ "Each roster member must be an active member of this group's organisation." ]
           }, status: :unprocessable_entity
         end
 
-        added = assign_account_ids(account_ids)
+        added = 0
+        added += assign_account_ids(account_ids) if account_ids.present?
+        added += 1 if memberable.present? && assign_memberable(memberable)
 
         render json: {
           group: serialize_detail(@group.reload),
@@ -487,6 +495,43 @@ module Api
         assign_account_ids(valid_ids.to_a)
       end
 
+      # Resolve a profile subject (PlayerProfile/CoachProfile) from
+      # `memberable_type` + `memberable_id`, or nil when none was sent. Renders a
+      # 422 and returns nil for an unknown type or id so a typo cannot silently
+      # add nobody.
+      def resolve_memberable
+        type = params[:memberable_type].presence
+        return nil if type.nil?
+
+        id = params[:memberable_id].presence&.to_i
+        klass = GroupMembership::MEMBERABLE_TYPES.include?(type) ? type.safe_constantize : nil
+        record = klass&.find_by(id: id)
+        if record.nil?
+          render json: { errors: [ "That roster member could not be found." ] }, status: :unprocessable_entity
+          return nil
+        end
+        record
+      end
+
+      # Adds a profile-keyed subject, re-activating an ended membership rather
+      # than inserting a second row (the subject index is on
+      # (group_id, memberable_type, memberable_id) across all statuses, so a
+      # re-join would collide — mirrors assign_account_ids).
+      def assign_memberable(memberable)
+        membership = @group.group_memberships.find_by(
+          memberable_type: memberable.class.name, memberable_id: memberable.id
+        )
+        if membership.nil?
+          @group.group_memberships.create!(memberable: memberable, joined_at: Time.current)
+          true
+        elsif membership.ended?
+          membership.update!(status: "active", left_at: nil)
+          true
+        else
+          false
+        end
+      end
+
       def serialize_summary(group)
         group.metadata
       end
@@ -494,13 +539,17 @@ module Api
       def serialize_detail(group)
         members = group.group_memberships.sort_by(&:id).map do |membership|
           account = membership.account
-          # The player profile is optional now: a squad may hold somebody who never
-          # registered as a player (§2.2), so these three are legitimately nil.
-          player = account&.player_profiles&.first
+          # A profile-keyed subject (an accountless PlayerProfile/CoachProfile) is
+          # the subject itself; an account-keyed one carries its optional player
+          # profile. Either way these may be nil (§2.2 / §4.4).
+          profile = membership.memberable if membership.memberable_type.in?(%w[PlayerProfile CoachProfile])
+          player = account&.player_profiles&.first || (profile if profile.is_a?(PlayerProfile))
           {
             id: membership.id,
             account_id: membership.account_id,
-            name: account&.full_name,
+            memberable_type: membership.memberable_type,
+            memberable_id: membership.memberable_id,
+            name: membership.player_name,
             player_profile_id: player&.id,
             level: player&.level,
             preferred_position: player&.preferred_position,

@@ -59,21 +59,27 @@ class Group < ApplicationRecord
   validate :members_share_the_organisation,
            if: -> { organisation_id.present? && (new_record? || will_save_change_to_organisation_id?) }
 
-  # Does every one of these accounts belong to the group's organisation?
+  # Does every one of these subjects belong to the group's organisation?
   # Vacuously true when there is no organisation: the rule has nothing to check
   # against, and refusing would invent a constraint nobody asked for.
   #
   # `organisation` is overridable so a caller can ask about the state a request
   # *would* produce — a group being moved and re-rostered in one call has to be
   # checked against its new organisation.
-  def shares_organisation?(_person_ids = [], organisation = organisation_id, account_ids: [])
+  #
+  # Subjects may be Accounts (`account_ids:`) or polymorphic memberables
+  # (`memberables:`) — a profile-keyed member counts as sharing the organisation
+  # when it is itself an active member of it, mirroring how an accountless
+  # profile joins a group in its own right (§4.4).
+  def shares_organisation?(_person_ids = [], organisation = organisation_id, account_ids: [], memberables: [])
     return true if organisation.blank?
 
+    memberables = Array(memberables).compact
     account_ids = Array(account_ids).compact.map(&:to_i).uniq
-    return true if account_ids.empty?
+    return true if account_ids.empty? && memberables.empty?
 
-    account_members = OrganisationMembership.where(organisation_id: organisation, account_id: account_ids, status: "active").distinct.count
-    account_members == account_ids.size
+    memberables.all? { |memberable| subject_is_org_member?(memberable, organisation) } &&
+      (account_ids.empty? || org_member_account_ids(organisation, account_ids).size == account_ids.size)
   end
 
   scope :active, -> { where(status: "active") }
@@ -207,16 +213,44 @@ class Group < ApplicationRecord
 
   private
 
+  # Is this subject an active member of the organisation, whether the membership
+  # row is keyed on its Account or on the profile itself?
+  def subject_is_org_member?(memberable, organisation)
+    scope = OrganisationMembership.active.where(organisation_id: organisation)
+    case memberable
+    when Account
+      scope.where(account_id: memberable.id).exists?
+    when PlayerProfile, CoachProfile
+      scope.where(memberable_type: memberable.class.name, memberable_id: memberable.id).exists?
+    else
+      false
+    end
+  end
+
+  def org_member_account_ids(organisation, account_ids)
+    OrganisationMembership
+      .where(organisation_id: organisation, account_id: account_ids, status: "active")
+      .distinct
+      .pluck(:account_id)
+  end
+
   # Every active member has to be an active member of the group's organisation.
   # Ended memberships are excluded: somebody who left the club may legitimately
   # remain on a squad's history, and counting them would make a group permanently
-  # unsavable for a fact nobody can change.
+  # unsavable for a fact nobody can change. Profile-keyed members are checked the
+  # same way account-keyed ones are, so an accountless profile on the roster must
+  # itself belong to the organisation.
   def members_share_the_organisation
     return if organisation_id.nil?
 
-    account_ids = group_memberships.active.map(&:account_id).compact.uniq
-    return if account_ids.empty?
-    return if shares_organisation?([], organisation_id, account_ids: account_ids)
+    active = group_memberships.active
+    account_ids = active.map(&:account_id).compact.uniq
+    profile_memberables = active.filter_map do |membership|
+      membership.memberable unless membership.account_id.present?
+    end
+    return if account_ids.empty? && profile_memberables.empty?
+    return if shares_organisation?([], organisation_id, account_ids: account_ids,
+                                   memberables: profile_memberables)
 
     errors.add(:organisation,
                "does not match everyone on the roster — a group is members who share one organisation")

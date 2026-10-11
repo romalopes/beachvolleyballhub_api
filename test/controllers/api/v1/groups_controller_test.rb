@@ -377,6 +377,66 @@ class Api::V1::GroupsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @u19.reload.accounts, insider
   end
 
+  test "an accountless player profile can be added to a group in its own right" do
+    # §4.4: the subject is polymorphic, so a profile with no Account can sit on a
+    # roster exactly as it can on an organisation roster. `pedro_player` has no
+    # account and is an active member of sydney_club (accountless_club_member).
+    sign_in_as(@owner)
+    @u19.update!(organisation: organisations(:sydney_club))
+    assert_nil @pedro.account_id
+
+    assert_difference "GroupMembership.count", 1 do
+      post_json members_api_v1_group_path(@u19),
+                { memberable_type: "PlayerProfile", memberable_id: @pedro.id }
+    end
+
+    assert_response :success
+    membership = @u19.group_memberships.find_by(memberable: @pedro)
+    assert membership
+    assert_equal "PlayerProfile", membership.memberable_type
+    assert_nil membership.account_id
+  end
+
+  test "a profile outside the group's organisation cannot be added to it" do
+    sign_in_as(@owner)
+    # A fresh group owned by the caller, placed in an organisation `pedro_player`
+    # does not belong to (he is a member of sydney_club, not northern_club).
+    group = Group.create!(name: "Northern squad", organisation: organisations(:northern_club), created_by: @owner)
+    group.group_memberships.create!(account: @owner.account, memberable: @owner.account,
+                                    role: "owner", status: "active", joined_at: Time.current)
+    assert_not group.shares_organisation?([], group.organisation_id, memberables: [ @pedro ])
+
+    assert_no_difference "GroupMembership.count" do
+      post_json members_api_v1_group_path(group),
+                { memberable_type: "PlayerProfile", memberable_id: @pedro.id }
+    end
+
+    assert_response :unprocessable_entity
+    assert_match(/active member/, json["errors"].first)
+  end
+
+  test "a profile subject that does not exist is refused" do
+    sign_in_as(@owner)
+
+    assert_no_difference "GroupMembership.count" do
+      post_json members_api_v1_group_path(@u19),
+                { memberable_type: "PlayerProfile", memberable_id: 0 }
+    end
+
+    assert_response :unprocessable_entity
+  end
+
+  test "a profile cannot be granted the owner role" do
+    sign_in_as(@owner)
+    @u19.update!(organisation: organisations(:sydney_club))
+
+    assert_no_difference "GroupMembership.count" do
+      assert_raises(ActiveRecord::RecordInvalid) do
+        @u19.group_memberships.create!(memberable: @pedro, role: "owner", joined_at: Time.current)
+      end
+    end
+  end
+
   test "a group cannot be moved to an organisation the caller does not belong to" do
     # Firing *before* the roster check: naming an organisation is not membership of
     # it, and that is the more specific fact about this request. The roster rule
