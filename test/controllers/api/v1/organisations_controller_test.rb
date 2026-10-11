@@ -1294,6 +1294,43 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  # --- leaving (self-service) -----------------------------------------------
+
+  test "an owner cannot leave if they are the only active owner" do
+    # @coach is the only owner of @club
+    sign_in_as(@coach)
+
+    delete leave_membership_api_v1_organisation_path(@club)
+
+    assert_response :forbidden
+    assert_match(/only active owner/, json["errors"].first)
+    membership = OrganisationMembership.find_by(
+      organisation: @club, account: @coach.account
+    )
+    assert_equal "active", membership.status
+  end
+
+  test "an owner can leave if another active owner exists" do
+    # Create a second owner
+    other_user = users(:five)
+    OrganisationMembership.create!(
+      organisation: @club,
+      account: other_user.account,
+      role: "owner",
+      status: "active"
+    )
+
+    sign_in_as(@coach)
+
+    delete leave_membership_api_v1_organisation_path(@club)
+
+    assert_response :success
+    membership = OrganisationMembership.find_by(
+      organisation: @club, account: @coach.account
+    )
+    assert_equal "ended", membership.status
+  end
+
   # --- joining with approval required ----------------------------------------
 
   test "joining an approval-required organisation records a request, not a seat" do
@@ -1434,5 +1471,115 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
   test "a guest may not create one" do
     post_json "/api/v1/organisations", organisation: { name: "Guest Club" }
     assert_response :unauthorized
+  end
+
+  # --- leaving (self-service) ------------------------------------------------
+
+  test "a coach can leave an organisation they are a member of" do
+    # @coach is an owner of @club
+    sign_in_as(@coach)
+
+    assert_difference "OrganisationMembership.count", -1 do
+      delete leave_membership_api_v1_organisation_path(@club)
+    end
+
+    assert_response :success
+    assert json["removed"]
+    refute OrganisationMembership.exists?(organisation: @club, account: @coach.account, status: "active")
+  end
+
+  test "leaving ends the membership rather than deleting it (history preserved)" do
+    sign_in_as(@coach)
+
+    delete leave_membership_api_v1_organisation_path(@club)
+
+    assert_response :success
+    membership = OrganisationMembership.find_by(organisation: @club, account: @coach.account)
+    assert_not_nil membership
+    assert_equal "ended", membership.status
+    assert_not_nil membership.left_at
+  end
+
+  test "an owner cannot leave if they are the sole active owner" do
+    # @coach is the sole owner of @club
+    sign_in_as(@coach)
+
+    delete leave_membership_api_v1_organisation_path(@club)
+
+    assert_response :forbidden
+    assert_match(/only active owner/, json["errors"].first)
+    # Membership should still exist
+    assert OrganisationMembership.exists?(organisation: @club, account: @coach.account, status: "active")
+  end
+
+  test "an owner can leave if there is another active owner" do
+    # Create another owner
+    other = users(:three)
+    @club.organisation_memberships.create!(account: other.account, role: "owner", status: "active")
+
+    sign_in_as(@coach)
+
+    delete leave_membership_api_v1_organisation_path(@club)
+
+    assert_response :success
+    refute OrganisationMembership.exists?(organisation: @club, account: @coach.account, status: "active")
+    # Other owner should still be active
+    assert OrganisationMembership.exists?(organisation: @club, account: other.account, status: "active")
+  end
+
+  test "a pending membership is withdrawn (destroyed) when leaving" do
+    # Create a pending membership
+    @club.update!(requires_approval: true)
+    sign_in_as(@coach)
+    post join_api_v1_organisation_path(@club)
+    assert_response :created
+
+    membership = OrganisationMembership.find_by(organisation: @club, account: @coach.account)
+    assert_equal "pending", membership.status
+
+    assert_difference "OrganisationMembership.count", -1 do
+      delete leave_membership_api_v1_organisation_path(@club)
+    end
+
+    assert_response :success
+    assert json["removed"]
+    refute OrganisationMembership.exists?(membership.id)
+  end
+
+  test "a guest may not leave an organisation" do
+    delete leave_membership_api_v1_organisation_path(@club)
+    assert_response :unauthorized
+  end
+
+  test "a user with no account cannot leave" do
+    curator = users(:four)  # curator has no account
+    assert_nil curator.account
+
+    sign_in_as(curator)
+    delete leave_membership_api_v1_organisation_path(@club)
+
+    assert_response :unprocessable_entity
+    assert_match(/account is not ready/, json["errors"].first)
+  end
+
+  test "a non-member cannot leave an organisation" do
+    # @coach is not a member of @australia
+    sign_in_as(@coach)
+
+    delete leave_membership_api_v1_organisation_path(@australia)
+
+    assert_response :not_found
+    assert_match(/not an active member/, json["errors"].first)
+  end
+
+  test "leaving an archived organisation is forbidden" do
+    sign_in_as(@coach)
+    retired = organisations(:retired_association)
+
+    delete leave_membership_api_v1_organisation_path(retired)
+
+    # Archived organisations don't accept membership changes
+    assert_response :unprocessable_entity
+    assert_match(/archived/, json["errors"].first)
   end
 end

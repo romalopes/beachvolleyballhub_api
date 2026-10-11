@@ -19,10 +19,10 @@ module Api
       before_action :require_training_manager!, except: %i[show update destroy]
       before_action :require_content_creator!, only: %i[create add_members remove_member]
       before_action :set_group, only: %i[show update destroy add_members remove_member
-                                         join approve_member reject_member]
+                                         join approve_member reject_member update_member end_member]
       before_action :require_group_reader!, only: :show
       before_action :check_visibility!, only: %i[show update destroy add_members remove_member join]
-      before_action :authorize_owner!, only: %i[add_members remove_member]
+      before_action :authorize_owner!, only: %i[add_members remove_member update_member end_member]
 
       before_action :authorize_management!, only: %i[update destroy]
 
@@ -34,6 +34,10 @@ module Api
         if params[:q].present?
           term = "%#{params[:q]}%"
           groups = groups.where("groups.name ILIKE :t OR groups.description ILIKE :t", t: term)
+        end
+
+        if params[:organisation_id].present?
+          groups = groups.where(organisation_id: params[:organisation_id])
         end
 
         unless params[:include_private].present?
@@ -299,6 +303,65 @@ module Api
         membership_id = membership.id
         membership.destroy!
         render json: { removed: true, membership_id: membership_id }
+      end
+
+      # PATCH /groups/:group_id/memberships/:membership_id
+      # Update a member's role (owner, coach, member)
+      def update_member
+        membership = find_membership
+        return if performed?
+
+        new_role = params[:role]
+        unless GroupMembership::ROLES.include?(new_role)
+          return render json: { errors: [ "Invalid role. Must be one of: #{GroupMembership::ROLES.join(', ')}" ] }, status: :unprocessable_entity
+        end
+
+        # Cannot change own role via this endpoint (prevents self-demotion)
+        if membership.account_id == Current.user&.account&.id
+          return render json: { errors: [ "You cannot change your own role." ] }, status: :forbidden
+        end
+
+        # If group has organisation, validate the member belongs to it
+        if @group.organisation_id.present? && membership.account_id.present?
+          unless @group.shares_organisation?([], @group.organisation_id, account_ids: [membership.account_id])
+            return render json: { errors: [ "Member must belong to the group's organisation." ] }, status: :forbidden
+          end
+        end
+
+        # Handle ownership transfer: only one active owner allowed
+        if new_role == "owner"
+          current_owner = @group.group_memberships.owners.first
+          if current_owner && current_owner.id != membership.id
+            # Demote current owner to member
+            current_owner.update!(role: "member")
+          end
+        elsif membership.owner?
+          # Trying to demote the current owner - require another owner to be set
+          return render json: { errors: [ "Cannot demote the owner without assigning a new owner." ] }, status: :unprocessable_entity
+        end
+
+        membership.update!(role: new_role)
+        render json: membership_payload(membership)
+      end
+
+      # DELETE /groups/:group_id/memberships/:membership_id
+      # Remove a member from the group (end membership)
+      def end_member
+        membership = find_membership
+        return if performed?
+
+        # Cannot remove yourself via this endpoint (use leave_group instead)
+        if membership.account_id == Current.user&.account&.id
+          return render json: { errors: [ "You cannot remove yourself. Use the leave action instead." ] }, status: :forbidden
+        end
+
+        # Cannot remove the owner
+        if membership.owner?
+          return render json: { errors: [ "Cannot remove the group owner. Transfer ownership first." ] }, status: :forbidden
+        end
+
+        membership.end_membership!
+        render json: { removed: true, membership_id: membership.id }
       end
 
       private

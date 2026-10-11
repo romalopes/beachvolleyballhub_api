@@ -199,6 +199,9 @@ Rails.application.routes.draw do
           # Distinct `as:` names: two routes cannot share one helper name, and both
           # verbs address the same account.
           patch "memberships/:membership_id", action: :update_member, as: :update_membership
+          # Self-service leave: counterpart to `join`, no admin authority required.
+          # Must come before the catch-all `memberships/:membership_id` route below.
+          delete "memberships/leave", action: :leave, as: :leave_membership
           delete "memberships/:membership_id", action: :end_member, as: :end_membership
           patch "members/:account_id", action: :update_member, as: :update_member
           delete "members/:account_id", action: :end_member, as: :end_member
@@ -259,6 +262,10 @@ Rails.application.routes.draw do
           post :members, to: "groups#add_members"
           # The roster is keyed on Account membership.
           delete "members/:account_id", to: "groups#remove_member"
+          # Update member role (owner/coach/member)
+          patch "memberships/:membership_id", action: :update_member, as: :update_membership
+          # Remove member by membership_id
+          delete "memberships/:membership_id", action: :end_member, as: :end_membership
           # Self-service join, mirroring organisations: `add_members` writes
           # somebody *else's* row and is owner-gated, while `join` writes your own.
           post :join

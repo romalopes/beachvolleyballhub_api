@@ -16,13 +16,13 @@ module Api
       include Pagination
 
       before_action :require_authentication
-      before_action :require_training_manager!, except: %i[show index join]
+      before_action :require_training_manager!, except: %i[show index join leave]
       # Loaded before the authority checks, not after: every organisation rule below
       # needs the record it is judging, and a rule that silently passed because the
       # record was nil would be the worst kind of bug here.
       before_action :set_organisation,
                     only: %i[show update archive restore logo destroy
-                             members member_candidates create_member update_member end_member join
+                             members member_candidates create_member update_member end_member join leave
                              approve_member reject_member]
       before_action :require_organisation_reader!, only: :show
       before_action :require_organisation_reader!, only: :members
@@ -38,6 +38,7 @@ module Api
       # organisation in as an argument the method does not take.
       before_action :require_organisation_membership_manager!,
                     only: %i[member_candidates create_member update_member end_member]
+      # `leave` is self-service and must bypass the membership-manager gate.
 
       def index
         organisations = Organisation
@@ -419,6 +420,51 @@ module Api
           name = membership.display_name
           membership.destroy!
           render json: { removed: true, account_id: account_id, message: "Invitation to #{name} withdrawn." }
+        else
+          membership.end!
+          render json: { removed: false, membership: membership.metadata }
+        end
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: e.record.errors.full_messages },
+               status: :unprocessable_entity
+      end
+
+      # Self-service leave: the current user ends their own active membership.
+      # No admin authority required — this is the counterpart to `join`.
+      # Owners cannot leave while they are the sole active owner.
+      def leave
+        account = Current.user&.account
+        if account.nil?
+          return render json: { errors: ["Your account is not ready."] },
+                        status: :unprocessable_entity
+        end
+
+        if @organisation.archived?
+          return render json: { errors: ["Cannot leave an archived organisation."] },
+                        status: :unprocessable_entity
+        end
+
+        membership = @organisation.organisation_memberships.active.find_by(account: account)
+        unless membership
+          return render json: { errors: ["You are not an active member of this organisation."] },
+                        status: :not_found
+        end
+
+        if membership.owner?
+          other_owner = @organisation.organisation_memberships
+                                  .active
+                                  .where(role: "owner")
+                                  .where.not(id: membership.id)
+                                  .exists?
+          unless other_owner
+            return render json: { errors: ["You are the only active owner. Transfer ownership before leaving."] },
+                          status: :forbidden
+          end
+        end
+
+        if membership.withdrawable?
+          membership.destroy!
+          render json: { removed: true, message: "Invitation withdrawn." }
         else
           membership.end!
           render json: { removed: false, membership: membership.metadata }
