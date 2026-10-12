@@ -16,10 +16,10 @@ module Api
       include Pagination
 
       before_action :require_authentication
-      before_action :require_training_manager!, except: %i[show update destroy]
+      before_action :require_training_manager!, except: %i[show update destroy join leave]
       before_action :require_content_creator!, only: %i[create add_members remove_member]
       before_action :set_group, only: %i[show update destroy add_members remove_member
-                                         join approve_member reject_member update_member end_member]
+                                         join leave approve_member reject_member update_member end_member]
       before_action :require_group_reader!, only: :show
       before_action :check_visibility!, only: %i[show update destroy add_members remove_member join]
       before_action :authorize_owner!, only: %i[add_members remove_member update_member end_member]
@@ -259,6 +259,29 @@ module Api
           render json: { errors: membership.errors.full_messages },
                  status: :unprocessable_entity
         end
+      end
+
+      # Self-service leave: the signed-in account ends its own active membership.
+      # An owner cannot leave until ownership has been transferred.
+      def leave
+        account = Current.user&.account
+        if account.nil?
+          return render json: { errors: [ "Your account is not ready." ] }, status: :unprocessable_entity
+        end
+
+        membership = @group.group_memberships.active.find_by(account: account)
+        if membership.nil?
+          return render json: { errors: [ "You are not an active member of this group." ] }, status: :not_found
+        end
+
+        if membership.owner?
+          return render json: { errors: [ "Cannot leave group as its owner. Transfer ownership first." ] }, status: :unprocessable_entity
+        end
+
+        membership.end_membership!
+        render json: { removed: false, membership_id: membership.id }
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
       end
 
       # Approve a pending self-service join request. The group's owner plus

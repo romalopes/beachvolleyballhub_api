@@ -113,6 +113,7 @@ module Api
       end
         # Staff creation of additional unlinked profiles stays coach/admin-only.
       def create
+        puts "\n\n\nparams:#{params}\n\n\n"
         link_to_account = ActiveModel::Type::Boolean.new.cast(params.dig(:player, :player_profile, :link_to_account))
         account = Current.user&.account
         if link_to_account

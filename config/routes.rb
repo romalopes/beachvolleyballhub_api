@@ -264,6 +264,9 @@ Rails.application.routes.draw do
           delete "members/:account_id", to: "groups#remove_member"
           # Update member role (owner/coach/member)
           patch "memberships/:membership_id", action: :update_member, as: :update_membership
+          # Self-service leave: counterpart to `join`, with no owner authority
+          # required. This must precede the membership-id route below.
+          delete "memberships/leave", action: :leave, as: :leave_membership
           # Remove member by membership_id
           delete "memberships/:membership_id", action: :end_member, as: :end_membership
           # Self-service join, mirroring organisations: `add_members` writes

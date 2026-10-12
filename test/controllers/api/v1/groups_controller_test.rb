@@ -553,6 +553,44 @@ class Api::V1::GroupsControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil reloaded.joined_at
   end
 
+  test "an active non-owner can leave a group" do
+    membership = @u19.group_memberships.create!(
+      account: @other_coach.account,
+      role: "member",
+      status: "active",
+      joined_at: Time.current,
+    )
+    sign_in_as(@other_coach)
+
+    delete "#{api_v1_groups_path}/#{@u19.id}/memberships/leave"
+
+    assert_response :success
+    assert_not json["removed"]
+    assert_equal membership.id, json["membership_id"]
+    membership.reload
+    assert_equal "ended", membership.status
+    assert_not_nil membership.left_at
+  end
+
+  test "a group owner cannot leave without transferring ownership" do
+    sign_in_as(@owner)
+
+    delete "#{api_v1_groups_path}/#{@u19.id}/memberships/leave"
+
+    assert_response :unprocessable_entity
+    assert_match(/owner/, json["errors"].first)
+    assert_equal "active", @u19.group_memberships.owners.first!.reload.status
+  end
+
+  test "a non-member cannot leave a group" do
+    sign_in_as(@other_coach)
+
+    delete "#{api_v1_groups_path}/#{@u19.id}/memberships/leave"
+
+    assert_response :not_found
+    assert_match(/not an active member/, json["errors"].first)
+  end
+
   test "an approval-required group records a join as pending, not active" do
     @u19.update!(requires_approval: true)
     sign_in_as(@other_coach)
