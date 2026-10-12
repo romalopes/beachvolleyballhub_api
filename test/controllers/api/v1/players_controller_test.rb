@@ -29,10 +29,21 @@ class Api::V1::PlayersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "create requires manager and stamps creator account" do
+  test "create permits player and curator roles and stamps creator account" do
     sign_in_as(@public_user)
     post api_v1_players_path, params: player_create_params
-    assert_response :forbidden
+    assert_response :created
+    player_profile = PlayerProfile.find(JSON.parse(response.body).fetch("id"))
+    assert_equal @public_user, player_profile.created_by
+    assert_equal @public_user.account, player_profile.created_by_account
+
+    sign_out
+    sign_in_as(@curator)
+    post api_v1_players_path, params: player_create_params
+    assert_response :created
+    profile = PlayerProfile.find(JSON.parse(response.body).fetch("id"))
+    assert_equal @curator, profile.created_by
+    assert_equal @curator.account, profile.created_by_account
 
     sign_out
     sign_in_as(@trainer)
@@ -77,6 +88,52 @@ class Api::V1::PlayersControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "create atomically attaches a player profile to a selected organisation and group" do
+    sign_in_as(@admin)
+
+    assert_difference [ "PlayerProfile.count", "OrganisationMembership.count", "GroupMembership.count" ], 1 do
+      post api_v1_players_path, params: player_create_params.deep_merge(
+        player: {
+          organisation_id: organisations(:sydney_club).id,
+          group_id: groups(:sydney_club_squad).id
+        }
+      )
+    end
+
+    assert_response :created
+    profile = PlayerProfile.find(JSON.parse(response.body).fetch("id"))
+    assert OrganisationMembership.exists?(organisation: organisations(:sydney_club), memberable: profile, role: "member", status: "active")
+    assert GroupMembership.exists?(group: groups(:sydney_club_squad), memberable: profile, role: "member", status: "active")
+  end
+
+  test "cross-organisation group selection rolls back player profile creation" do
+    sign_in_as(@admin)
+
+    assert_no_difference [ "PlayerProfile.count", "OrganisationMembership.count", "GroupMembership.count" ] do
+      post api_v1_players_path, params: player_create_params.deep_merge(
+        player: {
+          organisation_id: organisations(:sydney_club).id,
+          group_id: groups(:northern_club_squad).id
+        }
+      )
+    end
+
+    assert_response :unprocessable_entity
+    assert_includes JSON.parse(response.body).fetch("errors"), "The selected group does not belong to the selected organisation."
+  end
+
+  test "a profile creator cannot attach a player to an organisation they do not belong to" do
+    sign_in_as(@trainer)
+
+    assert_no_difference [ "PlayerProfile.count", "OrganisationMembership.count", "GroupMembership.count" ] do
+      post api_v1_players_path, params: player_create_params.deep_merge(
+        player: { organisation_id: organisations(:sydney_club).id }
+      )
+    end
+
+    assert_response :forbidden
+  end
+
   test "show and update use player profile attributes" do
     player = player_profiles(:pedro_player)
     sign_in_as(@admin)
@@ -104,6 +161,28 @@ class Api::V1::PlayersControllerTest < ActionDispatch::IntegrationTest
     assert_equal organisations(:sydney_club).name, organisation_membership.dig("organisation", "name")
     assert_equal groups(:u19_squad).name, group_membership.dig("group", "name")
     assert_nil group_membership.dig("group", "organisation")
+  end
+
+  test "show exposes profile-held memberships before the player is claimed" do
+    player = player_profiles(:pedro_player)
+    sign_in_as(@admin)
+
+    get api_v1_player_path(player)
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    organisation_membership = body.fetch("organisation_memberships").find { |row| row.fetch("id") == organisation_memberships(:accountless_club_member).id }
+    group_membership = body.fetch("group_memberships").find { |row| row.fetch("id") == group_memberships(:u19_squad_accountless_player).id }
+
+    assert_nil organisation_membership.fetch("account_id")
+    assert_equal "PlayerProfile", organisation_membership.fetch("memberable_type")
+    assert_equal player.id, organisation_membership.fetch("memberable_id")
+    assert_equal organisations(:sydney_club).name, organisation_membership.dig("organisation", "name")
+
+    assert_nil group_membership.fetch("account_id")
+    assert_equal "PlayerProfile", group_membership.fetch("memberable_type")
+    assert_equal player.id, group_membership.fetch("memberable_id")
+    assert_equal groups(:u19_squad).name, group_membership.dig("group", "name")
   end
 
   test "private players are hidden from unrelated coaches but visible to owner and curator" do

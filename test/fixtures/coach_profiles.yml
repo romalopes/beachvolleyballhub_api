@@ -3,3 +3,8 @@ maria_coach:
   display_name: Maria Silva
   coaching_level: level_2
   status: active
+
+unclaimed_roster_coach:
+  display_name: Roster Coach
+  coaching_level: level_1
+  status: active

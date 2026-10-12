@@ -3,16 +3,17 @@ module Api
     # Players are PlayerProfile records, optionally linked to an Account.
     #
     # Access is governed by ProfilePolicy: linked Accounts can view their own
-    # profiles, while catalogue access remains role-based. Creating a player
-    # requires a Coach or Admin. A player with no account can be recorded by
-    # staff and used immediately — no Account is created.
+    # profiles, while catalogue access remains role-based. Players, coaches,
+    # curators, and admins may create player profiles. A player with no account
+    # can be recorded and used immediately — no Account is created.
     class PlayersController < ApplicationController
       include ContentAuthorization
       include Pagination
       include NestedOrganisationMembershipAuthorization
+      include ProfileCreationMemberships
 
       before_action :require_authentication
-      before_action :require_profile_creator!, only: :create
+      before_action :require_player_profile_creator!, only: :create
       before_action :set_player, only: %i[show update merge destroy]
       before_action :validate_status_filter!, only: :index
 
@@ -92,8 +93,8 @@ module Api
         # the key always being present (nil = recorded before Phase C).
         payload["created_by"] = nil unless payload.key?("created_by")
         payload["account"] = nil unless payload.key?("account")
-        payload["organisation_memberships"] = organisation_membership_payloads(@player.account)
-        payload["group_memberships"] = group_membership_payloads(@player.account)
+        payload["organisation_memberships"] = organisation_membership_payloads(membership_subject_for(@player))
+        payload["group_memberships"] = group_membership_payloads(membership_subject_for(@player))
         redact_contact!(payload, @player)
 
         # Coaching history (plan 4.2): the count is published rows only, and
@@ -111,9 +112,11 @@ module Api
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Player not found" }, status: :not_found
       end
-        # Staff creation of additional unlinked profiles stays coach/admin-only.
+        # Player-profile creation includes player, coach, curator, and admin
+        # roles. Account linking remains opt-in and is handled below.
       def create
-        puts "\n\n\nparams:#{params}\n\n\n"
+        attributes = player_params
+        membership_attributes = profile_membership_params
         link_to_account = ActiveModel::Type::Boolean.new.cast(params.dig(:player, :player_profile, :link_to_account))
         account = Current.user&.account
         if link_to_account
@@ -124,18 +127,23 @@ module Api
             return render json: { errors: [ "Your account already has a player profile." ] }, status: :conflict
           end
           attributes = attributes.merge(account_id: account.id)
-        elsif Current.user&.coach? || Current.user&.admin?
-          # Staff flow: unlinked profile (coach/admin creating additional profiles)
+        elsif ProfilePolicy.new(actor: Current.user).create_player?
+          # Authorized flow: create an unlinked player profile.
         else
           return render json: { errors: [ "Your account is not ready to create a player profile." ] }, status: :unprocessable_entity
         end
         profile = PlayerProfile.new(attributes)
         saved = PlayerProfile.transaction do
           ProfileOwnership.stamp!(profile, Current.user)
-          next true if profile.save
+          unless profile.save
+            raise ActiveRecord::Rollback
+          end
+
+          next true if create_profile_memberships!(profile: profile, attributes: membership_attributes)
 
           raise ActiveRecord::Rollback
         end
+        return if performed?
 
         if saved
           render json: serialize(profile).merge("possible_duplicates" => []),
@@ -251,35 +259,33 @@ module Api
         payload
       end
 
-      def organisation_membership_payloads(account)
-        return [] unless account
+      # A claimed profile's roster memberships are transferred to its Account.
+      # Before that claim, the profile itself is the membership subject. Show one
+      # canonical subject so a transitional data state cannot render duplicates.
+      def membership_subject_for(profile)
+        profile.account || profile
+      end
 
-        account.organisation_memberships.includes(:organisation).order(:id).map do |membership|
-          {
-            id: membership.id,
-            account_id: membership.account_id,
-            organisation_id: membership.organisation_id,
-            role: membership.role,
-            status: membership.status,
-            joined_at: membership.joined_at,
-            left_at: membership.left_at,
+      def organisation_membership_payloads(subject)
+        OrganisationMembership.where(memberable: subject).includes(:organisation).order(:id).map do |membership|
+          membership.metadata.merge(
             organisation: {
               id: membership.organisation.id,
               name: membership.organisation.name,
               status: membership.organisation.status
             }
-          }
+          )
         end
       end
 
-      def group_membership_payloads(account)
-        return [] unless account
-
-        account.group_memberships.includes(group: :organisation).order(:id).map do |membership|
+      def group_membership_payloads(subject)
+        GroupMembership.where(memberable: subject).includes(group: :organisation).order(:id).map do |membership|
           group = membership.group
           {
             id: membership.id,
             account_id: membership.account_id,
+            memberable_type: membership.memberable_type,
+            memberable_id: membership.memberable_id,
             group_id: membership.group_id,
             role: membership.role,
             status: membership.status,
@@ -322,6 +328,10 @@ module Api
         profile_attrs = normalize_attrs(attrs[:player_profile] || attrs[:player_profile_attributes] || {}, PROFILE_ATTRS)
 
         profile_attrs
+      end
+
+      def profile_membership_params
+        normalize_attrs(params.require(:player), %i[organisation_id group_id])
       end
 
       def normalize_attrs(source, allowed)

@@ -10,10 +10,26 @@ module ContentAuthorization
     render_unauthorized_or_forbidden
   end
 
-  # Profile writes use Account-aware policy checks. User roles continue to
-  # decide whether an authenticated principal may create the domain record.
-  def require_profile_creator!
-    return if ProfilePolicy.new(actor: Current.user).create?
+  # Groups are personal or shared roster selections. Any signed-in player,
+  # coach, curator, or admin may start one; this deliberately does not widen
+  # the stricter content-creation rule used for catalogue and assessment data.
+  def require_group_creator!
+    user = Current.user
+    return if user&.player? || user&.coach? || user&.curator? || user&.admin?
+
+    render_unauthorized_or_forbidden
+  end
+
+  # Profile creation is type-specific: a player may record player profiles but
+  # not coach profiles, while coaches, curators, and admins may record both.
+  def require_player_profile_creator!
+    return if ProfilePolicy.new(actor: Current.user).create_player?
+
+    render_unauthorized_or_forbidden
+  end
+
+  def require_coach_profile_creator!
+    return if ProfilePolicy.new(actor: Current.user).create_coach?
 
     render_unauthorized_or_forbidden
   end

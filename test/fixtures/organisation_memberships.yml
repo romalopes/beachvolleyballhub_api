@@ -27,6 +27,13 @@ club_coach:
   status: active
   joined_at: <%= 3.months.ago.to_fs(:db) %>
 
+unclaimed_roster_coach_membership:
+  organisation: sydney_club
+  memberable: unclaimed_roster_coach (CoachProfile)
+  role: coach
+  status: active
+  joined_at: <%= 2.months.ago.to_fs(:db) %>
+
 club_player:
   organisation: sydney_club
   account: one

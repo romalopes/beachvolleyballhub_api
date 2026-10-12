@@ -11,12 +11,15 @@ class ProfilePolicy
   end
 
   def create?
-    return true if admin? || coach?
-    # Self-service from /identity: any authenticated user may create their own
-    # linked profile. Staff creation of unlinked profiles stays coach/admin-only
-    # via the controller, which forces non-privileged callers onto their own
-    # account.
-    @account.present?
+    create_player? || create_coach?
+  end
+
+  def create_player?
+    admin? || curator? || coach? || player?
+  end
+
+  def create_coach?
+    admin? || curator? || coach?
   end
 
   def view?
@@ -107,5 +110,6 @@ class ProfilePolicy
   def admin? = @account&.admin? || @user&.admin? || false
   def curator? = @account&.curator? || @user&.curator? || false
   def coach? = @account&.coach? || @user&.coach? || false
+  def player? = @account&.player? || @user&.player? || false
   def training_manager? = admin? || curator? || coach?
 end

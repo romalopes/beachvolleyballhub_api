@@ -107,6 +107,43 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a profile creator can add and remove their recorded player profile" do
+    creator = users(:three)
+    profile = PlayerProfile.new(display_name: "Creator managed player")
+    ProfileOwnership.stamp!(profile, creator)
+    profile.save!
+    sign_in_as(creator)
+
+    post "/api/v1/organisations/#{@club.id}/memberships/profile", params: {
+      memberable_type: "PlayerProfile", memberable_id: profile.id
+    }
+
+    assert_response :created
+    membership = @club.organisation_memberships.find_by!(memberable: profile)
+    assert_equal "member", membership.role
+    assert_equal "active", membership.status
+
+    delete "/api/v1/organisations/#{@club.id}/memberships/profile", params: {
+      memberable_type: "PlayerProfile", memberable_id: profile.id
+    }
+
+    assert_response :success
+    assert_equal "ended", membership.reload.status
+  end
+
+  test "a profile creator cannot add somebody else's profile" do
+    profile = PlayerProfile.new(display_name: "Other creator player")
+    ProfileOwnership.stamp!(profile, users(:six))
+    profile.save!
+    sign_in_as(users(:three))
+
+    post "/api/v1/organisations/#{@club.id}/memberships/profile", params: {
+      memberable_type: "PlayerProfile", memberable_id: profile.id
+    }
+
+    assert_response :forbidden
+  end
+
   test "show reports the parent and depth without a second call" do
     sign_in_as(@coach)
     get "/api/v1/organisations/#{@club.id}"

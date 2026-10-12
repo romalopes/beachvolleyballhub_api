@@ -7,21 +7,23 @@ module Api
     # Archive-not-delete: a group that has run assessment sessions cannot be
     # destroyed (preventing orphaned history); it must be archived instead.
     #
-    # Read access is open to training managers (coach/curator/admin). Creation
-    # and mutation requires a content creator (coach/admin). Private groups
-    # observe soft visibility: hidden from other coaches unless administrator
-    # or curator.
+    # Read access is open to training managers (coach/curator/admin). Any
+    # player, coach, curator, or admin may create a group; later mutation stays
+    # subject to the ownership and management rules below. Private groups observe
+    # soft visibility: hidden from other coaches unless administrator or curator.
     class GroupsController < ApplicationController
       include ContentAuthorization
       include Pagination
 
       before_action :require_authentication
-      before_action :require_training_manager!, except: %i[show update destroy join leave]
-      before_action :require_content_creator!, only: %i[create add_members remove_member]
+      before_action :require_training_manager!, except: %i[create show update destroy join leave add_created_profile_membership remove_created_profile_membership]
+      before_action :require_group_creator!, only: :create
+      before_action :require_content_creator!, only: %i[add_members remove_member]
       before_action :set_group, only: %i[show update destroy add_members remove_member
-                                         join leave approve_member reject_member update_member end_member]
+                                          join leave approve_member reject_member update_member end_member
+                                          add_created_profile_membership remove_created_profile_membership]
       before_action :require_group_reader!, only: :show
-      before_action :check_visibility!, only: %i[show update destroy add_members remove_member join]
+      before_action :check_visibility!, only: %i[show update destroy add_members remove_member join add_created_profile_membership remove_created_profile_membership]
       before_action :authorize_owner!, only: %i[add_members remove_member update_member end_member]
 
       before_action :authorize_management!, only: %i[update destroy]
@@ -67,10 +69,11 @@ module Api
         @group = Group.new(group_params)
         @group.created_by = Current.user
 
-        # A group belongs to an organisation the caller is actually *in*. Being able
-        # to name an organisation is not membership of it, and this is the one place
-        # where the two are told apart.
-        if @group.organisation_id.present? && !active_member_of?(@group.organisation_id)
+        # A group normally belongs to an organisation the caller is actually *in*.
+        # Site oversight (admin/curator) may create one for any organisation.
+        if @group.organisation_id.present? &&
+           !can_create_for_any_organisation? &&
+           !active_member_of?(@group.organisation_id)
           return render json: {
             errors: [ "You must be an active member of that organisation to create a group for it." ]
           }, status: :forbidden
@@ -171,6 +174,38 @@ module Api
           group: serialize_detail(@group.reload),
           added: added
         }
+      end
+
+      # Narrow creator-managed counterpart to the owner-only roster endpoint. The
+      # caller may add only the exact PlayerProfile/CoachProfile they recorded.
+      def add_created_profile_membership
+        member = created_profile_memberable
+        return if performed?
+
+        unless @group.shares_organisation?([], @group.organisation_id, memberables: [ member ])
+          return render json: { errors: [ "Each roster member must be an active member of this group's organisation." ] }, status: :unprocessable_entity
+        end
+
+        added = assign_memberable(member) ? 1 : 0
+        if added.zero?
+          membership = @group.group_memberships.find_by(memberable: member)
+          return render json: { error: "This profile is already a member of this group.", membership: membership_payload(membership) }, status: :conflict
+        end
+
+        render json: { group: serialize_detail(@group.reload), added: added }, status: :created
+      end
+
+      def remove_created_profile_membership
+        member = created_profile_memberable
+        return if performed?
+
+        membership = @group.group_memberships.active.find_by(memberable: member)
+        return render(json: { errors: [ "This profile is not active in this group." ] }, status: :not_found) unless membership
+
+        membership.end_membership!
+        render json: { removed: true, membership_id: membership.id }
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
       end
 
       # End a membership rather than removing the row (§2.5). The account stays on
@@ -489,6 +524,10 @@ module Api
         ).for_user_subjects(Current.user).exists?
       end
 
+      def can_create_for_any_organisation?
+        Current.user.admin? || Current.user.curator?
+      end
+
       # Adds accounts, re-activating an ended membership rather than adding a second
       # row for the same account: the unique index is on (group_id, account_id) across
       # all statuses, so a re-join that inserted would collide — and the first
@@ -534,6 +573,19 @@ module Api
           return nil
         end
         record
+      end
+
+      def created_profile_memberable
+        member = resolve_memberable
+        return if performed?
+
+        unless member.is_a?(PlayerProfile) || member.is_a?(CoachProfile)
+          return render json: { errors: [ "Choose a PlayerProfile or CoachProfile member." ] }, status: :unprocessable_entity
+        end
+        return member if ProfileOwnership.created_by?(member, Current.user)
+
+        render json: { error: "Forbidden" }, status: :forbidden
+        nil
       end
 
       # Adds a profile-keyed subject, re-activating an ended membership rather

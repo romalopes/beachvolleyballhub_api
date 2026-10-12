@@ -1,4 +1,3 @@
-# TEST EDIT
 module Api
   module V1
     # A hierarchical organisational context — an international federation, a
@@ -17,13 +16,14 @@ module Api
       include Pagination
 
       before_action :require_authentication
-      before_action :require_training_manager!, except: %i[show index join leave]
+      before_action :require_training_manager!, except: %i[show index join leave add_created_profile_membership remove_created_profile_membership]
       # Loaded before the authority checks, not after: every organisation rule below
       # needs the record it is judging, and a rule that silently passed because the
       # record was nil would be the worst kind of bug here.
       before_action :set_organisation,
                     only: %i[show update archive restore logo destroy
-                             members member_candidates create_member update_member end_member join leave
+                              members member_candidates create_member update_member end_member join leave
+                              add_created_profile_membership remove_created_profile_membership
                              approve_member reject_member]
       before_action :require_organisation_reader!, only: :show
       before_action :require_organisation_reader!, only: :members
@@ -391,6 +391,45 @@ module Api
         end
       end
 
+      # A coach/player who recorded an unclaimed profile may keep that specific
+      # profile's roster current. This is deliberately narrower than officer access:
+      # the request's subject must be exactly a PlayerProfile/CoachProfile created
+      # by the caller, and it is always recorded as an ordinary active member.
+      def add_created_profile_membership
+        member = created_profile_memberable
+        return if performed?
+
+        existing = @organisation.organisation_memberships.find_by(memberable: member)
+        if existing && !existing.ended?
+          return render json: { error: "This profile is already a member of this organisation.", membership: existing.metadata }, status: :conflict
+        end
+
+        membership = existing || @organisation.organisation_memberships.build(memberable: member)
+        membership.role = "member"
+        membership.status = "active"
+        membership.joined_at ||= Time.current
+        membership.left_at = nil
+
+        if membership.save
+          render json: membership.metadata, status: :created
+        else
+          render json: { errors: membership.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      def remove_created_profile_membership
+        member = created_profile_memberable
+        return if performed?
+
+        membership = @organisation.organisation_memberships.find_by(memberable: member)
+        return render(json: { errors: [ "This profile is not a member of this organisation." ] }, status: :not_found) unless membership
+
+        membership.end!
+        render json: { removed: false, membership: membership.metadata }
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+      end
+
       def update_member
         membership = find_membership
         return if membership.nil?
@@ -580,6 +619,19 @@ module Api
         return member if performed? || member.nil?
 
         canonical_memberable(member)
+      end
+
+      def created_profile_memberable
+        member = resolve_memberable_from_params(params)
+        return if performed?
+
+        unless member.is_a?(PlayerProfile) || member.is_a?(CoachProfile)
+          return render json: { errors: [ "Choose a PlayerProfile or CoachProfile member." ] }, status: :unprocessable_entity
+        end
+        return member if ProfileOwnership.created_by?(member, Current.user)
+
+        render json: { error: "Forbidden" }, status: :forbidden
+        nil
       end
 
       def resolve_memberable_from_params(source)

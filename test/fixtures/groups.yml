@@ -20,3 +20,22 @@ private_squad:
   created_by: three
   visibility: private
   status: active
+
+# Explicit organisation context for create-profile membership tests.
+sydney_club_squad:
+  name: Sydney Club squad
+  slug: sydney-club-squad
+  description: A squad belonging to Sydney Beach Volleyball Club.
+  created_by: six
+  organisation: sydney_club
+  visibility: shared
+  status: active
+
+northern_club_squad:
+  name: Northern Club squad
+  slug: northern-club-squad
+  description: A squad belonging to Northern Beaches Volleyball Club.
+  created_by: six
+  organisation: northern_club
+  visibility: shared
+  status: active

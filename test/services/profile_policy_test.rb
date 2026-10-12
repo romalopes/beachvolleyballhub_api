@@ -62,4 +62,20 @@ class ProfilePolicyTest < ActiveSupport::TestCase
     assert curator.merge?
     assert_not curator.destroy?
   end
+
+  test "profile creation permissions distinguish player and coach profiles" do
+    player = ProfilePolicy.new(actor: users(:one))
+    coach = ProfilePolicy.new(actor: users(:three))
+    curator = ProfilePolicy.new(actor: users(:four))
+    unprivileged = ProfilePolicy.new(actor: users(:five))
+
+    assert player.create_player?
+    assert_not player.create_coach?
+    assert coach.create_player?
+    assert coach.create_coach?
+    assert curator.create_player?
+    assert curator.create_coach?
+    assert_not unprivileged.create_player?
+    assert_not unprivileged.create_coach?
+  end
 end

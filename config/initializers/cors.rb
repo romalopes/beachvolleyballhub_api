@@ -1,7 +1,14 @@
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins "https://beachvolleyballproject.vercel.app", "http://localhost:5174, http://localhost:3001", "https://beachvolleyballhub.romalopes.workers.dev"
-
+    origins "https://beachvolleyballproject.vercel.app", "http://localhost:5174,
+    http://localhost:3001", "https://beachvolleyballhub.romalopes.workers.dev"
+       origins(
+        "http://localhost:5174",
+        "https://beachvolleyballproject.vercel.app",
+        "http://localhost:3001",
+        "https://beachvolleyballhub.romalopes.workers.dev",
+        %r{\Ahttps://[a-zA-Z0-9-]+-beachvolleyballhub\.romalopes\.workers\.dev\z}
+      )
 
     # origins "*"
     # origins ENV.fetch("FRONTEND_URL")

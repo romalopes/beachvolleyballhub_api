@@ -3,17 +3,18 @@ module Api
     # Coaches are CoachProfile records, optionally linked to an Account.
     #
     # Access is governed by ProfilePolicy: linked Accounts can view their own
-    # profiles, while catalogue access remains role-based. Creating a coach
-    # requires a Coach or Admin. A coach with no account can be recorded by
-    # staff and used immediately — no Account is created, and no application
+    # profiles, while catalogue access remains role-based. Coaches, curators,
+    # and admins may create coach profiles. A coach with no account can be
+    # recorded and used immediately — no Account is created, and no application
     # permissions are granted (those stay role-based on the User).
     class CoachesController < ApplicationController
       include ContentAuthorization
       include Pagination
       include NestedOrganisationMembershipAuthorization
+      include ProfileCreationMemberships
 
       before_action :require_authentication
-      before_action :require_profile_creator!, only: :create
+      before_action :require_coach_profile_creator!, only: :create
       before_action :set_coach, only: %i[show update merge destroy]
       before_action :validate_status_filter!, only: :index
 
@@ -82,8 +83,8 @@ module Api
         # the key always being present (nil = recorded before Phase C).
         payload["created_by"] = nil unless payload.key?("created_by")
         payload["account"] = nil unless payload.key?("account")
-        payload["organisation_memberships"] = organisation_membership_payloads(@coach.account)
-        payload["group_memberships"] = group_membership_payloads(@coach.account)
+        payload["organisation_memberships"] = organisation_membership_payloads(membership_subject_for(@coach))
+        payload["group_memberships"] = group_membership_payloads(membership_subject_for(@coach))
         redact_contact!(payload, @coach)
 
         # Attribution history (plan 4.2): the count and a recent slice of the
@@ -103,10 +104,11 @@ module Api
       # profile consolidation happens explicitly through the merge endpoint.
       def create
         attributes = coach_params
+        membership_attributes = profile_membership_params
         # Self-service from /identity: any authenticated user with an account
         # may create their own linked profile if they don't already have one.
         # Pass `link_to_account: true` in coach_profile from the frontend to opt into self-service.
-        # Staff creation of additional unlinked profiles stays coach/admin-only.
+        # Coach-profile creation is limited to coach, curator, and admin roles.
         link_to_account = ActiveModel::Type::Boolean.new.cast(params.dig(:coach, :coach_profile, :link_to_account))
         account = Current.user&.account
         if link_to_account
@@ -117,18 +119,23 @@ module Api
             return render json: { errors: [ "Your account already has a coach profile." ] }, status: :conflict
           end
           attributes = attributes.merge(account_id: account.id)
-        elsif Current.user&.coach? || Current.user&.admin?
-          # Staff flow: unlinked profile (coach/admin creating additional profiles)
+        elsif ProfilePolicy.new(actor: Current.user).create_coach?
+          # Authorized flow: create an unlinked coach profile.
         else
           return render json: { errors: [ "Your account is not ready to create a coach profile." ] }, status: :unprocessable_entity
         end
         profile = CoachProfile.new(attributes)
         saved = CoachProfile.transaction do
           ProfileOwnership.stamp!(profile, Current.user)
-          next true if profile.save
+          unless profile.save
+            raise ActiveRecord::Rollback
+          end
+
+          next true if create_profile_memberships!(profile: profile, attributes: membership_attributes)
 
           raise ActiveRecord::Rollback
         end
+        return if performed?
 
         if saved
           render json: serialize(profile).merge("possible_duplicates" => []),
@@ -232,35 +239,32 @@ module Api
         payload
       end
 
-      def organisation_membership_payloads(account)
-        return [] unless account
+      # A successful claim transfers profile-held memberships to the Account.
+      # Until then the profile is the canonical roster subject.
+      def membership_subject_for(profile)
+        profile.account || profile
+      end
 
-        account.organisation_memberships.includes(:organisation).order(:id).map do |membership|
-          {
-            id: membership.id,
-            account_id: membership.account_id,
-            organisation_id: membership.organisation_id,
-            role: membership.role,
-            status: membership.status,
-            joined_at: membership.joined_at,
-            left_at: membership.left_at,
+      def organisation_membership_payloads(subject)
+        OrganisationMembership.where(memberable: subject).includes(:organisation).order(:id).map do |membership|
+          membership.metadata.merge(
             organisation: {
               id: membership.organisation.id,
               name: membership.organisation.name,
               status: membership.organisation.status
             }
-          }
+          )
         end
       end
 
-      def group_membership_payloads(account)
-        return [] unless account
-
-        account.group_memberships.includes(group: :organisation).order(:id).map do |membership|
+      def group_membership_payloads(subject)
+        GroupMembership.where(memberable: subject).includes(group: :organisation).order(:id).map do |membership|
           group = membership.group
           {
             id: membership.id,
             account_id: membership.account_id,
+            memberable_type: membership.memberable_type,
+            memberable_id: membership.memberable_id,
             group_id: membership.group_id,
             role: membership.role,
             status: membership.status,
@@ -303,6 +307,10 @@ module Api
         profile_attrs = normalize_attrs(attrs[:coach_profile] || attrs[:coach_profile_attributes] || {}, PROFILE_ATTRS)
 
         profile_attrs
+      end
+
+      def profile_membership_params
+        normalize_attrs(params.require(:coach), %i[organisation_id group_id])
       end
 
       def normalize_attrs(source, allowed)

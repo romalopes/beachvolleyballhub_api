@@ -5,15 +5,17 @@ require "test_helper"
 # Groups are reusable participant rosters (squads) for assessment sessions.
 # They are a selection aid, not an authorization boundary.
 # Read is open to training managers (coach/curator/admin).
-# Create, update, destroy and membership manipulation require content creators (coach/admin).
+# Any player, coach, curator, or admin can create a group. Updates, deletion,
+# and membership manipulation retain their existing ownership/management rules.
 # Deleting a group with associated assessment sessions is refused (archive instead).
 class Api::V1::GroupsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @admin = users(:two)         # coach + admin
     @owner = users(:six)         # coach: created u19_squad fixture
     @other_coach = users(:three) # coach: created private_squad fixture
-    @curator = users(:four)      # curator: training manager, not content creator
+    @curator = users(:four)      # curator: training manager
     @player_user = users(:one)   # player role only
+    @guest_user = users(:five)   # no group-creator role
 
     @u19 = groups(:u19_squad)
     @private_group = groups(:private_squad)
@@ -51,12 +53,71 @@ class Api::V1::GroupsControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  test "curator can read index but cannot create groups" do
+  test "curator can read index and create groups" do
     sign_in_as(@curator)
     get api_v1_groups_path
     assert_response :success
 
-    post_json api_v1_groups_path, { group: { name: "Curator Group" } }
+    assert_difference "Group.count", 1 do
+      post_json api_v1_groups_path, { group: { name: "Curator Group" } }
+    end
+    assert_response :created
+    assert_equal @curator.id, json["group"]["created_by"]["id"]
+  end
+
+  test "player can create a group" do
+    sign_in_as(@player_user)
+
+    assert_difference "Group.count", 1 do
+      post_json api_v1_groups_path, { group: { name: "Player Group" } }
+    end
+
+    assert_response :created
+    assert_equal @player_user.id, json["group"]["created_by"]["id"]
+  end
+
+  test "a profile creator can add and remove their recorded coach profile" do
+    profile = CoachProfile.new(display_name: "Creator managed coach")
+    ProfileOwnership.stamp!(profile, @other_coach)
+    profile.save!
+    sign_in_as(@other_coach)
+
+    post "#{api_v1_groups_path}/#{@u19.id}/memberships/profile", params: {
+      memberable_type: "CoachProfile", memberable_id: profile.id
+    }
+
+    assert_response :created
+    membership = @u19.group_memberships.find_by!(memberable: profile)
+    assert_equal "active", membership.status
+
+    delete "#{api_v1_groups_path}/#{@u19.id}/memberships/profile", params: {
+      memberable_type: "CoachProfile", memberable_id: profile.id
+    }
+
+    assert_response :success
+    assert_equal "ended", membership.reload.status
+  end
+
+  test "a profile creator cannot add somebody else's profile" do
+    profile = CoachProfile.new(display_name: "Other creator coach")
+    ProfileOwnership.stamp!(profile, @owner)
+    profile.save!
+    sign_in_as(@other_coach)
+
+    post "#{api_v1_groups_path}/#{@u19.id}/memberships/profile", params: {
+      memberable_type: "CoachProfile", memberable_id: profile.id
+    }
+
+    assert_response :forbidden
+  end
+
+  test "user without a group-creator role cannot create a group" do
+    sign_in_as(@guest_user)
+
+    assert_no_difference "Group.count" do
+      post_json api_v1_groups_path, { group: { name: "Blocked Group" } }
+    end
+
     assert_response :forbidden
   end
 
@@ -321,6 +382,24 @@ class Api::V1::GroupsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :forbidden
     assert_match(/active member/, json["errors"].first)
+  end
+
+  test "admin and curator can create a group for any organisation" do
+    [ @admin, @curator ].each do |user|
+      sign_in_as(user)
+
+      assert_difference "Group.count", 1 do
+        post_json api_v1_groups_path, {
+          group: {
+            name: "#{user.roles.first.name.capitalize} Northern Squad",
+            organisation_id: organisations(:northern_club).id
+          }
+        }
+      end
+
+      assert_response :created
+      assert_equal organisations(:northern_club).id, json["group"]["organisation"]["id"]
+    end
   end
 
   test "being a group member does not grant organisation membership authority" do

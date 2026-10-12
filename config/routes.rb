@@ -202,6 +202,10 @@ Rails.application.routes.draw do
           # Self-service leave: counterpart to `join`, no admin authority required.
           # Must come before the catch-all `memberships/:membership_id` route below.
           delete "memberships/leave", action: :leave, as: :leave_membership
+          # Creator-scoped profile management must also precede the generic ID route,
+          # otherwise Rails treats the literal `profile` as a membership id.
+          post "memberships/profile", action: :add_created_profile_membership
+          delete "memberships/profile", action: :remove_created_profile_membership
           delete "memberships/:membership_id", action: :end_member, as: :end_membership
           patch "members/:account_id", action: :update_member, as: :update_member
           delete "members/:account_id", action: :end_member, as: :end_member
@@ -267,6 +271,9 @@ Rails.application.routes.draw do
           # Self-service leave: counterpart to `join`, with no owner authority
           # required. This must precede the membership-id route below.
           delete "memberships/leave", action: :leave, as: :leave_membership
+          # Literal profile routes must precede the generic membership-id route.
+          post "memberships/profile", action: :add_created_profile_membership
+          delete "memberships/profile", action: :remove_created_profile_membership
           # Remove member by membership_id
           delete "memberships/:membership_id", action: :end_member, as: :end_membership
           # Self-service join, mirroring organisations: `add_members` writes

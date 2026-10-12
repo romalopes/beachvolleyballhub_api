@@ -33,10 +33,18 @@ class Api::V1::CoachesControllerTest < ActionDispatch::IntegrationTest
     assert_empty first.fetch("data").map { |row| row.fetch("id") } & second.fetch("data").map { |row| row.fetch("id") }
   end
 
-  test "create requires manager and stamps creator account" do
+  test "create permits curator but denies player roles and stamps creator account" do
     sign_in_as(@public_user)
     post api_v1_coaches_path, params: coach_create_params
     assert_response :forbidden
+
+    sign_out
+    sign_in_as(@curator)
+    post api_v1_coaches_path, params: coach_create_params
+    assert_response :created
+    curator_profile = CoachProfile.find(JSON.parse(response.body).fetch("id"))
+    assert_equal @curator, curator_profile.created_by
+    assert_equal @curator.account, curator_profile.created_by_account
 
     sign_out
     sign_in_as(@trainer)
@@ -69,6 +77,40 @@ class Api::V1::CoachesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "create atomically attaches a coach profile to a selected organisation and group" do
+    sign_in_as(@admin)
+
+    assert_difference [ "CoachProfile.count", "OrganisationMembership.count", "GroupMembership.count" ], 1 do
+      post api_v1_coaches_path, params: coach_create_params.deep_merge(
+        coach: {
+          organisation_id: organisations(:sydney_club).id,
+          group_id: groups(:sydney_club_squad).id
+        }
+      )
+    end
+
+    assert_response :created
+    profile = CoachProfile.find(JSON.parse(response.body).fetch("id"))
+    assert OrganisationMembership.exists?(organisation: organisations(:sydney_club), memberable: profile, role: "member", status: "active")
+    assert GroupMembership.exists?(group: groups(:sydney_club_squad), memberable: profile, role: "member", status: "active")
+  end
+
+  test "cross-organisation group selection rolls back coach profile creation" do
+    sign_in_as(@admin)
+
+    assert_no_difference [ "CoachProfile.count", "OrganisationMembership.count", "GroupMembership.count" ] do
+      post api_v1_coaches_path, params: coach_create_params.deep_merge(
+        coach: {
+          organisation_id: organisations(:sydney_club).id,
+          group_id: groups(:northern_club_squad).id
+        }
+      )
+    end
+
+    assert_response :unprocessable_entity
+    assert_includes JSON.parse(response.body).fetch("errors"), "The selected group does not belong to the selected organisation."
+  end
+
   test "show and update use coach profile attributes" do
     coach = coach_profiles(:maria_coach)
     sign_in_as(@admin)
@@ -98,6 +140,21 @@ class Api::V1::CoachesControllerTest < ActionDispatch::IntegrationTest
     assert_equal organisations(:sydney_club).name, organisation_membership.dig("organisation", "name")
     assert_equal groups(:u19_squad).name, group_membership.dig("group", "name")
     assert_nil group_membership.dig("group", "organisation")
+  end
+
+  test "show exposes profile-held organisation memberships before the coach is claimed" do
+    coach = coach_profiles(:unclaimed_roster_coach)
+    sign_in_as(@admin)
+
+    get api_v1_coach_path(coach)
+
+    assert_response :success
+    membership = JSON.parse(response.body).fetch("organisation_memberships")
+                     .find { |row| row.fetch("id") == organisation_memberships(:unclaimed_roster_coach_membership).id }
+    assert_nil membership.fetch("account_id")
+    assert_equal "CoachProfile", membership.fetch("memberable_type")
+    assert_equal coach.id, membership.fetch("memberable_id")
+    assert_equal organisations(:sydney_club).name, membership.dig("organisation", "name")
   end
 
   test "private coaches are hidden from unrelated coaches but visible to owner and curator" do
