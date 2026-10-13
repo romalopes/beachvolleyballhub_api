@@ -23,17 +23,12 @@ Rails.application.configure do
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
   # config.active_storage.service = :local
-  config.active_storage.service = :supabase
+  config.active_storage.service = :cloudflare_r2
 
-  # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # config.assume_ssl = true
-
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
-
-  # Skip http-to-https redirect for the default health check endpoint.
-  # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
-
+# Assume all access to the app is happening through a SSL-terminating reverse proxy.
+  config.assume_ssl = ENV["BEHIND_HTTPS_PROXY"] == "true"
+# Skip http-to-https redirect for the default health check endpoint.
+  config.force_ssl = ENV["BEHIND_HTTPS_PROXY"] == "true"
 
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true
@@ -71,10 +66,6 @@ Rails.application.configure do
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :queue } }
 
-  config.logger = ActiveSupport::Logger.new("log/production.log")
-# OR
-  # config.logger = ActiveSupport::Logger.new(STDOUT)
-
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
@@ -83,16 +74,17 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "example.com"), protocol: "https" }
 
   # React frontend URL for password-reset email links (production deploy to Vercel).
-  ENV["FRONTEND_URL"] ||= "https://beachvolleyballproject.vercel.app"
+  ENV["FRONTEND_URL"] ||= "https://beachvolleyballhub.romalopes.workers.dev"
+  #"https://beachvolleyballhub.com"
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+# Allow the production API domain
+config.hosts << "api.beachvolleyballhub.com"
+
+# Allow local testing in production mode
+if ENV["ALLOW_LOCALHOST_IN_PRODUCTION"] == "true"
+  config.hosts << "localhost"
+  config.hosts << "127.0.0.1"
+end
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

@@ -1,20 +1,97 @@
-# Workaround for macOS fork-safety crash with Objective-C runtime
-# See: https://github.com/puma/puma/issues/2462
-ENV["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES" if RUBY_PLATFORM =~ /darwin/
+# # config/puma.rb
 
-# Puma configuration for SSL
-ssl_bind "127.0.0.1", "3001",
-  key: "config/ssl/localhost.key",
-  cert: "config/ssl/localhost.crt"
+# # Workaround for macOS fork-safety crash
+# ENV["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES" if RUBY_PLATFORM.include?("darwin")
 
-environment ENV.fetch("RAILS_ENV") { "development" }
+# environment ENV.fetch("RAILS_ENV", "development")
 
-pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
+# # Threads
+# threads_count = Integer(ENV.fetch("RAILS_MAX_THREADS", 2))
+# threads threads_count, threads_count
 
-# Single-mode in development to avoid fork-related crashes on macOS;
-# use cluster mode with multiple workers in production for throughput.
-worker_count = ENV.fetch("WEB_CONCURRENCY", ENV.fetch("RAILS_ENV", "development") == "production" ? "2" : "0").to_i
-workers worker_count
-preload_app! if worker_count.positive?
 
+# # Port 3001 in development and production
+# port_number = Integer(ENV.fetch("PORT", 3001))
+
+# # Local development: 127.0.0.1
+# # Docker production: 0.0.0.0
+# bind_host = if ENV["RAILS_ENV"] == "production"
+#   "0.0.0.0"
+# else
+#   "127.0.0.1"
+# end
+
+# # IMPORTANT: Only one bind instruction
+# bind "tcp://#{bind_host}:#{port_number}"
+
+# pidfile ENV.fetch("PIDFILE", "tmp/pids/server.pid")
+
+# # Single-process mode to minimise memory usage
+# # macOS native libraries can abort in a forked worker even when Rails runs in
+# # production mode. Keep local macOS runs in single-process, threaded mode.
+# if RUBY_PLATFORM.include?("darwin") || ENV.fetch("RAILS_ENV", "development") == "development"
+#   worker_count = 0
+# else
+#   worker_count = Integer(ENV.fetch("WEB_CONCURRENCY", "0"))
+#   # workers ENV.fetch("WEB_CONCURRENCY", 0)
+# end
+
+# workers worker_count
+# # preload_app! if worker_count.positive?
+
+# plugin :tmp_restart
+
+
+
+
+
+
+# This configuration file will be evaluated by Puma. The top-level methods that
+# are invoked here are part of Puma's configuration DSL. For more information
+# about methods provided by the DSL, see https://puma.io/puma/Puma/DSL.html.
+#
+# Puma starts a configurable number of processes (workers) and each process
+# serves each request in a thread from an internal thread pool.
+#
+# You can control the number of workers using ENV["WEB_CONCURRENCY"]. You
+# should only set this value when you want to run 2 or more workers.
+# Development and macOS use single-process mode; other environments default
+# to 1 worker unless WEB_CONCURRENCY specifies another integer.
+#
+# The ideal number of threads per worker depends both on how much time the
+# application spends waiting for IO operations and on how much you wish to
+# prioritize throughput over latency.
+#
+# As a rule of thumb, increasing the number of threads will increase how much
+# traffic a given process can handle (throughput), but due to CRuby's
+# Global VM Lock (GVL) it has diminishing returns and will degrade the
+# response time (latency) of the application.
+#
+# The default is set to 3 threads as it's deemed a decent compromise between
+# throughput and latency for the average Rails application.
+#
+# Any libraries that use a connection pool or another resource pool should
+# be configured to provide at least as many connections as the number of
+# threads. This includes Active Record's `pool` parameter in `database.yml`.
+threads_count = ENV.fetch("RAILS_MAX_THREADS", 2)
+threads threads_count, threads_count
+
+# Listen on every container interface. DigitalOcean routes traffic to PORT,
+# which defaults to the application's documented port 3001.
+bind "tcp://0.0.0.0:#{ENV.fetch("PORT", 3001)}"
+
+# Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
+
+# Specify the PID file. Defaults to tmp/pids/server.pid in development.
+# In other environments, only set the PID file if requested.
+pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
+
+# macOS native libraries can abort in a forked worker even when Rails runs in
+# production mode. Keep local macOS runs in single-process, threaded mode.
+if RUBY_PLATFORM.include?("darwin") || ENV.fetch("RAILS_ENV", "development") == "development"
+  workers 0
+else
+  workers Integer(ENV.fetch("WEB_CONCURRENCY", "0"))
+  # workers ENV.fetch("WEB_CONCURRENCY", 0)
+end

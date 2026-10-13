@@ -1,8 +1,5 @@
 #!/bin/bash -e
 
-# If running the rails server then create or migrate existing database
-if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
-  ./bin/rails db:prepare
-fi
-
+# Production migrations are a deliberate one-off release step, never an
+# implicit side effect of starting a web or Solid Queue worker container.
 exec "${@}"

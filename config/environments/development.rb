@@ -36,9 +36,10 @@ Rails.application.configure do
 # config.active_storage.service = :supabase
 config.active_storage.service = :cloudflare_r2
 
-  config.logger = ActiveSupport::Logger.new("log/development.log")
+  # config.logger = ActiveSupport::Logger.new("log/development.log")
 # OR
-  # config.logger = ActiveSupport::Logger.new(STDOUT)
+config.log_tags = [ :request_id ]
+config.logger = ActiveSupport::Logger.new(STDOUT)
 
 
   config.action_mailer.perform_deliveries = true
