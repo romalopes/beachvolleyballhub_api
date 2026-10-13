@@ -1,0 +1,355 @@
+# Database Backup & Restore Script
+
+A standalone Bash script for backing up and restoring Wine Words databases (local PostgreSQL, Supabase, NeonDB) with full compatibility with the Cloudflare R2 backup format used by GitHub Actions workflows.
+
+## Location
+
+`scripts/db_backup_restore.sh`
+
+## Features
+
+| Command               | Description                                                                |
+| --------------------- | -------------------------------------------------------------------------- |
+| `backup`              | Create encrypted backup from local/Supabase/Neon → local filesystem        |
+| `restore`             | Restore `.dump` or `.dump.age` to local/Supabase/Neon                      |
+| `verify`              | Verify Cloudflare R2 downloaded files (checksum + decryption test)         |
+| `list`                | List available backups in Cloudflare R2                                    |
+| `restore_r2_to_local` | Download and restore a specific R2 backup (or configured default) to local |
+| `download`            | Download specific backup (or `latest`) from R2                             |
+
+## Prerequisites
+
+- **PostgreSQL 18 client** (`pg_dump`, `pg_restore`, `psql`)
+- **age** v1.3.2 (encryption tool)
+- **awscli** (for R2 operations)
+- **jq**, `sha256sum`, `curl`
+
+```bash
+# macOS
+brew install postgresql@18 age awscli jq
+
+# Verify versions
+pg_dump --version    # Should show 18.x
+age --version        # Should show 1.3.2
+```
+
+## Environment Setup
+
+The `local` provider requires `LOCAL_DATABASE_URL`, read from the exported
+environment or `beachvolleyballhub_api/.env.development.local`. Exported values take
+precedence. This variable selects the database for local backups and restores;
+there is no hard-coded fallback.
+
+### 1. Database URLs (in `.env.development.local`)
+
+```dotenv
+# Local PostgreSQL
+LOCAL_DATABASE_URL=postgresql:///wine_words_development
+
+# Supabase
+SUPABASE_DATABASE_URL=postgresql://postgres:password@db.xxx.supabase.co:5432/postgres
+
+# Neon
+NEON_DATABASE_URL=postgresql://user:password@ep-xxx.neon.tech/dbname
+```
+
+### 2. Encryption and Cloudflare R2 settings
+
+Set these in `wine_words_api/.env.development.local`; no shell exports are needed.
+Exported values, when present, take precedence, just as for database URLs. Values
+may be unquoted or single/double quoted. An optional `export` prefix is supported. The file is read as data, not executed.
+
+```dotenv
+BACKUP_ENCRYPTION_RECIPIENT=age1YOUR_PUBLIC_KEY
+BACKUP_ENCRYPTION_IDENTITY=/absolute/path/to/age-keys.txt
+R2_BUCKET=database-backups
+R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=YOUR_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY=YOUR_SECRET_ACCESS_KEY
+```
+
+`BACKUP_ENCRYPTION_IDENTITY` also accepts a raw `AGE-SECRET-KEY-...` value.
+Use an identity-file path for an age-keygen document spanning multiple lines.
+Generate a new key pair, if needed, with `age-keygen -o age-keys.txt`.
+Encryption settings apply to backup, verification, and restore. R2 settings apply
+to list and download. Relative identity-file paths are relative to the working
+directory from which you run the script.
+
+## Usage Examples
+
+### Backup Local Database
+
+```bash
+# Basic backup to ./backups/
+./scripts/db_backup_restore.sh backup local ./backups
+
+# With custom name
+./scripts/db_backup_restore.sh backup local ./backups my-dev-backup
+```
+
+Output files created:
+
+- `wine-words_postgresql_local_20240115T020000Z.dump` (plaintext, auto-deleted if encrypted)
+- `wine-words_postgresql_local_20240115T020000Z.dump.age` (encrypted)
+- `wine-words_postgresql_local_20240115T020000Z.dump.sha256` (checksum)
+- `wine-words_postgresql_local_20240115T020000Z.dump.json` (metadata)
+
+### Backup Neon/Supabase Database
+
+```bash
+# Requires NEON_DATABASE_URL or SUPABASE_DATABASE_URL in .env.development.local
+./scripts/db_backup_restore.sh backup neon ./backups
+./scripts/db_backup_restore.sh backup supabase ./backups
+```
+
+### Verify Cloudflare Downloads
+
+If you downloaded the three files from Cloudflare R2 (`.dump.age`, `.sha256`, `.json`):
+
+```bash
+./scripts/db_backup_restore.sh verify ./cloudflare-downloads
+```
+
+Example output:
+
+```
+[INFO] Verifying Cloudflare R2 downloaded files in: ./cloudflare-downloads
+[INFO] Found files:
+  Dump: ./cloudflare-downloads/wine-words_postgresql_neon_20240115T020000Z.dump.age
+  Checksum: ./cloudflare-downloads/wine-words_postgresql_neon_20240115T020000Z.dump.age.sha256
+  Metadata: ./cloudflare-downloads/wine-words_postgresql_neon_20240115T020000Z.dump.age.json
+[INFO] Verifying SHA-256 checksum...
+[SUCCESS] Checksum MATCHES
+[INFO] Backup metadata:
+{
+  "system": "wine-words",
+  "provider": "neon",
+  "timestamp": "20240115T020000Z",
+  "database": "wine_words_production",
+  ...
+}
+[INFO] Testing decryption (requires BACKUP_ENCRYPTION_IDENTITY)...
+[SUCCESS] Decryption test PASSED
+[SUCCESS] All Cloudflare download files verified!
+```
+
+### Restore to Local Database
+
+```bash
+# From a verified Cloudflare download
+./scripts/db_backup_restore.sh restore neon ./cloudflare-downloads/backup.dump.age local
+```
+
+Interactive confirmation required:
+
+```
+[INFO] Target database: wine_words_development
+[WARN] This will OVERWRITE the target database. Continue? (y/N)
+```
+
+### Restore to Neon Test Database
+
+```bash
+# Direct connection URL (must be a disposable/test database)
+./scripts/db_backup_restore.sh restore neon backup.dump.age neon "postgresql://user:pass@ep-xxx.neon.tech/test_db"
+```
+
+### List R2 Backups
+
+```bash
+./scripts/db_backup_restore.sh list neon
+./scripts/db_backup_restore.sh list supabase
+```
+
+### Download Latest Backup from R2
+
+```bash
+./scripts/db_backup_restore.sh download neon latest ./downloads
+```
+
+### Download Specific Backup from R2
+
+```bash
+./scripts/db_backup_restore.sh download neon "wine-words/postgresql/neon/DAILY_20240115T020000Z.dump.age" ./downloads
+```
+
+## Complete Recovery Workflow (Cloudflare → Local)
+
+```bash
+# 1. Set up environment
+export BACKUP_ENCRYPTION_IDENTITY=AGE-SECRET-KEY-...
+export R2_BUCKET=database-backups
+export R2_ENDPOINT=https://<account>.r2.cloudflarestorage.com
+export R2_ACCESS_KEY_ID=...
+export R2_SECRET_ACCESS_KEY=...
+
+# 2. Download latest backup
+./scripts/db_backup_restore.sh download neon latest ./recovery
+
+# 3. Verify files
+./scripts/db_backup_restore.sh verify ./recovery
+
+# 4. Restore to local database
+./scripts/db_backup_restore.sh restore neon ./recovery/*.dump.age local
+```
+
+## Safety Features
+
+- ✅ **Production protection** - Refuses to restore to databases with "prod" or "production" in name
+- ✅ **Explicit confirmation** - Requires `y/N` before overwriting target
+- ✅ **Checksum verification** - Validates SHA-256 before restore
+- ✅ **Secure cleanup** - Shreds plaintext dump after restore
+- ✅ **Schema validation** - Checks tables, migrations, and users post-restore
+
+## Compatibility with GitHub Actions
+
+This script uses the same format as the automated workflows:
+
+- **Encryption**: age with key ID `v1`
+- **Checksum**: SHA-256
+- **Metadata**: JSON sidecar with schema info
+- **R2 path**: `wine-words/postgresql/<provider>/DAILY_<timestamp>.dump.age`
+- **pg_dump flags**: `--no-owner --no-acl --format=custom`
+
+## Troubleshooting
+
+| Issue                                              | Solution                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `pg_dump: command not found`                       | Install PostgreSQL 18 client: `brew install postgresql@18`                                 |
+| `age: command not found`                           | Install age: `brew install age`                                                            |
+| `CHECKSUM MISMATCH`                                | Re-download files; don't rename browser-added suffixes like `(1)`                          |
+| `Decryption test FAILED`                           | Wrong private key; ensure `BACKUP_ENCRYPTION_IDENTITY` matches the key used for encryption |
+| `SAFETY: Target database appears to be production` | Use a disposable database name without "prod"/"production"                                 |
+| `Connection fails / pooler rejected`               | Use direct host URL, not pooler; check TLS, firewall, credentials                          |
+
+## Related Documentation
+
+- [Database Backup & Restore Guide](DATABASE_BACKUP_AND_RESTORE.md) - Full runbook with GitHub Actions workflows
+- [Local & Deployment Setup](LOCAL_AND_DEPLOYMENT_SETUP.md) - Environment configuration
+
+### Restore error: unrecognized `transaction_timeout`
+
+Selecting PostgreSQL 18 clients does not upgrade the running local server.
+A PostgreSQL 18 restore into PostgreSQL 14 can fail on `SET transaction_timeout`.
+Use a PostgreSQL 18 or newer target server for these backups. The script now checks
+its version before requesting overwrite confirmation and restores in one transaction
+with error stopping, so SQL failures roll back rather than leave a partial restore.
+
+Check the running server with `psql postgresql:///wine_words_development -Atc
+'SHOW server_version;'` (as one shell command). If running a separate PostgreSQL 18
+instance on another port, create the target database there and pass its URL as the
+final restore argument, for example:
+
+```bash
+./scripts/db_backup_restore.sh restore neon ./backups/BACKUP.dump.age local postgresql://localhost:5433/wine_words_development
+```
+
+The port above is an example; confirm the target server and port before restoring.
+Earlier script versions continued after SQL errors; inspect an already attempted
+restore before assuming it left the target unchanged.
+
+### Small backups and restore validation
+
+Restore compares the number of table definitions in the archive with the target's
+user-table count; there is no five-table minimum. This is a count sanity check,
+not a row-by-row integrity check. Successful transactional `pg_restore` is the
+primary restore check. Missing Rails tables are reported as unavailable instead
+of reporting fabricated zero row counts. Extra target tables produce a warning:
+`--clean` only replaces objects present in the archive.
+
+The source-provider argument labels the backup; it does not fetch data from that
+provider. Restoring a `_local_` file with `restore neon` still restores that local
+file. Use the intended Neon backup if you need the Neon database contents.
+
+## Copy directly between configured databases
+
+Run from the API root:
+
+```bash
+./scripts/db_backup_restore.sh restore_local_to_neondb
+./scripts/db_backup_restore.sh restore_local_to_supabase
+./scripts/db_backup_restore.sh restore_local_to_local
+./scripts/db_backup_restore.sh restore_neondb_to_neondb
+./scripts/db_backup_restore.sh restore_neondb_to_local
+```
+
+| Command                     | Source variable      | Destination variable        |
+| --------------------------- | -------------------- | --------------------------- |
+| `restore_local_to_neondb`   | `LOCAL_DATABASE_URL` | `NEON_DATABASE_URL`         |
+| `restore_local_to_supabase` | `LOCAL_DATABASE_URL` | `SUPA_DATABASE_URL`         |
+| `restore_local_to_local`    | `LOCAL_DATABASE_URL` | `LOCAL_SECOND_DATABASE_URL` |
+| `restore_neondb_to_neondb`  | `NEON_DATABASE_URL`  | `NEON_SECOND_DATABASE_URL`  |
+| `restore_neondb_to_local`   | `NEON_DATABASE_URL`  | `LOCAL_DATABASE_URL`        |
+
+Set these URLs in `.env.development.local`; exported values take precedence.
+`SUPA_DATABASE_URL` is the exact name used by the new shortcut. Existing
+`backup supabase` and `restore ... supabase` commands still use
+`SUPABASE_DATABASE_URL`.
+
+Each command checks the destination version, creates a source backup in a unique
+subdirectory of `./backups`, verifies it, and asks for overwrite confirmation
+before restoring. Supply an optional output directory, for example:
+
+```bash
+./scripts/db_backup_restore.sh restore_neondb_to_local ./scripts/backups
+```
+
+Backups are retained even if you cancel the restore. If encryption is configured,
+both `BACKUP_ENCRYPTION_RECIPIENT` and a matching `BACKUP_ENCRYPTION_IDENTITY` are
+needed. Without a recipient the retained backup is plaintext. No R2 upload or
+download is involved. The source is not modified. The destination must already
+exist, meet the PostgreSQL version requirement, and allow the restore operations.
+Existing production-name checks and transactional restore behavior still apply.
+Objects present in the backup are replaced; unrelated destination objects remain.
+These commands do not create a separate backup of the destination.
+
+## Copy directly from R2 to local
+
+Run from the API root to download, verify, and restore a specific snapshot to
+`LOCAL_DATABASE_URL`:
+
+```bash
+./scripts/db_backup_restore.sh restore_r2_to_local "wine-words/postgresql/neon/DAILY_20240115T020000Z.dump.age"
+```
+
+Set the default in `.env.development.local`:
+
+```dotenv
+R2_BACKUP_SPECIFIC=latest
+```
+
+An omitted or empty first argument uses `R2_BACKUP_SPECIFIC`. Exported values take
+precedence. `latest` selects the most recently modified `.dump.age` object under
+`wine-words/postgresql/neon/`. A full object key selects that exact snapshot.
+
+```bash
+./scripts/db_backup_restore.sh restore_r2_to_local
+./scripts/db_backup_restore.sh restore_r2_to_local "" ./downloads
+```
+
+Configure the R2 credentials listed above, `BACKUP_ENCRYPTION_IDENTITY`, and
+`LOCAL_DATABASE_URL`. Downloads and sidecars are retained in a unique directory
+under `./backups` (or the optional second argument). Checksum, metadata, and
+decryption verification run before the existing overwrite confirmation prompt.
+The destination must already exist and meet the PostgreSQL version requirement.
+Production-name checks and transactional restore behavior apply. Objects in the
+backup replace matching destination objects; unrelated objects remain. This
+command does not back up the destination.
+
+### R2 listing returns AccessDenied
+
+`latest` requires `ListObjectsV2` access. This error means listing failed, not
+that the bucket has no backups. Check that the R2 S3 credentials have **Object
+Read only** (or **Object Read & Write**) access to the bucket in `R2_BUCKET`,
+and that `R2_ENDPOINT` belongs to the same account. See
+[Cloudflare R2 authentication](https://developers.cloudflare.com/r2/api/tokens/).
+Exported R2 variables override `.env.development.local`; check for stale shell
+settings if you changed the file.
+
+A full `.dump.age` object key, supplied as the first argument or as
+`R2_BACKUP_SPECIFIC`, skips listing. Download access to the dump and its sidecars
+is still required. After correcting access, retry the read-only listing with:
+
+```bash
+./scripts/db_backup_restore.sh list neon
+```

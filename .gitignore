@@ -35,3 +35,5 @@
 /config/*.key
 server.pid
 server.log
+*beachvolleyballhub_postgresql*
+*wine-words_postgresql_*
