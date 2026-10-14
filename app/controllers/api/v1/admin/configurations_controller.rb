@@ -43,7 +43,7 @@ module Api
         def configuration_json
           {
             logs_saved_to_database: AppSetting.logs_enabled?,
-            test: AppSetting.test?,
+            use_test_email: AppSetting.use_test_email?,
             test_email: AppSetting.test_email
           }
         end

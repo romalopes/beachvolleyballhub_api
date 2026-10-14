@@ -35,7 +35,7 @@ class TestEmailMailer < ApplicationMailer
   # notifications; this diagnostics send must always reach the address the
   # caller supplied, so the redirect does not apply here.
   def mail(headers = {}, &block)
-    if AppSetting.test?
+    if AppSetting.use_test_email?
       headers[:subject] = "[TEST] #{headers[:subject]}"
     end
     super

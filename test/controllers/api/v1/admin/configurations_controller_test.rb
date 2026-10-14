@@ -27,7 +27,7 @@ class Api::V1::Admin::ConfigurationsControllerTest < ActionDispatch::Integration
     assert_equal true, body["test"]
     assert_equal "qa@example.com", body["test_email"]
     assert_equal false, AppSetting.logs_enabled?
-    assert_equal true, AppSetting.test?
+    assert_equal true, AppSetting.use_test_email?
     assert_equal "qa@example.com", AppSetting.test_email
   end
 

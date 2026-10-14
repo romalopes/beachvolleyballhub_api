@@ -7,7 +7,7 @@ class ApplicationMailer < ActionMailer::Base
   # recipients, with a [TEST] subject prefix. Off = normal delivery.
   # Mirrors the wine words project.
   def mail(headers = {}, &block)
-    if AppSetting.test? && !is_a?(TestEmailMailer)
+    if AppSetting.use_test_email?
       headers = headers.merge(
         to: AppSetting.test_email,
         cc: nil,

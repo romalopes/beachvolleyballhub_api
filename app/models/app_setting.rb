@@ -40,8 +40,8 @@ class AppSetting < ApplicationRecord
 
   # Test-mode toggle: when true, every saved audit log triggers an email
   # notification to AppSetting.test_email.
-  def self.test?
-    boolean("test")
+  def self.use_test_email?
+    boolean("use_test_email")
   end
 
   # Recipient address for test-mode email notifications.

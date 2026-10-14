@@ -7,7 +7,7 @@ class AppSettingTest < ActiveSupport::TestCase
 
   test "defaults apply when no rows exist" do
     assert_equal true, AppSetting.logs_enabled?
-    assert_equal false, AppSetting.test?
+    assert_equal false, AppSetting.use_test_email?
     assert_equal "romalopes@yahoo.com.br", AppSetting.test_email
   end
 
@@ -20,16 +20,16 @@ class AppSettingTest < ActiveSupport::TestCase
 
   test "test? and test_email reflect persisted values" do
     AppSetting.set!(:test, true)
-    assert_equal true, AppSetting.test?
+    assert_equal true, AppSetting.use_test_email?
     AppSetting.set!(:test_email, "qa@example.com")
     assert_equal "qa@example.com", AppSetting.test_email
   end
 
   test "boolean casts string values" do
     AppSetting.set!(:test, "false")
-    assert_equal false, AppSetting.test?
+    assert_equal false, AppSetting.use_test_email?
     AppSetting.set!(:test, "true")
-    assert_equal true, AppSetting.test?
+    assert_equal true, AppSetting.use_test_email?
   end
 
   test "ordered_all includes unset built-in defaults sorted by key" do
