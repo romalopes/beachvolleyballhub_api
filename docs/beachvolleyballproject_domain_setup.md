@@ -131,9 +131,11 @@ Verify host authorization if enabled, default URL options for mailers, redirects
 ```dotenv
 FRONTEND_URL=https://beachvolleyballhub.com
 API_BASE_URL=https://api.beachvolleyballhub.com
+APP_HOST=api.beachvolleyballhub.com
+ALLOWED_HOSTS=api.beachvolleyballhub.com,beachvolleyballproject-dev.onrender.com
 ```
 
-These are illustrative names; check the actual app code and existing environment variables. Configure Google OAuth and other third-party callback/origin allowlists to match the actual auth flow. Keep secrets only in Render environment settings.
+`ALLOWED_HOSTS` is a comma-separated Rails Host Authorization allowlist. Keep the Render default hostname while Render health checks use it, and include the custom API hostname once it is configured. These are illustrative names; check the actual app code and existing environment variables. Configure Google OAuth and other third-party callback/origin allowlists to match the actual auth flow. Keep secrets only in Render environment settings.
 
 ## 7. Phase 5 — Email: choose Resend OR Brevo
 

@@ -201,6 +201,7 @@ RAILS_MAX_THREADS=5
 JOB_CONCURRENCY=1
 FRONTEND_URL=https://<frontend>.vercel.app
 APP_HOST=<api>.onrender.com
+ALLOWED_HOSTS=<api>.onrender.com,api.beachvolleyballhub.com
 MAIL_TRANSPORT=resend
 RESEND_API_KEY=<Resend API key>
 MAIL_FROM=BVB Project <no-reply@your-verified-domain.example>
@@ -232,6 +233,7 @@ All variables here belong on the API/worker, never in the Vercel or Cloudflare b
 | `SECRET_KEY_BASE` | Rails can generate a development secret | Stable secret from `bin/rails secret`, or configured encrypted credentials. Changing it invalidates signed credentials/tokens. |
 | `FRONTEND_URL` | `http://localhost:5174` | Public frontend origin, including `https://`, without `/api/v1`; used for email links. Production fallback is `https://beachvolleyballproject.vercel.app`. |
 | `APP_HOST` | Development mailer currently hardcodes localhost:3001 | API hostname only, no protocol/path; production mailer URL host, default `example.com`. |
+| `ALLOWED_HOSTS` | Usually unnecessary locally | Comma-separated hostnames accepted by Rails Host Authorization. Include the Render default hostname for Render health checks and the custom API hostname when configured. |
 | `APP_VERSION` | Optional; default `0.0.21` | API health/version value; keep aligned with frontend `src/constants/versions.ts`. |
 | `WEB_CONCURRENCY` | Default `0` | Start at `0` for a single process; increase according to memory/CPU. Repository Puma default is `2` in production, but the documented Render command defaults to `0`. |
 | `RAILS_MAX_THREADS` | Default database pool limit `5` | `5` initially; also controls threads in the documented Render command. Repository Puma does not directly read it for threads. Account for worker and multiple-database connections when sizing PostgreSQL. |

@@ -74,17 +74,17 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "example.com"), protocol: "https" }
 
   # React frontend URL for password-reset email links (production deploy to Vercel).
-  ENV["FRONTEND_URL"] ||= "https://beachvolleyballhub.romalopes.workers.dev"
-  #"https://beachvolleyballhub.com"
 
-# Allow the production API domain
-config.hosts << "api.beachvolleyballhub.com"
+  # Allow comma-separated production hostnames configured by the deployment.
+  ENV.fetch("ALLOWED_HOSTS", "").split(",").map(&:strip).reject(&:blank?).each do |host|
+    config.hosts << host
+  end
 
-# Allow local testing in production mode
-if ENV["ALLOW_LOCALHOST_IN_PRODUCTION"] == "true"
-  config.hosts << "localhost"
-  config.hosts << "127.0.0.1"
-end
+  # Allow local testing in production mode.
+  if ENV["ALLOW_LOCALHOST_IN_PRODUCTION"] == "true"
+    config.hosts << "localhost"
+    config.hosts << "127.0.0.1"
+  end
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
