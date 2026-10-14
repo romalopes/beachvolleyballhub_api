@@ -3,7 +3,7 @@ require 'test_helper'
 class TournamentCreateServiceTest < ActiveSupport::TestCase
   setup do
     @organisation = Organisation.create!(name: 'Test Org', acronym: 'TO')
-    @account = Account.create!(email: 'test@example.com', password: 'password')
+    @account = create_account!
   end
 
   test 'should create a tournament with valid parameters' do

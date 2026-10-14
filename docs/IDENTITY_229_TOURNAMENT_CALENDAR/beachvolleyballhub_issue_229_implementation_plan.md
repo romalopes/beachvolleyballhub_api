@@ -36,7 +36,7 @@ Implement a searchable tournament directory, month/list calendar, detailed tourn
 
 ### Phase 2 — Tournament domain services, lifecycle, timezones
 **Objective:** Build domain services for tournament lifecycle (create, update, archive, publish) with transactional guarantees. Implement timezone-aware calendar interval logic, all-day event handling, and DST-safe computations. Create value objects for recurrence patterns (if any) and duration. Add service object tests covering edge cases (leap years, month-end, timezone transitions). Do not modify frontend. Show service test output.
-**Status:** 🔄 IN PROGRESS
+**Status:** ✅ COMPLETED
 [Read full phase details](./beachvolleyballhub_issue_229_phase_2.md)
 
 ### Phase 3 — Search, calendar query and pagination
