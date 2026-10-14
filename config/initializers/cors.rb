@@ -1,12 +1,9 @@
-# The canonical production site is always an allowed browser origin. Additional
-# origins are configurable because FRONTEND_URL is also used for email links.
+# Comma-separated exact origins for deployed browser clients. FRONTEND_URL is
+# retained as the fallback because it is also used in email links.
 allowed_origins = ENV.fetch(
   "CORS_ORIGINS",
   ENV.fetch("FRONTEND_URL", "https://beachvolleyballhub.romalopes.workers.dev")
 ).split(",").map(&:strip).reject(&:blank?)
-
-allowed_origins << "https://beachvolleyballhub.com"
-allowed_origins.uniq!
 
 # Local development is intentionally opt-in by environment rather than exposed
 # by the production allow-list.
@@ -16,6 +13,10 @@ end
 
 # Cloudflare Workers preview deployments are an intended frontend surface.
 allowed_origins << %r{\Ahttps://[a-zA-Z0-9-]+-beachvolleyballhub\.romalopes\.workers\.dev\z}
+allowed_origins << "https://beachvolleyballhub.com"
+allowed_origins << "https://www.beachvolleyballhub.com"
+allowed_origins << "https://beachvolleyballhub.romalopes.workers.dev"
+allowed_origins << "http://localhost:5174"
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
