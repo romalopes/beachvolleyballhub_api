@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -608,6 +608,102 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000001) do
     t.index ["slug"], name: "index_skills_on_slug", unique: true
   end
 
+  create_table "solid_cache_entries", force: :cascade do |t|
+    t.integer "byte_size", null: false
+    t.datetime "created_at", null: false
+    t.binary "key", null: false
+    t.bigint "key_hash", null: false
+    t.binary "value", null: false
+    t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
+    t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
+    t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
+  end
+
+  create_table "tournament_divisions", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.integer "division_number"
+    t.string "letter_level"
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_tournament_divisions_on_active"
+    t.index ["division_number"], name: "index_tournament_divisions_on_division_number"
+    t.index ["letter_level"], name: "index_tournament_divisions_on_letter_level"
+    t.index ["tournament_id", "division_number"], name: "index_tournament_divisions_on_tournament_id_and_division_number", unique: true, where: "(division_number IS NOT NULL)"
+    t.index ["tournament_id", "letter_level"], name: "index_tournament_divisions_on_tournament_id_and_letter_level", unique: true, where: "(letter_level IS NOT NULL)"
+    t.index ["tournament_id"], name: "index_tournament_divisions_on_tournament_id"
+    t.check_constraint "division_number IS NULL OR division_number > 0", name: "division_number_positive"
+    t.check_constraint "letter_level IS NOT NULL AND division_number IS NULL OR letter_level IS NULL AND division_number IS NOT NULL", name: "division_level_or_number"
+    t.check_constraint "letter_level IS NULL OR (letter_level::text = ANY (ARRAY['B'::character varying, 'BB'::character varying, 'BBB'::character varying, 'A'::character varying, 'AA'::character varying, 'AAA'::character varying, 'AAAA'::character varying]::text[]))", name: "valid_letter_level"
+  end
+
+  create_table "tournament_participation_divisions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "tournament_division_id", null: false
+    t.bigint "tournament_id", null: false
+    t.bigint "tournament_participation_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tournament_division_id"], name: "idx_on_tournament_division_id_3fea2c228f"
+    t.index ["tournament_id"], name: "index_tournament_participation_divisions_on_tournament_id"
+    t.index ["tournament_participation_id", "tournament_division_id"], name: "idx_on_tournament_participation_id_tournament_divis_cb1066220f", unique: true
+    t.index ["tournament_participation_id"], name: "idx_on_tournament_participation_id_b11fb1a51c"
+  end
+
+  create_table "tournament_participations", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.datetime "created_at", null: false
+    t.string "role", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_tournament_participations_on_account_id"
+    t.index ["role"], name: "index_tournament_participations_on_role"
+    t.index ["tournament_id"], name: "index_tournament_participations_on_tournament_id"
+  end
+
+  create_table "tournament_watch_links", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.string "provider"
+    t.datetime "starts_at"
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["position"], name: "index_tournament_watch_links_on_position"
+    t.index ["tournament_id"], name: "index_tournament_watch_links_on_tournament_id"
+    t.check_constraint "url::text ~* '^https?://'::text", name: "valid_url"
+  end
+
+  create_table "tournaments", force: :cascade do |t|
+    t.boolean "all_day", default: false, null: false
+    t.string "city"
+    t.string "country"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_account_id", null: false
+    t.text "description"
+    t.string "division_scheme", null: false
+    t.datetime "ends_at", null: false
+    t.string "location_name"
+    t.string "name", null: false
+    t.bigint "organisation_id", null: false
+    t.string "publication_state", default: "draft", null: false
+    t.string "scope", null: false
+    t.datetime "starts_at", null: false
+    t.string "state"
+    t.string "timezone", null: false
+    t.datetime "updated_at", null: false
+    t.string "website_url"
+    t.index ["created_by_account_id"], name: "index_tournaments_on_created_by_account_id"
+    t.index ["ends_at"], name: "index_tournaments_on_ends_at"
+    t.index ["organisation_id"], name: "index_tournaments_on_organisation_id"
+    t.index ["publication_state"], name: "index_tournaments_on_publication_state"
+    t.index ["starts_at"], name: "index_tournaments_on_starts_at"
+    t.check_constraint "ends_at > starts_at", name: "ends_after_starts"
+    t.check_constraint "publication_state::text = ANY (ARRAY['draft'::character varying, 'active'::character varying, 'cancelled'::character varying, 'archived'::character varying]::text[])", name: "valid_publication_state"
+    t.check_constraint "scope::text = ANY (ARRAY['club'::character varying, 'state'::character varying, 'national'::character varying, 'international'::character varying, 'other'::character varying]::text[])", name: "valid_scope"
+  end
+
   create_table "training_focuses", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "custom_focus"
@@ -836,6 +932,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000001) do
   add_foreign_key "sessions", "users", column: "impersonated_user_id"
   add_foreign_key "skills", "categories"
   add_foreign_key "skills", "users", column: "created_by_id"
+  add_foreign_key "tournament_divisions", "tournaments"
+  add_foreign_key "tournament_participation_divisions", "tournament_divisions"
+  add_foreign_key "tournament_participation_divisions", "tournament_participations"
+  add_foreign_key "tournament_participation_divisions", "tournaments"
+  add_foreign_key "tournament_participations", "accounts"
+  add_foreign_key "tournament_participations", "tournaments"
+  add_foreign_key "tournament_watch_links", "tournaments"
+  add_foreign_key "tournaments", "accounts", column: "created_by_account_id"
+  add_foreign_key "tournaments", "organisations", on_delete: :restrict
   add_foreign_key "training_focuses", "skills"
   add_foreign_key "training_focuses", "training_sessions"
   add_foreign_key "training_session_drills", "drills"

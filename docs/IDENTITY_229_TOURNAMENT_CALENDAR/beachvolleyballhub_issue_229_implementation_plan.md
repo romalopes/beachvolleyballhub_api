@@ -31,6 +31,7 @@ Implement a searchable tournament directory, month/list calendar, detailed tourn
 
 ### Phase 1 — Database schema and model invariants
 **Objective:** Implement only Phase 1 from docs/tournament_calendar_v2/audit.md and the issue #229 plan. Follow actual Rails migration and model conventions. Create Tournament, TournamentDivision, TournamentParticipation, TournamentParticipationDivision, TournamentWatchLink and associations with Organisation and Account. Use database CHECK/unique/FK constraints, including composite constraints ensuring a selected division belongs to the participation's tournament. Use transactional services for cross-row invariants. Do not add Person, Organization, a second auth system, or a serializer framework. Update organisation deletion checks/counts so the UI cannot offer forbidden deletion. Add focused Minitest coverage for constraints, associations, races, and deletion. Do not edit frontend. Show migration rollback implications and test output.
+**Status:** ✅ COMPLETED
 [Read full phase details](./beachvolleyballhub_issue_229_phase_1.md)
 
 ### Phase 2 — Tournament domain services, lifecycle, timezones

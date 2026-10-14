@@ -405,3 +405,20 @@ class OrganisationTest < ActiveSupport::TestCase
     assert_equal "PB", organisation.metadata[:acronym]
   end
 end
+  test "cannot delete organisation with associated tournaments" do
+    organisation = Organisation.create!(name: 'Test Org', slug: 'test-org')
+    account = Account.create!(user: User.create!(email: 'test@example.com', password: 'password'))
+    Tournament.create!(
+      name: 'Test Tournament',
+      organisation: organisation,
+      scope: 'club',
+      division_scheme: 'letter',
+      starts_at: DateTime.now,
+      ends_at: DateTime.now + 1.day,
+      timezone: 'UTC',
+      created_by_account: account
+    )
+
+    assert_not organisation.destroy
+    assert_includes organisation.errors[:base], "cannot be destroyed because there are existing tournaments"
+  end

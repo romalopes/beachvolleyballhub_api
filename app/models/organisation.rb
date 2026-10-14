@@ -62,6 +62,7 @@ class Organisation < ApplicationRecord
   # only — who recorded the row — so there are never two competing answers to "who
   # owns this club", which is how a transferred club ends up unmanageable by anyone.
   has_many :organisation_memberships, dependent: :destroy
+  has_many :tournaments, foreign_key: :organisation_id, dependent: :restrict_with_error
   # `members` means *current* members. Going through the raw association would
   # include accounts who had left, so "is this account one of ours?" would keep
   # answering yes after they resigned — the ended rows stay for history, and this
