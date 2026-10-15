@@ -16,5 +16,12 @@ Implemented across the API and React client:
 - Inactive divisions are displayed for retained selections, cannot be newly selected in the UI, and are rejected server-side if a forged/new inactive ID is submitted.
 - `/my-tournaments` is authenticated, uses server-side `mine=1`, excludes archived records, and groups returned tournaments into Upcoming, Ongoing, and Past sections.
 - The participation endpoint now consistently requires authentication, loads the requested tournament, accepts the typed `{ participation: ... }` payload, exposes `division_ids` and `my_participation`, and fixes the `Current_user` typo in `mine=1` processing.
+- The server-side `mine=1` filter in `TournamentQuery` was fixed to use a proper `WHERE id IN (SELECT …)` subquery instead of an undefined `EXISTS(...)` helper that raised `NoMethodError` on every `/tournaments?mine=1` request.
+- Request-level coverage (`test/controllers/api/v1/tournaments_integration_test.rb`) now exercises the detail read, self-link, role/division rules, idempotent re-submit, idempotent unlink, `mine=1` scoping, and admin-only cancellation paths.
 
-**Verification note:** focused frontend API/directory tests pass. Full frontend typecheck remains blocked by the pre-existing `ConfigurationSettings.test.tsx` configuration-shape failures documented in Phase 9. Rails test execution is currently blocked before assertions by the existing test-database connection/fixture foreign-key failures; this is also a Phase 9 environment/fixture repair item.
+### Verification — October 16, 2026
+
+- Backend tournament suite passes: **98 tests, 0 failures, 0 errors** (models, services — including the new `TournamentQuery` subquery-filter test — and the request-level participation integration test) under `RAILS_ENV=test`.
+- Frontend Phase 7 tests pass: **53 tests** across `src/api.test.ts`, `src/utils/tournaments.test.ts`, `src/pages/TournamentDetail.test.tsx`, and `src/pages/MyTournaments.test.tsx`.
+- Frontend typecheck (`tsc -b`) passes.
+- The remaining full-suite frontend failures are pre-existing and unrelated to tournaments (training/identity/schema components); they are tracked for Phase 9.

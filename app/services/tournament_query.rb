@@ -45,29 +45,20 @@ class TournamentQuery
       relation = relation.where(division_scheme: params[:division_scheme])
     end
 
-    # Letter levels filter (using EXISTS to avoid duplicate tournaments)
+    # Letter levels filter: tournaments with at least one active division at the
+    # requested level (a subquery avoids duplicate tournament rows).
     if params[:letter_levels].present? && params[:letter_levels].is_a?(Array)
       letter_levels = params[:letter_levels].map(&:upcase)
       relation = relation.where(
-        EXISTS(
-          TournamentDivision.select(1)
-            .where("tournament_divisions.tournament_id = tournaments.id")
-            .where(letter_level: letter_levels)
-            .where(active: true)
-        )
+        id: TournamentDivision.where(letter_level: letter_levels, active: true).select(:tournament_id)
       )
     end
 
-    # Division numbers filter (using EXISTS)
+    # Division numbers filter: tournaments with an active numbered division.
     if params[:division_numbers].present? && params[:division_numbers].is_a?(Array)
       division_numbers = params[:division_numbers].map(&:to_i)
       relation = relation.where(
-        EXISTS(
-          TournamentDivision.select(1)
-            .where("tournament_divisions.tournament_id = tournaments.id")
-            .where(division_number: division_numbers)
-            .where(active: true)
-        )
+        id: TournamentDivision.where(division_number: division_numbers, active: true).select(:tournament_id)
       )
     end
 
@@ -94,16 +85,12 @@ class TournamentQuery
       end
     end
 
-    # Mine filter: tournaments where the current account has a participation
+    # Mine filter: tournaments where the given account has a participation.
     if params[:mine].present? && params[:mine] == true
       # Expect account_id to be passed in params when mine is true
       if params[:account_id].present?
         relation = relation.where(
-          EXISTS(
-            TournamentParticipation.select(1)
-              .where("tournament_participations.tournament_id = tournaments.id")
-              .where(account_id: params[:account_id])
-          )
+          id: TournamentParticipation.where(account_id: params[:account_id]).select(:tournament_id)
         )
       else
         # If no account_id provided, return none

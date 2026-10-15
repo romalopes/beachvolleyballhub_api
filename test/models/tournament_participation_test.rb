@@ -3,8 +3,8 @@ require 'test_helper'
 class TournamentParticipationTest < ActiveSupport::TestCase
   def setup
     @organisation = Organisation.create!(name: 'Test Org', slug: 'test-org')
-    @account = Account.create!(user: User.create!(email: 'test@example.com', password: 'password'))
-    @other_account = Account.create!(user: User.create!(email: 'other@example.com', password: 'password'))
+    @account = Account.create!(user: User.create!(email_address: 'test@example.com', password: 'password'))
+    @other_account = Account.create!(user: User.create!(email_address: 'other@example.com', password: 'password'))
     @tournament = Tournament.create!(
       name: 'Test Tournament',
       organisation: @organisation,
@@ -53,14 +53,14 @@ class TournamentParticipationTest < ActiveSupport::TestCase
     assert_includes participation.errors[:role], "can't be blank"
   end
 
-  test 'should have valid role' do
-    participation = TournamentParticipation.new(
-      account: @account,
-      tournament: @tournament,
-      role: 'invalid'
-    )
-    assert_not participation.valid?
-    assert_includes participation.errors[:role], "is not included in the list"
+  test 'rejects an invalid role' do
+    assert_raises ArgumentError do
+      TournamentParticipation.new(
+        account: @account,
+        tournament: @tournament,
+        role: 'invalid'
+      )
+    end
   end
 
   test 'should validate uniqueness of account scoped to tournament' do
@@ -120,7 +120,10 @@ class TournamentParticipationTest < ActiveSupport::TestCase
       role: 'player'
     )
     division = @tournament.divisions.create!(letter_level: 'A')
-    participation_division = participation.participation_divisions.create!(tournament_division: division)
+    participation_division = participation.participation_divisions.create!(
+      tournament_division: division,
+      tournament: @tournament
+    )
     assert_includes participation.participation_divisions, participation_division
   end
 

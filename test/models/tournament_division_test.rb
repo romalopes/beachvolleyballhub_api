@@ -3,7 +3,7 @@ require 'test_helper'
 class TournamentDivisionTest < ActiveSupport::TestCase
   def setup
     @organisation = Organisation.create!(name: 'Test Org', slug: 'test-org')
-    @account = Account.create!(user: User.create!(email: 'test@example.com', password: 'password'))
+    @account = Account.create!(user: User.create!(email_address: 'test@example.com', password: 'password'))
     @tournament = Tournament.create!(
       name: 'Test Tournament',
       organisation: @organisation,
@@ -25,8 +25,18 @@ class TournamentDivisionTest < ActiveSupport::TestCase
   end
 
   test 'should be valid with division number' do
+    numbered_tournament = Tournament.create!(
+      name: 'Numbered Tournament',
+      organisation: @organisation,
+      scope: 'club',
+      division_scheme: 'numbered',
+      starts_at: DateTime.now,
+      ends_at: DateTime.now + 1.day,
+      timezone: 'UTC',
+      created_by_account: @account
+    )
     division = TournamentDivision.new(
-      tournament: @tournament,
+      tournament: numbered_tournament,
       division_number: 1
     )
     assert division.valid?

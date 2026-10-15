@@ -10,8 +10,8 @@ class TournamentUpdateServiceTest < ActiveSupport::TestCase
       created_by_account_id: @account.id,
       scope: 'club',
       division_scheme: 'letter',
-      starts_at: '2026-10-15 09:00:00',
-      ends_at: '2026-10-15 17:00:00',
+      starts_at: 1.day.from_now,
+      ends_at: 2.days.from_now,
       timezone: 'US/Eastern',
       all_day: false,
       publication_state: :draft

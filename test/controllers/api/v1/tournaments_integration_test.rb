@@ -1,68 +1,193 @@
-require 'test_helper'
+require "test_helper"
 
-class TournamentManagementIntegrationTest < ActiveSupport::TestCase
-  include SessionTestHelper
-
+# Request tests for the tournament detail, self-link and My Tournaments surface
+# (Phase 7). Pinned here:
+#   * participation requires authentication and is self-declared — no membership
+#     or admin authority is needed to link an Account to a tournament;
+#   * role/division rules are enforced server-side (non-player/coach roles cannot
+#     select divisions; foreign and inactive divisions are rejected);
+#   * re-submitting updates the single Account/tournament row rather than adding;
+#   * unlinking is idempotent and allowed even after the event ends;
+#   * `mine=1` scopes the directory to the caller's participations;
+#   * detail is public and never leaks a participation for a guest.
+class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @organisation = Organisation.create!(name: 'Integration Org', acronym: 'IO')
-    @admin_account = create_account!(first_name: 'Admin', last_name: 'Admin', email: 'admin@example.com')
-    @regular_account = create_account!(first_name: 'Regular', last_name: 'Regular', email: 'regular@example.com')
+    @organisation = organisations(:sydney_club)
+    # users(:five) via accounts(:one): an active club *member* (not owner/admin),
+    # so it exercises the self-link path that must not require management rights.
+    @account = accounts(:one)
+    @user = @account.user
+    @admin = users(:two) # carries the admin role
 
-    # Make admin a superuser (admin? true) - adjust as per your app's admin flag
-    @admin_account.update!(admin: true)
-
-    # Ensure both accounts are active members of the organization
-    @organisation.organisation_memberships.create!(account_id: @admin_account.id, role: 'administrator', status: 'active')
-    @organisation.organisation_memberships.create!(account_id: @regular_account.id, role: 'member', status: 'active')
+    @tournament = Tournament.create!(
+      name: "Sand Series Open",
+      organisation: @organisation,
+      created_by_account: @account,
+      scope: "club",
+      division_scheme: "letter",
+      publication_state: "active",
+      starts_at: 1.day.from_now,
+      ends_at: 2.days.from_now,
+      timezone: "UTC",
+      all_day: false
+    )
+    @division_a = @tournament.divisions.create!(letter_level: "A", active: true)
+    @division_b = @tournament.divisions.create!(letter_level: "B", active: true)
+    @inactive_division = @tournament.divisions.create!(letter_level: "BB", active: false)
   end
 
-  test 'admin account can cancel a tournament' do
-    tournament = Tournament.create!(
-      name: 'Cancel Test Admin',
-      organisation_id: @organisation.id,
-      created_by_account_id: @regular_account.id,
-      scope: 'club',
-      division_scheme: 'letter',
-      starts_at: '2026-10-15 09:00:00',
-      ends_at: '2026-10-15 17:00:00',
-      timezone: 'US/Eastern',
-      all_day: false,
-      publication_state: :active
-    )
+  def json = JSON.parse(response.body)
 
-    # Sign in as admin account
-    sign_in_as(@admin_account)
-
-    cancelled = TournamentCancelService.call(tournament)
-
-    assert_equal 'cancelled', cancelled.publication_state
+  def post_json(path, payload)
+    post path, params: payload.to_json, headers: { "Content-Type" => "application/json" }
   end
 
-  test 'admin impersonating regular user cannot cancel' do
-    tournament = Tournament.create!(
-      name: 'Cancel Test Impersonation',
-      organisation_id: @organisation.id,
-      created_by_account_id: @regular_account.id,
-      scope: 'club',
-      division_scheme: 'letter',
-      starts_at: '2026-10-15 09:00:00',
-      ends_at: '2026-10-15 17:00:00',
-      timezone: 'US/Eastern',
-      all_day: false,
-      publication_state: :active
+  def delete_json(path)
+    delete path, headers: { "Content-Type" => "application/json" }
+  end
+
+  # --- detail (public) --------------------------------------------------------
+
+  test "guest can read a tournament detail with no participation" do
+    get "/api/v1/tournaments/#{@tournament.id}"
+
+    assert_response :success
+    assert_equal @tournament.id, json["id"]
+    assert_equal "Sand Series Open", json["name"]
+    assert_nil json["my_participation"]
+  end
+
+  # --- participation (self-link) ---------------------------------------------
+
+  test "unauthenticated participation is rejected" do
+    post_json "/api/v1/tournaments/#{@tournament.id}/participate",
+              participation: { role: "player", division_ids: [ @division_a.id ] }
+
+    assert_response :unauthorized
+  end
+
+  test "authenticated account can self-link with a role and active divisions" do
+    sign_in_as(@user)
+
+    post_json "/api/v1/tournaments/#{@tournament.id}/participate",
+              participation: { role: "player", division_ids: [ @division_a.id ] }
+
+    assert_response :success
+    assert_equal "player", json["role"]
+    assert_equal [ @division_a.id ], json["division_ids"]
+
+    participation = TournamentParticipation.find_by(account: @account, tournament: @tournament)
+    assert_not_nil participation
+    assert_equal "player", participation.role
+  end
+
+  test "re-submitting updates the single existing participation row" do
+    sign_in_as(@user)
+
+    post_json "/api/v1/tournaments/#{@tournament.id}/participate",
+              participation: { role: "player", division_ids: [ @division_a.id ] }
+    post_json "/api/v1/tournaments/#{@tournament.id}/participate",
+              participation: { role: "coach", division_ids: [ @division_a.id, @division_b.id ] }
+
+    assert_response :success
+    assert_equal "coach", json["role"]
+    assert_equal [ @division_a.id, @division_b.id ].sort, json["division_ids"].sort
+    assert_equal 1, TournamentParticipation.where(account: @account, tournament: @tournament).count
+  end
+
+  test "non-player/coach roles cannot select divisions" do
+    sign_in_as(@user)
+
+    post_json "/api/v1/tournaments/#{@tournament.id}/participate",
+              participation: { role: "referee", division_ids: [ @division_a.id ] }
+
+    assert_response :unprocessable_entity
+    assert_nil TournamentParticipation.find_by(account: @account, tournament: @tournament)
+  end
+
+  test "a forged inactive division is rejected" do
+    sign_in_as(@user)
+
+    post_json "/api/v1/tournaments/#{@tournament.id}/participate",
+              participation: { role: "player", division_ids: [ @inactive_division.id ] }
+
+    assert_response :unprocessable_entity
+  end
+
+  test "a division from another tournament is rejected" do
+    sign_in_as(@user)
+
+    other = Tournament.create!(
+      name: "Other Open",
+      organisation: @organisation,
+      created_by_account: @account,
+      scope: "club",
+      division_scheme: "letter",
+      publication_state: "active",
+      starts_at: 3.days.from_now,
+      ends_at: 4.days.from_now,
+      timezone: "UTC",
+      all_day: false
     )
+    foreign = other.divisions.create!(letter_level: "A", active: true)
 
-    # Sign in as regular account, then impersonate admin
-    sign_in_as(@regular_account)
-    # Simulate impersonation by swapping Current.real_user to admin
-    Current.real_user = @admin_account
+    post_json "/api/v1/tournaments/#{@tournament.id}/participate",
+              participation: { role: "player", division_ids: [ foreign.id ] }
 
-    error = assert_raises ActiveRecord::RecordInvalid do
-      TournamentCancelService.call(tournament)
-    end
+    assert_response :unprocessable_entity
+  end
 
-    assert_match(/Forbidden/, error.message)
-    # Reset Current.real_user for subsequent tests
-    Current.real_user = nil
+  test "unlinking removes the participation and is idempotent" do
+    sign_in_as(@user)
+
+    post_json "/api/v1/tournaments/#{@tournament.id}/participate",
+              participation: { role: "player", division_ids: [ @division_a.id ] }
+    assert_response :success
+
+    delete_json "/api/v1/tournaments/#{@tournament.id}/participate"
+    assert_response :no_content
+    assert_nil TournamentParticipation.find_by(account: @account, tournament: @tournament)
+
+    delete_json "/api/v1/tournaments/#{@tournament.id}/participate"
+    assert_response :no_content
+  end
+
+  # --- mine=1 (My Tournaments server-side) -----------------------------------
+
+  test "mine=1 requires authentication" do
+    get "/api/v1/tournaments", params: { mine: "1" }
+
+    assert_response :unauthorized
+  end
+
+  test "mine=1 returns only the caller's tournaments" do
+    sign_in_as(@user)
+    TournamentParticipation.create!(account: @account, tournament: @tournament, role: "player")
+
+    get "/api/v1/tournaments", params: { mine: "1" }
+
+    assert_response :success
+    assert_equal [ @tournament.id ], json["tournaments"].map { |t| t["id"] }
+  end
+
+  # --- management authorization (regression: admin-only lifecycle) -----------
+
+  test "admin can cancel a tournament" do
+    sign_in_as(@admin)
+
+    post_json "/api/v1/tournaments/#{@tournament.id}/cancel", {}
+
+    assert_response :success
+    assert_equal "cancelled", json["publication_state"]
+    assert_equal "cancelled", @tournament.reload.publication_state
+  end
+
+  test "a non-admin member cannot cancel a tournament" do
+    sign_in_as(@user)
+
+    post_json "/api/v1/tournaments/#{@tournament.id}/cancel", {}
+
+    assert_response :forbidden
+    assert_equal "active", @tournament.reload.publication_state
   end
 end

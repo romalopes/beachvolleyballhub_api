@@ -14,7 +14,7 @@ class ProfileClaimability
     return profile_class.none unless user
 
     # Claim suggestions must obey the same visibility boundary as profile
-    # catalogues and detail endpoints. Organization or coaching relationships
+    # catalogues and detail endpoints. Organisation or coaching relationships
     # alone must not expose a profile its owner marked private.
     base = profile_class.active.where(account_id: nil).visible_to(user)
     return profile_class.none unless user.account
