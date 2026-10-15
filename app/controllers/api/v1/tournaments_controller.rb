@@ -30,19 +30,22 @@ module Api
 
         relation = TournamentQuery.call(query_params)
         # Pagination
-        page = (params[:page] || 1).to_i
-        per_page = [(params[:per_page] || 25).to_i, 100].min
-        tournaments = relation.page(page).per(per_page)
+        page = [(params[:page] || 1).to_i, 1].max
+        per_page = [[(params[:per_page] || 25).to_i, 1].max, 100].min
+        total = relation.count
+        tournaments = relation.offset((page - 1) * per_page).limit(per_page)
 
         render json: {
           tournaments: tournaments.map { |t| tournament_payload(t) },
           meta: {
             page: page,
             per_page: per_page,
-            total: relation.count,
-            total_pages: relation.count.to_f / per_page
+            total: total,
+            total_pages: (total.to_f / per_page).ceil
           }
         }
+      end
+
       # GET /api/v1/tournaments/:id
       def show
         render json: tournament_payload(@tournament)
@@ -85,6 +88,30 @@ module Api
           params: participation_params
         )
         render json: participation_payload(participation)
+      end
+
+      # DELETE /api/v1/tournaments/:id/participate
+      def destroy_participation
+        TournamentParticipationService.unlink_participation(
+          Current.user.account.id,
+          @tournament.id
+        )
+        head :no_content
+      end
+
+      # GET /api/v1/tournaments/options
+      def options
+        scopes = Tournament.scopes.keys
+        schemes = %w[letter numbered] # as per comment in TournamentQuery
+        ordered_levels = %w[AAAA AAA AA A BBB BB B] # from strongest to weakest
+        participation_roles = TournamentParticipation.roles.keys
+
+        render json: {
+          scopes: scopes,
+          schemes: schemes,
+          ordered_levels: ordered_levels,
+          participation_roles: participation_roles
+        }
       end
 
       private
@@ -182,4 +209,3 @@ module Api
     end
   end
 end
-      end

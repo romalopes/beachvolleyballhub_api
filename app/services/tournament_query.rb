@@ -79,6 +79,8 @@ class TournamentQuery
         "tournaments.location_name ILIKE ? OR tournaments.city ILIKE ? OR tournaments.state ILIKE ? OR tournaments.country ILIKE ?",
         "%#{escaped_location}%", "%#{escaped_location}%", "%#{escaped_location}%", "%#{escaped_location}%"
       )
+    end
+
     # Temporal status filter
     if params[:temporal_status].present?
       now = Time.current
@@ -141,7 +143,7 @@ class TournamentQuery
     return nil if time_input.blank?
 
     # If it's already a Time or DateTime, return as is (assuming UTC)
-    if time_input.is_a?(Time) || time_input.is_a!(DateTime)
+    if time_input.is_a?(Time) || time_input.is_a?(DateTime)
       time_input
     elsif time_input.is_a?(String)
       # Parse as UTC time
@@ -156,4 +158,3 @@ class TournamentQuery
     end
   end
 end
-    end
