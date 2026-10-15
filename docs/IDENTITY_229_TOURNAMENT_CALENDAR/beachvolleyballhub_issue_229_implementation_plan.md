@@ -51,10 +51,19 @@ Implement a searchable tournament directory, month/list calendar, detailed tourn
 
 ### Phase 5 — Frontend types, API client and reusable UI
 **Objective:** Generate TypeScript types from API (or define manually). Create API client functions for tournament resources. Build reusable UI components (tournament card, division badge, participation button). Ensure types cover all backend fields and validation. Add unit tests for types and API client. Do not modify backend. Show frontend type and unit test output.
+**Status:** ✅ IMPLEMENTED — typed API methods, Rails-compatible filter serialization,
+abort-signal forwarding, reusable tournament UI, and focused tests are complete. The
+full frontend suite/build remains blocked only by unrelated existing failures documented
+in the Phase 5 and Phase 6 records.
 [Read full phase details](./beachvolleyballhub_issue_229_phase_5.md)
 
 ### Phase 6 — Tournament directory and calendar
 **Objective:** Build tournament directory page (search, filters, list) and month/list calendar view. Use existing calendar infrastructure. Implement routing and navigation. Connect to backend API. Add integration tests for directory and calendar. Do not modify backend. Show frontend build and test output.
+**Status:** ✅ IMPLEMENTED — focused frontend coverage passed. The directory has URL-backed
+month/view/filter state, queries the full visible calendar grid, aggregates every bounded
+API result page, aborts superseded requests, and places multi-day events using each
+tournament's declared IANA timezone. Full frontend test/build validation remains blocked
+by pre-existing failures documented in the Phase 6 record.
 [Read full phase details](./beachvolleyballhub_issue_229_phase_6.md)
 
 ### Phase 7 — Tournament detail, My Tournaments, self-link
