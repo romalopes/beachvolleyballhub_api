@@ -73,6 +73,7 @@ by pre-existing failures documented in the Phase 6 record.
 
 ### Phase 8 — Admin forms and organisation integration
 **Objective:** Build admin forms for creating/editing tournaments and divisions. Integrate with Organisation scope (only admins of an organisation can manage its tournaments). Add organisation deletion guards (tournaments must be archived or deleted before organisation deletion). Do not modify backend. Show frontend build and test output.
+**Status:** ✅ IMPLEMENTED & VERIFIED — the admin form now manages divisions (add/deactivate/remove) and ordered watch links (add/reorder/remove) alongside lifecycle actions (publish/archive/cancel/restore/delete with confirmation). The typed API client gained the missing division/watch-link/lifecycle methods. Organisation deletion remains guarded server-side. Backend tournament suite (107 tests) passes; frontend build and new admin-form tests pass.
 [Read full phase details](./beachvolleyballhub_issue_229_phase_8.md)
 
 ### Phase 9 — Security, quality and integration testing
