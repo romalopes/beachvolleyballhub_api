@@ -1,4 +1,5 @@
 ## 6. Phase 4 — Rails API and authorization
+**Status:** ✅ COMPLETED
 
 Proposed routes under `/api/v1`:
 

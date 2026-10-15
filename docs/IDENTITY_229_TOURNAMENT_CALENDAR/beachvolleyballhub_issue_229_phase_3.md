@@ -1,4 +1,5 @@
 ## 5. Phase 3 — Search, calendar query and pagination
+**Status:** ✅ COMPLETED
 
 Use an overlap predicate for timed events: `starts_at < range_end AND ends_at > range_start`. Include events starting before the visible window. Treat calendar all-day rows according to local date labels and display timezone; test extreme offsets. Provide search across name, organiser name/acronym and location, with parameter binding and escaped LIKE wildcards.
 

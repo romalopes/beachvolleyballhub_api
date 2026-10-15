@@ -41,10 +41,12 @@ Implement a searchable tournament directory, month/list calendar, detailed tourn
 
 ### Phase 3 — Search, calendar query and pagination
 **Objective:** Implement search (by name, scope, division, location, date) and calendar queries (month, week, day) with pagination. Reuse existing pagination concern. Ensure calendar query includes overlapping events (not just starts_at in range). Add backend tests for search and query logic. Do not modify frontend. Show query test output.
+**Status:** ✅ COMPLETED
 [Read full phase details](./beachvolleyballhub_issue_229_phase_3.md)
 
 ### Phase 4 — Rails API and authorization
 **Objective:** Create API endpoints for tournaments, divisions, participations, and watch links. Apply existing authentication and authorization (admin authority). Use strong parameters, pagination, and proper error handling. Add request specs for endpoints, including authentication and authorization tests. Do not modify frontend. Show API test output.
+**Status:** ✅ COMPLETED
 [Read full phase details](./beachvolleyballhub_issue_229_phase_4.md)
 
 ### Phase 5 — Frontend types, API client and reusable UI
