@@ -22,7 +22,7 @@ class TournamentArchiveServiceTest < ActiveSupport::TestCase
     archived_tournament = TournamentArchiveService.call(@tournament)
 
     assert archived_tournament.persisted?
-    assert_equal :archived, archived_tournament.publication_state
+    assert_equal 'archived', archived_tournament.publication_state
   end
 
   test 'should allow archiving from any state' do
@@ -41,7 +41,7 @@ class TournamentArchiveServiceTest < ActiveSupport::TestCase
       )
 
       archived = TournamentArchiveService.call(tournament)
-      assert_equal :archived, archived.publication_state
+      assert_equal 'archived', archived.publication_state
     end
   end
 

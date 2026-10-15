@@ -29,7 +29,7 @@ class TournamentPublishServiceTest < ActiveSupport::TestCase
     published_tournament = TournamentPublishService.call(tournament)
 
     assert published_tournament.persisted?
-    assert_equal :active, published_tournament.publication_state
+    assert_equal 'active', published_tournament.publication_state
   end
 
   test 'should not publish a tournament without any active division' do
@@ -57,7 +57,7 @@ class TournamentPublishServiceTest < ActiveSupport::TestCase
     end
 
     # Ensure the tournament is still draft
-    assert_equal :draft, tournament.reload.publication_state
+    assert_equal 'draft', tournament.reload.publication_state
   end
 
   test 'should not publish a tournament with no divisions' do
@@ -78,18 +78,18 @@ class TournamentPublishServiceTest < ActiveSupport::TestCase
       TournamentPublishService.call(tournament)
     end
 
-    assert_equal :draft, tournament.reload.publication_state
+    assert_equal 'draft', tournament.reload.publication_state
   end
 
   test 'should raise error if tournament is invalid for other reasons' do
     tournament = Tournament.create!(
-      name: 'Invalid Tournament',
+      name: 'Valid Then Broken',
       organisation_id: @organisation.id,
       created_by_account_id: @account.id,
       scope: 'club',
       division_scheme: 'letter',
       starts_at: '2026-10-15 09:00:00',
-      ends_at: '2026-10-15 08:00:00', # ends before starts
+      ends_at: '2026-10-15 17:00:00',
       timezone: 'US/Eastern',
       all_day: false,
       publication_state: :draft
@@ -101,10 +101,15 @@ class TournamentPublishServiceTest < ActiveSupport::TestCase
       active: true
     )
 
+    # An invalid persisted state cannot be created through validations (the
+    # ends_at > starts_at rule is enforced by model and DB), so force one the
+    # way only a bug or a raw write could: a blank name.
+    tournament.update_columns(name: '')
+
     assert_raises ActiveRecord::RecordInvalid do
       TournamentPublishService.call(tournament)
     end
 
-    assert_equal :draft, tournament.reload.publication_state
+    assert_equal 'draft', tournament.reload.publication_state
   end
 end

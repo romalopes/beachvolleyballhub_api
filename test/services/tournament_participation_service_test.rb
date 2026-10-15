@@ -27,15 +27,15 @@ class TournamentParticipationServiceTest < ActiveSupport::TestCase
     )
     assert participation.persisted?
     assert_equal 'player', participation.role
-    assert_equal 1, participation.tournament_participation_divisions.count
+    assert_equal 1, participation.participation_divisions.count
 
-    # Update
+    # Update — a coach may switch divisions, unlike a referee
     participation = TournamentParticipationService.link_or_update_participation(
-      @account.id, @tournament.id, role: 'referee', division_ids: [@division_b.id]
+      @account.id, @tournament.id, role: 'coach', division_ids: [@division_b.id]
     )
-    assert_equal 'referee', participation.role
-    assert_equal 1, participation.tournament_participation_divisions.count
-    assert_equal @division_b.id, participation.tournament_participation_divisions.first.tournament_division_id
+    assert_equal 'coach', participation.role
+    assert_equal 1, participation.participation_divisions.count
+    assert_equal @division_b.id, participation.participation_divisions.first.tournament_division_id
   end
 
   test 'should be idempotent for link' do
@@ -59,10 +59,12 @@ class TournamentParticipationServiceTest < ActiveSupport::TestCase
   end
 
   test 'should allow unlinking even if tournament is archived' do
-    @tournament.update!(publication_state: :archived)
+    # Link while the tournament is still active, then archive — unlinking must
+    # remain possible afterwards (linking itself is rejected once archived).
     TournamentParticipationService.link_or_update_participation(
       @account.id, @tournament.id, role: 'player', division_ids: [@division_a.id]
     )
+    @tournament.update!(publication_state: :archived)
     assert_difference 'TournamentParticipation.count', -1 do
       TournamentParticipationService.unlink_participation(@account.id, @tournament.id)
     end

@@ -1,6 +1,23 @@
 class TournamentUpdateService
+  extend InvalidRecord
+
   def self.call(tournament, params)
     ActiveRecord::Base.transaction do
+      # Lock the parent so a concurrent participation link and a scheme change
+      # cannot interleave (Phase 2 concurrency gate).
+      tournament.lock!
+
+      # Scheme immutability: once any participation exists the scheme is locked —
+      # division codes and participation selections are expressed in its terms.
+      if params.key?(:division_scheme) &&
+         params[:division_scheme].to_s != tournament.division_scheme &&
+         tournament.participations.exists?
+        raise_invalid!(
+          tournament,
+          "Division scheme cannot be changed after participation begins"
+        )
+      end
+
       # Assign basic attributes if present
       tournament.name = params[:name] if params.key?(:name)
       tournament.organisation_id = params[:organisation_id] if params.key?(:organisation_id)
@@ -15,72 +32,34 @@ class TournamentUpdateService
       tournament.state = params[:state] if params.key?(:state)
       tournament.country = params[:country] if params.key?(:country)
       tournament.timezone = params[:timezone] if params.key?(:timezone)
+      # An invalid timezone must fail loudly at assignment time, even when no
+      # date parsing follows (a timezone-only update still changes how stored
+      # instants would be interpreted).
+      if params.key?(:timezone) && !ActiveSupport::TimeZone[params[:timezone]]
+        raise ArgumentError, "Invalid timezone: #{params[:timezone]}"
+      end
 
       # Handle all-day event and timezone conversion if starts_at or ends_at is present
       all_day = params.key?(:all_day) ? ActiveModel::Type::Boolean.new.cast(params[:all_day]) : tournament.all_day
       tournament.all_day = all_day
 
-      # Parse and convert starts_at and ends_at if present
+      # Parse and convert starts_at and ends_at if present. Values not supplied
+      # come from the stored row and are re-anchored through the event timezone,
+      # so partial updates cannot drift the local date.
       if params.key?(:starts_at) || params.key?(:ends_at)
-        begins_at = parse_time_in_timezone(params[:starts_at] || tournament.starts_at, tournament.timezone, all_day)
-        ends_at = parse_time_in_timezone(params[:ends_at] || tournament.ends_at, tournament.timezone, all_day, begins_at)
-
-        tournament.starts_at = begins_at
-        tournament.ends_at = ends_at
+        tournament.starts_at = TournamentTime.parse_in_timezone(
+          params[:starts_at] || tournament.starts_at, tournament.timezone, all_day: all_day
+        )
+        tournament.ends_at = TournamentTime.parse_in_timezone(
+          params[:ends_at] || tournament.ends_at, tournament.timezone,
+          all_day: all_day, end_of_day: true
+        )
       end
 
       # Validate the tournament (will run ends_after_starts validation)
       tournament.save!
 
       tournament
-    end
-  end
-
-  private_class_method def self.parse_time_in_timezone(time_input, timezone_str, all_day, begins_at = nil)
-    return nil if time_input.blank?
-
-    # Validate timezone
-    unless ActiveSupport::TimeZone[timezone_str]
-      raise ArgumentError, "Invalid timezone: #{timezone_str}"
-    end
-
-    time_zone = ActiveSupport::TimeZone[timezone_str]
-
-    if all_day
-      # For all-day events, we expect the input to be a date (or datetime) representing the start date.
-      if time_input.is_a?(String)
-        # Try to parse as date first, then datetime
-        begin
-          date = Date.parse(time_input)
-        rescue ArgumentError
-          # If not a date, try datetime and then extract date
-          datetime = time_zone.parse(time_input)
-          date = datetime.to_date
-        end
-      elsif time_input.is_a?(DateTime) || time_input.is_a?(Time)
-        date = time_input.to_date
-      else
-        # Assume it's a date-like object
-        date = Date.parse(time_input.to_s)
-      end
-
-      # Create a time at the beginning of the day in the timezone
-      beginning_of_day = time_zone.local(date.year, date.month, date.day, 0, 0, 0)
-      # Convert to UTC
-      beginning_of_day.utc
-
-    else
-      # For timed events, parse the input as a time in the timezone and convert to UTC
-      if time_input.is_a?(String)
-        time = time_zone.parse(time_input)
-      elsif time_input.is_a?(DateTime) || time_input.is_a?(Time)
-        time = time_input
-      else
-        time = time_zone.parse(time_input.to_s)
-      end
-
-      # Convert to UTC
-      time.utc
     end
   end
 end

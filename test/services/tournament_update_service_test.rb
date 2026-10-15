@@ -105,4 +105,34 @@ class TournamentUpdateServiceTest < ActiveSupport::TestCase
     assert_equal original_scope, updated_tournament.scope
     assert_equal 'New description', updated_tournament.description
   end
+
+  test 'refuses to change the division scheme once participation exists' do
+    @tournament.update!(publication_state: :active)
+    division = @tournament.divisions.create!(letter_level: 'A', active: true)
+    TournamentParticipationService.link_or_update_participation(
+      @account.id, @tournament.id, role: 'player', division_ids: [division.id]
+    )
+
+    error = assert_raises ActiveRecord::RecordInvalid do
+      TournamentUpdateService.call(@tournament, division_scheme: 'numbered')
+    end
+
+    assert_match(/scheme cannot be changed/, error.message)
+    assert_equal 'letter', @tournament.reload.division_scheme
+  end
+
+  test 're-asserting the current scheme with participation is allowed' do
+    @tournament.update!(publication_state: :active)
+    division = @tournament.divisions.create!(letter_level: 'A', active: true)
+    TournamentParticipationService.link_or_update_participation(
+      @account.id, @tournament.id, role: 'player', division_ids: [division.id]
+    )
+
+    updated = TournamentUpdateService.call(
+      @tournament, division_scheme: 'letter', description: 'still letter'
+    )
+
+    assert_equal 'letter', updated.division_scheme
+    assert_equal 'still letter', updated.description
+  end
 end

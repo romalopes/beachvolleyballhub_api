@@ -5,8 +5,12 @@ class Tournament < ApplicationRecord
   has_many :participations, class_name: 'TournamentParticipation', dependent: :destroy
   has_many :watch_links, class_name: 'TournamentWatchLink', dependent: :destroy
 
-  enum :scope, { club: 0, state: 1, national: 2, international: 3, other: 4 }
-  enum :publication_state, { draft: 0, active: 1, cancelled: 2, archived: 3 }
+  # The DB columns are strings guarded by CHECK constraints (valid_scope /
+  # valid_publication_state), so the enum VALUES must be the labels themselves.
+  # Integer-valued enums (`{ club: 0 }`) serialize to "0" on a string column,
+  # which violates those constraints on every insert.
+  enum :scope, { club: "club", state: "state", national: "national", international: "international", other: "other" }
+  enum :publication_state, { draft: "draft", active: "active", cancelled: "cancelled", archived: "archived" }
 
   validates :name, presence: true
   validates :scope, presence: true, inclusion: { in: scopes.keys }

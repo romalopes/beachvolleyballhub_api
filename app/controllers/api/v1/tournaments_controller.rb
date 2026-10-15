@@ -1,8 +1,11 @@
 module Api
   module V1
     class TournamentsController < ApplicationController
-      before_action :set_tournament, only: [:show, :update, :archive, :publish, :participate, :destroy_participation]
-      before_action :require_authentication, only: [:create, :update, :archive, :publish, :participate, :destroy_participation]
+      include TournamentPayloads
+      include TournamentManagementAuthorization
+
+      before_action :set_tournament, only: [:show, :update, :destroy, :archive, :publish, :cancel, :restore, :participate, :destroy_participation]
+      before_action :require_authentication, only: [:create, :update, :destroy, :archive, :publish, :cancel, :restore, :participate, :destroy_participation]
 
       # GET /api/v1/tournaments
       def index
@@ -58,30 +61,82 @@ module Api
 
       # POST /api/v1/tournaments
       def create
-        authorize_admin_for_organisation!(params[:organisation_id])
+        organisation = Organisation.find_by(
+          id: params[:organisation_id] || params.dig(:tournament, :organisation_id)
+        )
+        unless organisation
+          return render json: { error: "Organisation is required" }, status: :unprocessable_entity
+        end
+        return unless authorize_tournament_creation!(organisation)
+
         tournament = TournamentCreateService.call(tournament_params)
         render json: tournament_payload(tournament), status: :created
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: invalid_record_errors(e) }, status: :unprocessable_entity
       end
 
       # PATCH /api/v1/tournaments/:id
       def update
-        authorize_tournament_management!(@tournament)
+        return unless authorize_tournament_management!
+
         tournament = TournamentUpdateService.call(@tournament, tournament_params)
         render json: tournament_payload(tournament)
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: invalid_record_errors(e) }, status: :unprocessable_entity
+      end
+
+      # DELETE /api/v1/tournaments/:id
+      # Hard delete for unused mistakes only (Phase 4): anything with
+      # participation history must be archived instead of disappearing.
+      def destroy
+        return unless authorize_tournament_management!
+
+        if @tournament.participations.exists?
+          return render json: {
+            error: "Tournament has participations and cannot be deleted — archive it instead"
+          }, status: :conflict
+        end
+
+        @tournament.destroy!
+        head :no_content
+      rescue ActiveRecord::InvalidForeignKey
+        render json: { error: "Tournament has related records and cannot be deleted" }, status: :conflict
       end
 
       # PATCH /api/v1/tournaments/:id/archive
       def archive
-        authorize_tournament_management!(@tournament)
-        tournament = TournamentArchiveService.call(@tournament)
-        render json: tournament_payload(tournament)
+        return unless authorize_tournament_management!
+
+        render json: tournament_payload(TournamentArchiveService.call(@tournament))
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: invalid_record_errors(e) }, status: :unprocessable_entity
       end
 
       # PATCH /api/v1/tournaments/:id/publish
       def publish
-        authorize_tournament_management!(@tournament)
-        tournament = TournamentPublishService.call(@tournament)
-        render json: tournament_payload(tournament)
+        return unless authorize_tournament_management!
+
+        render json: tournament_payload(TournamentPublishService.call(@tournament))
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: invalid_record_errors(e) }, status: :unprocessable_entity
+      end
+
+      # POST /api/v1/tournaments/:id/cancel
+      def cancel
+        return unless authorize_tournament_management!
+
+        render json: tournament_payload(TournamentCancelService.call(@tournament))
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: invalid_record_errors(e) }, status: :unprocessable_entity
+      end
+
+      # POST /api/v1/tournaments/:id/restore
+      def restore
+        return unless authorize_tournament_management!
+
+        render json: tournament_payload(TournamentRestoreService.call(@tournament))
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: invalid_record_errors(e) }, status: :unprocessable_entity
       end
 
       # POST /api/v1/tournaments/:id/participate
@@ -96,6 +151,8 @@ module Api
           division_ids: participation_params[:division_ids] || []
         )
         render json: participation_payload(participation)
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: invalid_record_errors(e) }, status: :unprocessable_entity
       end
 
       # DELETE /api/v1/tournaments/:id/participate
@@ -126,12 +183,6 @@ module Api
 
       private
 
-      def set_tournament
-        @tournament = Tournament.find(params[:id])
-      rescue ActiveRecord::RecordNotFound
-        render json: { error: "Tournament not found" }, status: :not_found
-      end
-
       def tournament_params
         params.require(:tournament).permit(
           :name, :organisation_id, :created_by_account_id, :scope, :division_scheme,
@@ -143,82 +194,6 @@ module Api
 
       def participation_params
         params.require(:participation).permit(:role, division_ids: [])
-      end
-
-      def tournament_payload(tournament)
-        {
-          id: tournament.id,
-          name: tournament.name,
-          organisation: {
-            id: tournament.organisation.id,
-            name: tournament.organisation.name,
-            acronym: tournament.organisation.acronym
-          },
-          scope: tournament.scope,
-          division_scheme: tournament.division_scheme,
-          publication_state: tournament.publication_state,
-          website_url: tournament.website_url,
-          description: tournament.description,
-          location_name: tournament.location_name,
-          city: tournament.city,
-          state: tournament.state,
-          country: tournament.country,
-          timezone: tournament.timezone,
-          all_day: tournament.all_day,
-          starts_at: tournament.starts_at,
-          ends_at: tournament.ends_at,
-          created_by_account_id: tournament.created_by_account_id,
-          divisions: tournament.divisions.map { |d| division_payload(d) },
-          participations: tournament.participations.map { |p| participation_payload(p) },
-          my_participation: Current.user&.account ? participation_payload(tournament.participations.find_by(account_id: Current.user.account.id)) : nil,
-          watch_links: tournament.watch_links.map { |l| watch_link_payload(l) }
-        }
-      end
-
-      def division_payload(division)
-        {
-          id: division.id,
-          letter_level: division.letter_level,
-          division_number: division.division_number,
-          active: division.active,
-          strength_order: division.strength_order,
-          division_code: division.division_code
-        }
-      end
-
-      def participation_payload(participation)
-        return nil unless participation
-
-        {
-          id: participation.id,
-          account_id: participation.account_id,
-          role: participation.role,
-          created_at: participation.created_at,
-          division_ids: participation.participation_divisions.pluck(:tournament_division_id)
-        }
-      end
-
-      def watch_link_payload(link)
-        {
-          id: link.id,
-          url: link.url,
-          link_type: link.link_type,
-          position: link.position,
-          active: link.active
-        }
-      end
-
-      def authorize_admin_for_organisation!(organisation_id)
-        organisation = Organisation.find(organisation_id)
-        unless Current.user.account&.id == organisation.account_id || Current.user.admin?
-          render json: { error: "Forbidden" }, status: :forbidden
-        end
-      end
-
-      def authorize_tournament_management!(tournament)
-        unless Current.user.account&.id == tournament.organisation.account_id || Current.user.admin?
-          render json: { error: "Forbidden" }, status: :forbidden
-        end
       end
     end
   end
