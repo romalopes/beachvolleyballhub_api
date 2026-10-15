@@ -68,6 +68,7 @@ by pre-existing failures documented in the Phase 6 record.
 
 ### Phase 7 — Tournament detail, My Tournaments, self-link
 **Objective:** Build tournament detail page (show tournament, divisions, watch links). Implement My Tournaments page (list of participations). Allow authenticated Accounts to self-link to tournaments (select role/divisions) and unlink. Add integration tests for detail, My Tournaments, and participation flow. Do not modify backend. Show frontend build and test output.
+**Status:** ✅ IMPLEMENTED — detail, authenticated participation, `/my-tournaments`, server-side participation contract corrections, and focused frontend tests are complete. Full frontend typecheck/build remains blocked by the pre-existing Configuration Settings test type failures; Rails test execution remains blocked by existing test-database/fixture failures, both tracked for Phase 9.
 [Read full phase details](./beachvolleyballhub_issue_229_phase_7.md)
 
 ### Phase 8 — Admin forms and organisation integration

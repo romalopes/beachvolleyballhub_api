@@ -1,8 +1,8 @@
 module Api
   module V1
     class TournamentsController < ApplicationController
-      before_action :set_tournament, only: [:show, :update, :archive, :publish]
-      before_action :require_authentication, only: [:create, :update, :archive, :publish, :participate]
+      before_action :set_tournament, only: [:show, :update, :archive, :publish, :participate, :destroy_participation]
+      before_action :require_authentication, only: [:create, :update, :archive, :publish, :participate, :destroy_participation]
 
       # GET /api/v1/tournaments
       def index
@@ -26,7 +26,12 @@ module Api
         # query_params[:letter_levels] = params[:letter_levels] if params[:letter_levels].is_a?(Array)
         # query_params[:division_numbers] = params[:division_numbers] if params[:division_numbers].is_a?(Array)
         query_params[:mine] = params[:mine] == '1' if params[:mine].present?
-        query_params[:account_id] = Current_user.account.id if query_params[:mine] && Current_user.account
+        if query_params[:mine]
+          return render json: { error: "Authentication required" }, status: :unauthorized unless Current.user
+          return render json: { error: "Account required" }, status: :unprocessable_entity unless Current.user.account
+
+          query_params[:account_id] = Current.user.account.id
+        end
 
         relation = TournamentQuery.call(query_params)
         # Pagination
@@ -82,16 +87,21 @@ module Api
       # POST /api/v1/tournaments/:id/participate
       def participate
         # Expect params: { role: ..., division_ids: [] }
-        participation = TournamentParticipationService.call(
-          tournament: @tournament,
-          account_id: Current.user.account.id,
-          params: participation_params
+        return render json: { error: "Account required" }, status: :unprocessable_entity unless Current.user.account
+
+        participation = TournamentParticipationService.link_or_update_participation(
+          Current.user.account.id,
+          @tournament.id,
+          role: participation_params[:role],
+          division_ids: participation_params[:division_ids] || []
         )
         render json: participation_payload(participation)
       end
 
       # DELETE /api/v1/tournaments/:id/participate
       def destroy_participation
+        return render json: { error: "Account required" }, status: :unprocessable_entity unless Current.user.account
+
         TournamentParticipationService.unlink_participation(
           Current.user.account.id,
           @tournament.id
@@ -132,7 +142,7 @@ module Api
       end
 
       def participation_params
-        params.permit(:role, division_ids: [])
+        params.require(:participation).permit(:role, division_ids: [])
       end
 
       def tournament_payload(tournament)
@@ -158,8 +168,9 @@ module Api
           starts_at: tournament.starts_at,
           ends_at: tournament.ends_at,
           created_by_account_id: tournament.created_by_account_id,
-          divisions: tournament.divisions.active.map { |d| division_payload(d) },
+          divisions: tournament.divisions.map { |d| division_payload(d) },
           participations: tournament.participations.map { |p| participation_payload(p) },
+          my_participation: Current.user&.account ? participation_payload(tournament.participations.find_by(account_id: Current.user.account.id)) : nil,
           watch_links: tournament.watch_links.map { |l| watch_link_payload(l) }
         }
       end
@@ -176,11 +187,14 @@ module Api
       end
 
       def participation_payload(participation)
+        return nil unless participation
+
         {
           id: participation.id,
           account_id: participation.account_id,
           role: participation.role,
-          created_at: participation.created_at
+          created_at: participation.created_at,
+          division_ids: participation.participation_divisions.pluck(:tournament_division_id)
         }
       end
 

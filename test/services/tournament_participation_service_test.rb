@@ -97,4 +97,31 @@ class TournamentParticipationServiceTest < ActiveSupport::TestCase
       )
     end
   end
+
+  test 'allows retaining but not newly adding an inactive division' do
+    participation = TournamentParticipationService.link_or_update_participation(
+      @account.id, @tournament.id, role: 'player', division_ids: [@division_a.id]
+    )
+    @division_a.update!(active: false)
+
+    TournamentParticipationService.link_or_update_participation(
+      @account.id, @tournament.id, role: 'coach', division_ids: [@division_a.id]
+    )
+    assert_equal [@division_a.id], participation.reload.participation_divisions.pluck(:tournament_division_id)
+
+    inactive_division = @tournament.divisions.create!(letter_level: 'AA', active: false)
+    assert_raises ActiveRecord::RecordInvalid do
+      TournamentParticipationService.link_or_update_participation(
+        @account.id, @tournament.id, role: 'player', division_ids: [@division_a.id, inactive_division.id]
+      )
+    end
+  end
+
+  test 'does not allow a referee or organiser to select divisions' do
+    assert_raises ActiveRecord::RecordInvalid do
+      TournamentParticipationService.link_or_update_participation(
+        @account.id, @tournament.id, role: 'referee', division_ids: [@division_a.id]
+      )
+    end
+  end
 end
