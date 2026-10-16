@@ -1,0 +1,74 @@
+# Render Blueprint for bvb-api (Rails 8, Docker)
+# Repo: beachvolleyballproject_api (this file lives at repo root, which IS the Rails root)
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Why this exists:
+# - production uses 4 logical DBs sharing one DATABASE_URL:
+#     primary (db/migrate), cache (db/cache_migrate -> solid_cache_entries),
+#     queue (db/queue_migrate), cable (db/cable_migrate)
+# - Dockerfile deliberately does NOT run migrations at build time.
+# - bin/docker-entrypoint deliberately does NOT auto-migrate on boot.
+# - Without a preDeployCommand, deploys skip `db:migrate:cache` etc.,
+#   so `solid_cache_entries` is missing and every `rate_limit` endpoint
+#   (POST /api/v1/sessions, registrations, passwords, ...) 500s with:
+#     PG::UndefinedTable: relation "solid_cache_entries" does not exist
+# - This blueprint wires the missing step: preDeployCommand runs once per
+#   deploy, BEFORE new web processes start (no boot race).
+#
+# How to use:
+#  1. Commit this file, push to main.
+#  2. Render Dashboard -> New -> Blueprint -> select repo -> Apply.
+#     (Or: existing Web Service -> Settings -> Build & Deploy -> set
+#     Pre-Deploy Command to the same command below.)
+#  3. Ensure env vars DATABASE_URL (linked database) and RAILS_MASTER_KEY exist.
+#  4. Deploy, then verify:
+#       bundle exec rails db:migrate:status:cache   # must show `up`
+#       POST /api/v1/sessions with bad password -> 401 (not 500)
+
+services:
+  - type: web
+    name: bvb-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # Puma binds tcp://0.0.0.0:${PORT}; Render injects PORT=10000 automatically.
+    # Keep in sync with config/puma.rb.
+    healthCheckPath: /up
+    # Build the Docker image only. Do NOT migrate here: build containers may
+    # not have DATABASE_URL access, and Docker best practice is migrate-on-release.
+    buildCommand: ""
+    # Start via Dockerfile CMD (./bin/rails server). bin/docker-entrypoint is a
+    # no-op pass-through unless MIGRATE_ON_BOOT=true (see that file).
+    startCommand: ""
+    # THE FIX: runs once per deploy before traffic switches. Covers all 4 DBs.
+    # NOTE: explicit migrates (not db:prepare) so an existing production DB is
+    # never seeded — missing secondary tables are created, data is untouched.
+    preDeployCommand: "./bin/render-predeploy.sh"
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_LOG_LEVEL
+        value: info
+      # Render injects PORT; do not hardcode.
+      # Link a Render Postgres and expose as DATABASE_URL, e.g.:
+      # - key: DATABASE_URL
+      #   fromDatabase:
+      #     name: bvb-db
+      #     property: connectionString
+      - key: DATABASE_URL
+        sync: false
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: APP_VERSION
+        value: "0.0.21"
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: APP_HOST
+        sync: false
+      # Safety net for single-host Docker deploys where preDeployCommand was
+      # skipped/forgotten: entrypoint runs `db:prepare` (all DBs) on boot.
+      # Set to "false" if you scale to >1 instance / separate workers and rely
+      # solely on preDeployCommand (avoids concurrent-migration races).
+      - key: MIGRATE_ON_BOOT
+        value: "true"

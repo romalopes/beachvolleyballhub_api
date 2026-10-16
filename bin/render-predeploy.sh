@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -o errexit
+
+# Render pre-deploy: migrate primary + cache + queue + cable.
+# All four share the same DATABASE_URL in production (see config/database.yml),
+# so all tables land in the same Postgres database.
+# Missing `solid_cache_entries` here = 500 on every `rate_limit` endpoint
+# (POST /api/v1/sessions, registrations, passwords, ...):
+#   PG::UndefinedTable: relation "solid_cache_entries" does not exist
+#
+# Wired as `preDeployCommand` in render.yaml. Runs once per deploy BEFORE
+# new web processes start (no boot race, unlike migrate-on-boot).
+
+bundle exec rails db:migrate db:migrate:cache db:migrate:queue db:migrate:cable

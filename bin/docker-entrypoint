@@ -1,5 +1,32 @@
 #!/bin/bash -e
 
-# Production migrations are a deliberate one-off release step, never an
-# implicit side effect of starting a web or Solid Queue worker container.
+# Entrypoint hands control to the requested process.
+#
+# Production migrations are normally a deliberate one-off release step:
+# Render `preDeployCommand` (see render.yaml -> bin/render-predeploy.sh) runs
+#   bundle exec rails db:migrate db:migrate:cache db:migrate:queue db:migrate:cable
+# once per deploy BEFORE new web processes start.
+#
+# Safety net: when MIGRATE_ON_BOOT=true, also run explicit migrates (all 4 DBs)
+# at container boot. This heals single-host Docker deploys where the pre-deploy
+# step was skipped or forgotten (the cause of
+# `PG::UndefinedTable: solid_cache_entries` 500s on every rate_limit endpoint,
+# e.g. POST /api/v1/sessions).
+#
+# NOTE: explicit `db:migrate*` (not `db:prepare`) on purpose — `db:prepare`
+# would `db:seed` a database whose schema_migrations is empty, which is wrong
+# for an existing production database that is merely missing secondary tables.
+#
+# Concurrency warning: with >1 web instance or separate worker containers,
+# concurrent boots can race on migrations. In that topology set
+# MIGRATE_ON_BOOT=false and rely SOLELY on preDeployCommand.
+if [ "${RAILS_ENV:-}" = "production" ] && [ "${MIGRATE_ON_BOOT:-}" = "true" ]; then
+  echo "MIGRATE_ON_BOOT=true: running primary + cache + queue + cable migrates..."
+  ./bin/rails db:migrate
+  ./bin/rails db:migrate:cache
+  ./bin/rails db:migrate:queue
+  ./bin/rails db:migrate:cable
+fi
+
 exec "${@}"
+
