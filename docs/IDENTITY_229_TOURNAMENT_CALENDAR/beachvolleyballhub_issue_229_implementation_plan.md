@@ -78,6 +78,7 @@ by pre-existing failures documented in the Phase 6 record.
 
 ### Phase 9 — Security, quality and integration testing
 **Objective:** Perform security review (authentication, authorization, input validation). Run backend and frontend test suites. Fix any flaky tests. Add end-to-end tests for critical user flows (guest search, participant self-link, admin management). Ensure no regressions in existing `/calendar` training feature. Show security audit report and test suite output.
+**Status:** 🔶 PARTIAL (2026-10-16) — active-filter chips now render organisation names (with ID fallback) via a new `organisations` prop on `FilterState`, threaded from `Tournaments.tsx`; covered by new `FilterState.test.tsx` (2 tests). Wrong-path `src/components/TournamentFilterForm.tsx` artifact deleted (resolves 5 TS errors). Focused vitest run (6 tests), `tsc -b` and `npm run build` all pass. Full Phase 9 gate (permissions matrix, E2E flows, full backend suite re-run) still pending; pre-existing failures (api.test.ts VITE_API_BASE_URL, ~9 lint, training/identity/schema) tracked.
 [Read full phase details](./beachvolleyballhub_issue_229_phase_9.md)
 
 ### Phase 10 — Rollout, operations and documentation
