@@ -3,7 +3,7 @@ require 'test_helper'
 class TournamentTest < ActiveSupport::TestCase
   def setup
     @organisation = Organisation.create!(name: 'Test Org', slug: 'test-org')
-    @account = Account.create!(user: User.create!(email: 'test@example.com', password: 'password'))
+    @account = Account.create!(user: User.create!(email_address: 'test@example.com', password: 'password'))
   end
 
   test 'should be valid with valid attributes' do
@@ -49,18 +49,20 @@ class TournamentTest < ActiveSupport::TestCase
   end
 
   test 'should have valid scope' do
-    tournament = Tournament.new(
-      name: 'Test Tournament',
-      organisation: @organisation,
-      scope: 'invalid',
-      division_scheme: 'letter',
-      starts_at: DateTime.now,
-      ends_at: DateTime.now + 1.day,
-      timezone: 'UTC',
-      created_by_account: @account
-    )
-    assert_not tournament.valid?
-    assert_includes tournament.errors[:scope], "is not included in the list"
+    # String-backed enum: an unknown value is rejected eagerly with
+    # ArgumentError rather than surfacing as a validation error.
+    assert_raises(ArgumentError) do
+      Tournament.new(
+        name: 'Test Tournament',
+        organisation: @organisation,
+        scope: 'invalid',
+        division_scheme: 'letter',
+        starts_at: DateTime.now,
+        ends_at: DateTime.now + 1.day,
+        timezone: 'UTC',
+        created_by_account: @account
+      )
+    end
   end
 
   test 'ends_at must be after starts_at' do
