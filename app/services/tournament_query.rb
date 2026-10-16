@@ -3,7 +3,8 @@ class TournamentQuery
   # @param params [Hash] the query parameters
   # @option params [String] :search text search across name, organiser name/acronym, location
   # @option params [String] :scope tournament scope (club, state, national, international, other)
-  # @option params [String] :organisation_id filter by organisation id
+  # @option params [String] :organisation_id legacy filter by one organisation id
+  # @option params [Array<String>] :organisation_ids filter by any selected organisation ids
   # @option params [String] :division_scheme division scheme (letter, numbered)
   # @option params [Array<String>] :letter_levels letter levels (e.g., ['B', 'BB'])
   # @option params [Array<Integer>] :division_numbers division numbers
@@ -35,8 +36,11 @@ class TournamentQuery
       relation = relation.where(scope: params[:scope])
     end
 
-    # Organisation filter
-    if params[:organisation_id].present?
+    # Organisation filter. `organisation_id` remains supported for existing
+    # callers, while `organisation_ids` is the canonical multi-select filter.
+    if params[:organisation_ids].present? && params[:organisation_ids].is_a?(Array)
+      relation = relation.where(organisation_id: params[:organisation_ids])
+    elsif params[:organisation_id].present?
       relation = relation.where(organisation_id: params[:organisation_id])
     end
 

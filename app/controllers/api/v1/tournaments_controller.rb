@@ -22,6 +22,7 @@ module Api
           :ends_at,
           :page,
           :per_page,
+          organisation_ids: [],
           letter_levels: [],
           division_numbers: []
         )

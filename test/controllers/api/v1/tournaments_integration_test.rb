@@ -170,6 +170,27 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ @tournament.id ], json["tournaments"].map { |t| t["id"] }
   end
 
+  test "organisation_ids filters the directory by any selected organisation" do
+    other_organisation = Organisation.create!(name: "Other Tournament Organisation", acronym: "OTO")
+    other_tournament = Tournament.create!(
+      name: "Other Organisation Open",
+      organisation: other_organisation,
+      created_by_account: @account,
+      scope: "club",
+      division_scheme: "letter",
+      publication_state: "active",
+      starts_at: 3.days.from_now,
+      ends_at: 4.days.from_now,
+      timezone: "UTC",
+      all_day: false
+    )
+
+    get "/api/v1/tournaments", params: { organisation_ids: [ @organisation.id, other_organisation.id ] }
+
+    assert_response :success
+    assert_equal [ @tournament.id, other_tournament.id ].sort, json["tournaments"].map { |t| t["id"] }.sort
+  end
+
   # --- management authorization (regression: admin-only lifecycle) -----------
 
   test "admin can cancel a tournament" do

@@ -48,6 +48,27 @@ class TournamentQueryTest < ActiveSupport::TestCase
     assert_not_includes TournamentQuery.call(division_numbers: [2]).map(&:id), @numbered_tournament.id
   end
 
+  test 'filters by any selected organisation id' do
+    other_organisation = Organisation.create!(name: 'Other Query Org', acronym: 'OQO')
+    other_tournament = Tournament.create!(
+      name: 'Other Organisation Tournament',
+      organisation: other_organisation,
+      created_by_account: @account,
+      scope: 'club',
+      division_scheme: 'letter',
+      publication_state: 'active',
+      starts_at: 5.days.from_now,
+      ends_at: 6.days.from_now,
+      timezone: 'UTC',
+      all_day: false
+    )
+
+    ids = TournamentQuery.call(organisation_ids: [@organisation.id, other_organisation.id]).map(&:id)
+
+    assert_includes ids, @letter_tournament.id
+    assert_includes ids, other_tournament.id
+  end
+
   test 'mine filter scopes to the account participations' do
     TournamentParticipation.create!(account: @account, tournament: @letter_tournament, role: 'player')
 
