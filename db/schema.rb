@@ -13,6 +13,7 @@
 ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_trgm"
 
   create_table "account_addresses", force: :cascade do |t|
     t.bigint "account_id", null: false
@@ -608,17 +609,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
     t.index ["slug"], name: "index_skills_on_slug", unique: true
   end
 
-  create_table "solid_cache_entries", force: :cascade do |t|
-    t.integer "byte_size", null: false
-    t.datetime "created_at", null: false
-    t.binary "key", null: false
-    t.bigint "key_hash", null: false
-    t.binary "value", null: false
-    t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
-    t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
-    t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
-  end
-
   create_table "tournament_divisions", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
@@ -634,7 +624,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
     t.index ["tournament_id"], name: "index_tournament_divisions_on_tournament_id"
     t.check_constraint "division_number IS NULL OR division_number > 0", name: "division_number_positive"
     t.check_constraint "letter_level IS NOT NULL AND division_number IS NULL OR letter_level IS NULL AND division_number IS NOT NULL", name: "division_level_or_number"
-    t.check_constraint "letter_level IS NULL OR (letter_level::text = ANY (ARRAY['B'::character varying, 'BB'::character varying, 'BBB'::character varying, 'A'::character varying, 'AA'::character varying, 'AAA'::character varying, 'AAAA'::character varying]::text[]))", name: "valid_letter_level"
+    t.check_constraint "letter_level IS NULL OR (letter_level::text = ANY (ARRAY['B'::character varying::text, 'BB'::character varying::text, 'BBB'::character varying::text, 'A'::character varying::text, 'AA'::character varying::text, 'AAA'::character varying::text, 'AAAA'::character varying::text]))", name: "valid_letter_level"
   end
 
   create_table "tournament_participation_divisions", force: :cascade do |t|
@@ -700,8 +690,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
     t.index ["publication_state"], name: "index_tournaments_on_publication_state"
     t.index ["starts_at"], name: "index_tournaments_on_starts_at"
     t.check_constraint "ends_at > starts_at", name: "ends_after_starts"
-    t.check_constraint "publication_state::text = ANY (ARRAY['draft'::character varying, 'active'::character varying, 'cancelled'::character varying, 'archived'::character varying]::text[])", name: "valid_publication_state"
-    t.check_constraint "scope::text = ANY (ARRAY['club'::character varying, 'state'::character varying, 'national'::character varying, 'international'::character varying, 'other'::character varying]::text[])", name: "valid_scope"
+    t.check_constraint "publication_state::text = ANY (ARRAY['draft'::character varying::text, 'active'::character varying::text, 'cancelled'::character varying::text, 'archived'::character varying::text])", name: "valid_publication_state"
+    t.check_constraint "scope::text = ANY (ARRAY['club'::character varying::text, 'state'::character varying::text, 'national'::character varying::text, 'international'::character varying::text, 'other'::character varying::text])", name: "valid_scope"
   end
 
   create_table "training_focuses", force: :cascade do |t|
@@ -861,99 +851,3 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
     t.index ["provider"], name: "index_videos_on_provider"
     t.index ["provider_video_id"], name: "index_videos_on_provider_video_id"
   end
-
-  add_foreign_key "account_addresses", "accounts"
-  add_foreign_key "accounts", "users"
-  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "admin_activities", "users"
-  add_foreign_key "assessment_categories", "assessment_definitions"
-  add_foreign_key "assessment_categories", "categories"
-  add_foreign_key "assessment_categories", "category_customs"
-  add_foreign_key "assessment_category_scores", "assessment_categories"
-  add_foreign_key "assessment_category_scores", "assessments"
-  add_foreign_key "assessment_category_scores", "criteria"
-  add_foreign_key "assessment_definitions", "users", column: "created_by_id"
-  add_foreign_key "assessment_session_participants", "assessment_sessions"
-  add_foreign_key "assessment_session_participants", "player_profiles"
-  add_foreign_key "assessment_sessions", "assessment_definitions"
-  add_foreign_key "assessment_sessions", "coach_profiles"
-  add_foreign_key "assessment_sessions", "groups"
-  add_foreign_key "assessment_sessions", "users", column: "created_by_id"
-  add_foreign_key "assessments", "assessment_definitions"
-  add_foreign_key "assessments", "assessment_sessions", on_delete: :nullify
-  add_foreign_key "assessments", "categories"
-  add_foreign_key "assessments", "coach_profiles"
-  add_foreign_key "assessments", "player_profiles"
-  add_foreign_key "assessments", "training_sessions", on_delete: :nullify
-  add_foreign_key "assessments", "users", column: "created_by_id"
-  add_foreign_key "category_customs", "users", column: "created_by_id"
-  add_foreign_key "claim_invitations", "users", column: "invited_by_id"
-  add_foreign_key "claim_invitations", "users", column: "used_by_id"
-  add_foreign_key "coach_profiles", "accounts", column: "created_by_account_id"
-  add_foreign_key "coach_profiles", "accounts", column: "merged_by_account_id"
-  add_foreign_key "coach_profiles", "accounts", on_delete: :restrict
-  add_foreign_key "coach_profiles", "coach_profiles", column: "merged_into_profile_id"
-  add_foreign_key "coach_profiles", "users", column: "created_by_id"
-  add_foreign_key "contact_details", "accounts", on_delete: :restrict
-  add_foreign_key "criteria", "assessment_categories"
-  add_foreign_key "drill_skills", "drills"
-  add_foreign_key "drill_skills", "skills"
-  add_foreign_key "drills", "users", column: "created_by_id"
-  add_foreign_key "group_memberships", "accounts"
-  add_foreign_key "group_memberships", "groups"
-  add_foreign_key "groups", "organisations"
-  add_foreign_key "groups", "users", column: "created_by_id"
-  add_foreign_key "log_objects", "logs"
-  add_foreign_key "organisation_memberships", "accounts"
-  add_foreign_key "organisation_memberships", "organisations"
-  add_foreign_key "organisations", "accounts", column: "created_by_account_id"
-  add_foreign_key "organisations", "organisations", column: "parent_organisation_id"
-  add_foreign_key "player_claims", "accounts", column: "claimant_account_id"
-  add_foreign_key "player_claims", "accounts", column: "initiated_by_account_id"
-  add_foreign_key "player_claims", "accounts", column: "reviewed_by_account_id"
-  add_foreign_key "player_claims", "player_profiles"
-  add_foreign_key "player_coaches", "coach_profiles"
-  add_foreign_key "player_coaches", "player_profiles"
-  add_foreign_key "player_profiles", "accounts", column: "created_by_account_id"
-  add_foreign_key "player_profiles", "accounts", column: "merged_by_account_id"
-  add_foreign_key "player_profiles", "accounts", on_delete: :restrict
-  add_foreign_key "player_profiles", "player_profiles", column: "merged_into_profile_id"
-  add_foreign_key "player_profiles", "users", column: "created_by_id"
-  add_foreign_key "profile_merges", "accounts", column: "merged_by_account_id"
-  add_foreign_key "ranking_consolidation_rows", "player_profiles"
-  add_foreign_key "ranking_consolidation_rows", "ranking_consolidations"
-  add_foreign_key "ranking_consolidation_sessions", "assessment_sessions"
-  add_foreign_key "ranking_consolidation_sessions", "ranking_consolidations"
-  add_foreign_key "ranking_consolidations", "assessment_definitions"
-  add_foreign_key "ranking_consolidations", "users", column: "created_by_id"
-  add_foreign_key "ranking_consolidations", "users", column: "recalculated_by_id"
-  add_foreign_key "sessions", "users"
-  add_foreign_key "sessions", "users", column: "impersonated_user_id"
-  add_foreign_key "skills", "categories"
-  add_foreign_key "skills", "users", column: "created_by_id"
-  add_foreign_key "tournament_divisions", "tournaments"
-  add_foreign_key "tournament_participation_divisions", "tournament_divisions"
-  add_foreign_key "tournament_participation_divisions", "tournament_participations"
-  add_foreign_key "tournament_participation_divisions", "tournaments"
-  add_foreign_key "tournament_participations", "accounts"
-  add_foreign_key "tournament_participations", "tournaments"
-  add_foreign_key "tournament_watch_links", "tournaments"
-  add_foreign_key "tournaments", "accounts", column: "created_by_account_id"
-  add_foreign_key "tournaments", "organisations", on_delete: :restrict
-  add_foreign_key "training_focuses", "skills"
-  add_foreign_key "training_focuses", "training_sessions"
-  add_foreign_key "training_session_drills", "drills"
-  add_foreign_key "training_session_drills", "training_sessions"
-  add_foreign_key "training_session_participants", "player_profiles"
-  add_foreign_key "training_session_participants", "training_sessions"
-  add_foreign_key "training_sessions", "users", column: "created_by_id"
-  add_foreign_key "user_roles", "roles"
-  add_foreign_key "user_roles", "users"
-  add_foreign_key "video_categories", "users", column: "created_by_id"
-  add_foreign_key "video_references", "videos"
-  add_foreign_key "video_taggings", "video_tags"
-  add_foreign_key "video_taggings", "videos"
-  add_foreign_key "videos", "users", column: "created_by_id"
-  add_foreign_key "videos", "video_categories", on_delete: :nullify
-end

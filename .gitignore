@@ -38,3 +38,4 @@ server.log
 *beachvolleyballhub_postgresql*
 *wine-words_postgresql_*
 .env.example
+*database_backup_postgresql_*
