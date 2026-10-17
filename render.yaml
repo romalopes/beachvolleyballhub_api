@@ -67,8 +67,15 @@ services:
       - key: APP_HOST
         sync: false
       # Safety net for single-host Docker deploys where preDeployCommand was
-      # skipped/forgotten: entrypoint runs `db:prepare` (all DBs) on boot.
+      # skipped/forgotten: entrypoint runs explicit migrates (all DBs, never
+      # seeds) on boot.
       # Set to "false" if you scale to >1 instance / separate workers and rely
       # solely on preDeployCommand (avoids concurrent-migration races).
       - key: MIGRATE_ON_BOOT
         value: "true"
+      - key: BEHIND_HTTPS_PROXY
+        value: "true"
+      - key: RAILS_MAX_THREADS
+        value: "2"
+      - key: WEB_CONCURRENCY
+        value: "2"
