@@ -75,6 +75,7 @@ COPY --chown=rails:rails --from=build /rails /rails
 # containers.
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
-# Puma listens on 0.0.0.0:${PORT}; DigitalOcean's HTTP service must target 3001.
+# Puma listens on 0.0.0.0:${PORT}; Render injects PORT=10000 automatically
+# (Dockerfile default PORT=3001 is overridden at runtime).
 EXPOSE 3001
 CMD ["./bin/rails", "server"]

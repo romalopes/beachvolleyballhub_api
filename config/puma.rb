@@ -76,8 +76,8 @@
 threads_count = ENV.fetch("RAILS_MAX_THREADS", 2)
 threads threads_count, threads_count
 
-# Listen on every container interface. DigitalOcean routes traffic to PORT,
-# which defaults to the application's documented port 3001.
+# Listen on every container interface. Render injects PORT=10000 at runtime;
+# the Dockerfile default (3001) is only a local fallback.
 bind "tcp://0.0.0.0:#{ENV.fetch("PORT", 3001)}"
 
 # Allow puma to be restarted by `bin/rails restart` command.

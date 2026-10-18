@@ -7,9 +7,10 @@
 #   bundle exec rails db:migrate db:migrate:cache db:migrate:queue db:migrate:cable
 # once per deploy BEFORE new web processes start.
 #
-# Safety net: when MIGRATE_ON_BOOT=true, also run explicit migrates (all 4 DBs)
-# at container boot. This heals single-host Docker deploys where the pre-deploy
-# step was skipped or forgotten (the cause of
+# Safety net: also run explicit migrates (all 4 DBs) at container boot by
+# default in production. This heals Docker deploys where the pre-deploy step
+# was skipped or forgotten — e.g. a manual Render Dashboard service that
+# ignores render.yaml (the cause of
 # `PG::UndefinedTable: solid_cache_entries` 500s on every rate_limit endpoint,
 # e.g. POST /api/v1/sessions).
 #
@@ -20,12 +21,26 @@
 # Concurrency warning: with >1 web instance or separate worker containers,
 # concurrent boots can race on migrations. In that topology set
 # MIGRATE_ON_BOOT=false and rely SOLELY on preDeployCommand.
-if [ "${RAILS_ENV:-}" = "production" ] && [ "${MIGRATE_ON_BOOT:-}" = "true" ]; then
-  echo "MIGRATE_ON_BOOT=true: running primary + cache + queue + cable migrates..."
+
+if [ "${RAILS_ENV:-}" = "production" ] && [ "${MIGRATE_ON_BOOT:-true}" != "false" ]; then
+  echo "[docker-entrypoint] MIGRATE_ON_BOOT=${MIGRATE_ON_BOOT:-<unset, defaulting to true>}: running primary + cache + queue + cable migrates..."
+  if [ -z "${DATABASE_URL:-}" ]; then
+    echo "[docker-entrypoint] WARNING: DATABASE_URL is unset — migrations will fail. Set it in Render Dashboard -> Environment."
+  else
+    # Mask credentials, show host/db only for diagnostics.
+    echo "[docker-entrypoint] DATABASE_URL host: $(echo "$DATABASE_URL" | sed -E 's#.*@([^/?]+).*#\1#') db: $(echo "$DATABASE_URL" | sed -E 's#.*\/([^?]+).*#\1#')"
+  fi
+  echo "[docker-entrypoint] step 1/4: db:migrate"
   ./bin/rails db:migrate
+  echo "[docker-entrypoint] step 2/4: db:migrate:cache"
   ./bin/rails db:migrate:cache
+  echo "[docker-entrypoint] step 3/4: db:migrate:queue"
   ./bin/rails db:migrate:queue
+  echo "[docker-entrypoint] step 4/4: db:migrate:cable"
   ./bin/rails db:migrate:cable
+  echo "[docker-entrypoint] all migrates done."
+else
+  echo "[docker-entrypoint] skipping boot migrates (RAILS_ENV=${RAILS_ENV:-<unset>} MIGRATE_ON_BOOT=${MIGRATE_ON_BOOT:-<unset>})."
 fi
 
 exec "${@}"

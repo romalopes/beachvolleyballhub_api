@@ -10,5 +10,11 @@ set -o errexit
 #
 # Wired as `preDeployCommand` in render.yaml. Runs once per deploy BEFORE
 # new web processes start (no boot race, unlike migrate-on-boot).
+#
+# NOTE: for Docker runtimes on Render, preDeployCommand only applies to
+# Blueprint-synced services. Manual Dashboard services ignore render.yaml —
+# the bin/docker-entrypoint boot-migrate safety net covers that case.
 
+echo "[render-predeploy] running primary + cache + queue + cable migrates..."
 bundle exec rails db:migrate db:migrate:cache db:migrate:queue db:migrate:cable
+echo "[render-predeploy] done."
