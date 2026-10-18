@@ -154,8 +154,8 @@ module Api
         pool = ActiveRecord::Base.connection_pool
         {
           adapter: db_config_value(config, :adapter),
-          database: db_config_value(config, :database),
-          host: db_config_value(config, :host),
+          database: db_config_value(config, :database)[0, 20],
+          host: db_config_value(config, :host)[0, 20],
           port: db_config_value(config, :port),
           username: db_config_value(config, :username),
           encoding: db_config_value(config, :encoding),
