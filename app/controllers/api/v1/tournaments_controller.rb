@@ -22,6 +22,8 @@ module Api
           :ends_at,
           :page,
           :per_page,
+          :format,
+          tournament: {},
           organisation_ids: [],
           letter_levels: [],
           division_numbers: []
