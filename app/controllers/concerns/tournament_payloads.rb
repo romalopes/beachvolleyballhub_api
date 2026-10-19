@@ -35,6 +35,9 @@ module TournamentPayloads
       divisions: tournament.divisions.map { |d| division_payload(d) },
       participations: tournament.participations.map { |p| participation_payload(p) },
       my_participation: Current.user&.account ? participation_payload(tournament.participations.find_by(account_id: Current.user.account.id)) : nil,
+      # The watching-list bookmark: true when the current account follows the
+      # tournament, so the client can badge the card and offer unfollow.
+      my_following: Current.user&.account ? tournament.follows.exists?(account_id: Current.user.account.id) : false,
       watch_links: tournament.watch_links.map { |l| watch_link_payload(l) }
     }
   end

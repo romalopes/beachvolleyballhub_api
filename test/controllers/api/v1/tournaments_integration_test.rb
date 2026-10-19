@@ -242,4 +242,96 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal false, json["organisation"]["can_edit"]
   end
+
+  # --- follow (the watching-list bookmark) ------------------------------------
+
+  test "unauthenticated follow is rejected" do
+    post_json "/api/v1/tournaments/#{@tournament.id}/follow", {}
+
+    assert_response :unauthorized
+  end
+
+  test "following records the bookmark and is idempotent" do
+    sign_in_as(@user)
+
+    post_json "/api/v1/tournaments/#{@tournament.id}/follow", {}
+    assert_response :success
+    assert_equal true, json["my_following"]
+    assert_equal 1, TournamentFollow.where(account: @account, tournament: @tournament).count
+
+    post_json "/api/v1/tournaments/#{@tournament.id}/follow", {}
+    assert_response :success
+    assert_equal 1, TournamentFollow.where(account: @account, tournament: @tournament).count
+  end
+
+  test "unfollowing removes the bookmark and is idempotent" do
+    sign_in_as(@user)
+    TournamentFollow.create!(account: @account, tournament: @tournament)
+
+    delete_json "/api/v1/tournaments/#{@tournament.id}/follow"
+    assert_response :no_content
+    assert_nil TournamentFollow.find_by(account: @account, tournament: @tournament)
+
+    delete_json "/api/v1/tournaments/#{@tournament.id}/follow"
+    assert_response :no_content
+  end
+
+  # --- relationship filters ----------------------------------------------------
+
+  test "relationship=participating returns tournaments the caller participates in" do
+    sign_in_as(@user)
+    TournamentParticipation.create!(account: @account, tournament: @tournament, role: "player")
+
+    get "/api/v1/tournaments", params: { relationship: ["participating"] }
+
+    assert_response :success
+    assert_equal [ @tournament.id ], json["tournaments"].map { |t| t["id"] }
+  end
+
+  test "relationship=created returns tournaments the caller created" do
+    sign_in_as(@user) # @tournament was created by @account
+
+    get "/api/v1/tournaments", params: { relationship: ["created"] }
+
+    assert_response :success
+    assert_equal [ @tournament.id ], json["tournaments"].map { |t| t["id"] }
+  end
+
+  test "relationship=following returns tournaments the caller follows" do
+    sign_in_as(@user)
+    TournamentFollow.create!(account: @account, tournament: @tournament)
+
+    get "/api/v1/tournaments", params: { relationship: ["following"] }
+
+    assert_response :success
+    assert_equal [ @tournament.id ], json["tournaments"].map { |t| t["id"] }
+  end
+
+  test "relationship kinds are OR-combined" do
+    sign_in_as(@user)
+    followed = Tournament.create!(
+      name: "Followed Open",
+      organisation: @organisation,
+      created_by_account: accounts(:two),
+      scope: "club",
+      division_scheme: "letter",
+      publication_state: "active",
+      starts_at: 5.days.from_now,
+      ends_at: 6.days.from_now,
+      timezone: "UTC",
+      all_day: false
+    )
+    TournamentFollow.create!(account: @account, tournament: followed)
+
+    get "/api/v1/tournaments", params: { relationship: ["created", "following"] }
+
+    assert_response :success
+    assert_equal [ @tournament.id, followed.id ].sort, json["tournaments"].map { |t| t["id"] }.sort
+  end
+
+  test "relationship requires authentication" do
+    get "/api/v1/tournaments", params: { relationship: ["following"] }
+
+    assert_response :unauthorized
+  end
 end

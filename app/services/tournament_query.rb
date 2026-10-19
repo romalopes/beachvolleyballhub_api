@@ -10,7 +10,8 @@ class TournamentQuery
   # @option params [Array<Integer>] :division_numbers division numbers
   # @option params [String] :location text search across location_name, city, state, country
   # @option params [String] :temporal_status one of 'upcoming', 'ongoing', 'completed'
-  # @option params [Boolean] :mine when true, only tournaments where current account participates
+  # @option params [Boolean] :mine when true, only tournaments where current account participates (legacy "participating")
+  # @option params [Array<String>] :relationship tie kinds to filter by ('created', 'participating', 'following'), OR-combined
   # @option params [String] :publication_state publication state (draft, active, cancelled, archived)
   # @option params [String] :starts_at start of date range for overlap (UTC timestamp string)
   # @option params [String] :ends_at end of date range for overlap (UTC timestamp string)
@@ -90,6 +91,8 @@ class TournamentQuery
     end
 
     # Mine filter: tournaments where the given account has a participation.
+    # Legacy spelling of the "participating" relationship — kept so existing
+    # callers and bookmarked URLs keep working.
     if params[:mine].present? && params[:mine] == true
       # Expect account_id to be passed in params when mine is true
       if params[:account_id].present?
@@ -99,6 +102,33 @@ class TournamentQuery
       else
         # If no account_id provided, return none
         relation = relation.none
+      end
+    end
+
+    # Relationship filter: the kinds of tie between the caller and a tournament
+    # — created, participating, or following. Several kinds may be requested at
+    # once and are OR-combined (asking for "created" and "following" shows the
+    # union, not the intersection). A subquery wraps the union so it ANDs
+    # cleanly with the other filters above.
+    if params[:relationship].present? && params[:relationship].is_a?(Array)
+      kinds = params[:relationship].map(&:to_s) & %w[created participating following]
+      account_id = params[:account_id]
+
+      if kinds.empty? || account_id.blank?
+        relation = relation.none
+      else
+        union = kinds.map do |kind|
+          case kind
+          when 'created'
+            Tournament.where(created_by_account_id: account_id)
+          when 'participating'
+            Tournament.where(id: TournamentParticipation.where(account_id: account_id).select(:tournament_id))
+          when 'following'
+            Tournament.where(id: TournamentFollow.where(account_id: account_id).select(:tournament_id))
+          end
+        end.reduce { |combined, scope| combined.or(scope) }
+
+        relation = relation.where(id: union.select(:id))
       end
     end
 

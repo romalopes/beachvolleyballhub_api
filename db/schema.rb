@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_19_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -627,6 +627,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
     t.check_constraint "letter_level IS NULL OR (letter_level::text = ANY (ARRAY['B'::character varying, 'BB'::character varying, 'BBB'::character varying, 'A'::character varying, 'AA'::character varying, 'AAA'::character varying, 'AAAA'::character varying]::text[]))", name: "valid_letter_level"
   end
 
+  create_table "tournament_follows", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "tournament_id"], name: "index_tournament_follows_on_account_id_and_tournament_id", unique: true
+    t.index ["account_id"], name: "index_tournament_follows_on_account_id"
+    t.index ["tournament_id"], name: "index_tournament_follows_on_tournament_id"
+  end
+
   create_table "tournament_participation_divisions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "tournament_division_id", null: false
@@ -923,6 +933,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000003) do
   add_foreign_key "skills", "categories"
   add_foreign_key "skills", "users", column: "created_by_id"
   add_foreign_key "tournament_divisions", "tournaments"
+  add_foreign_key "tournament_follows", "accounts"
+  add_foreign_key "tournament_follows", "tournaments"
   add_foreign_key "tournament_participation_divisions", "tournament_divisions"
   add_foreign_key "tournament_participation_divisions", "tournament_participations"
   add_foreign_key "tournament_participation_divisions", "tournaments"

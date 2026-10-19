@@ -4,6 +4,8 @@ class Tournament < ApplicationRecord
   has_many :divisions, class_name: 'TournamentDivision', dependent: :destroy
   has_many :participations, class_name: 'TournamentParticipation', dependent: :destroy
   has_many :watch_links, class_name: 'TournamentWatchLink', dependent: :destroy
+  # The watching-list bookmarks. Thin on purpose — see TournamentFollow.
+  has_many :follows, class_name: 'TournamentFollow', dependent: :destroy
 
   # The DB columns are strings guarded by CHECK constraints (valid_scope /
   # valid_publication_state), so the enum VALUES must be the labels themselves.

@@ -11,6 +11,7 @@ class Account < ApplicationRecord
   has_many :group_memberships, dependent: :restrict_with_error
   has_many :organisations, through: :organisation_memberships
   has_many :groups, through: :group_memberships
+  has_many :tournament_follows, dependent: :destroy
 
   accepts_nested_attributes_for :account_address, reject_if: :all_blank
 

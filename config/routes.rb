@@ -115,6 +115,8 @@ Rails.application.routes.draw do
           post :restore
           post :participate
           delete :participate, to: "tournaments#destroy_participation"
+          post :follow
+          delete :follow, to: "tournaments#unfollow"
         end
         collection do
           get :options
