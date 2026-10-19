@@ -9,7 +9,9 @@ require "test_helper"
 #   * re-submitting updates the single Account/tournament row rather than adding;
 #   * unlinking is idempotent and allowed even after the event ends;
 #   * `mine=1` scopes the directory to the caller's participations;
-#   * detail is public and never leaks a participation for a guest.
+#   * detail is public and never leaks a participation for a guest;
+#   * detail stamps `organisation.can_edit` with the same authority the
+#     create/update actions enforce, so the client renders controls from it.
 class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @organisation = organisations(:sydney_club)
@@ -210,5 +212,34 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :forbidden
     assert_equal "active", @tournament.reload.publication_state
+  end
+
+  # --- payload permission flag ------------------------------------------------
+
+  test "detail stamps can_edit for the organisation's owner" do
+    sign_in_as(accounts(:two).user)
+
+    get "/api/v1/tournaments/#{@tournament.id}"
+
+    assert_response :success
+    assert_equal true, json["organisation"]["can_edit"]
+  end
+
+  test "detail stamps can_edit for the account that created the tournament" do
+    sign_in_as(@user)
+
+    get "/api/v1/tournaments/#{@tournament.id}"
+
+    assert_response :success
+    assert_equal true, json["organisation"]["can_edit"]
+  end
+
+  test "detail denies can_edit to an unrelated signed-in account" do
+    sign_in_as(accounts(:three).user)
+
+    get "/api/v1/tournaments/#{@tournament.id}"
+
+    assert_response :success
+    assert_equal false, json["organisation"]["can_edit"]
   end
 end

@@ -12,7 +12,11 @@ module TournamentPayloads
       organisation: {
         id: tournament.organisation.id,
         name: tournament.organisation.name,
-        acronym: tournament.organisation.acronym
+        acronym: tournament.organisation.acronym,
+        # The same judgement the create/update actions enforce, stamped per
+        # record so the client can decide which controls to render. A stale
+        # true only earns a 403 on the next request.
+        can_edit: tournament_can_edit?(tournament)
       },
       scope: tournament.scope,
       division_scheme: tournament.division_scheme,
@@ -33,6 +37,17 @@ module TournamentPayloads
       my_participation: Current.user&.account ? participation_payload(tournament.participations.find_by(account_id: Current.user.account.id)) : nil,
       watch_links: tournament.watch_links.map { |l| watch_link_payload(l) }
     }
+  end
+
+  # Mirrors the authority the create/update actions enforce: real-admin
+  # oversight, or owner/administrator (or creator) standing on the organisation.
+  # Stamped per record so the client can decide which controls to render; a
+  # stale true only earns a 403 on the next request.
+  def tournament_can_edit?(tournament)
+    return false unless Current.user
+
+    Current.real_user&.admin? ||
+      OrganisationAccess.edits_record_by_membership?(tournament.organisation, Current.user.account)
   end
 
   def division_payload(division)
