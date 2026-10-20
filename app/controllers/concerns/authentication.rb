@@ -64,15 +64,27 @@ module Authentication
         Current.session = session
         cookies.signed.permanent[:session_id] = { value: session.id, httponly: true, same_site: :lax }
       end
+
+      # Security notification after a successful login. Captured at
+      # authentication time from request metadata; only on success — failed
+      # logins return before this point.
+      LoginNotificationService.notify(user, request: request)
     end
 
     def start_api_session_for(user)
-      user.sessions.create!(
+      session = user.sessions.create!(
         user_agent: request.user_agent,
         ip_address: request.remote_ip,
         api_token: SecureRandom.hex(32),
         api_token_expires_at: 30.days.from_now
       )
+
+      # Security notification after a successful API login. Captured at
+      # authentication time from request metadata; only on success — failed
+      # logins return before this point.
+      LoginNotificationService.notify(user, request: request)
+
+      session
     end
 
     def terminate_session

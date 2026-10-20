@@ -39,9 +39,11 @@ class AppSetting < ApplicationRecord
   end
 
   # Test-mode toggle: when true, every saved audit log triggers an email
-  # notification to AppSetting.test_email.
+  # notification to AppSetting.test_email. Reads the "test" key (the toggle
+  # admins flip on the Configuration page); "use_test_email" is not a setting
+  # key and was a lookup bug that raised KeyError when no row existed.
   def self.use_test_email?
-    boolean("use_test_email")
+    boolean("test")
   end
 
   # Recipient address for test-mode email notifications.

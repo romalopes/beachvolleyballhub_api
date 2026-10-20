@@ -13,7 +13,7 @@ class Api::V1::Admin::ConfigurationsControllerTest < ActionDispatch::Integration
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal true, body["logs_saved_to_database"]
-    assert_equal false, body["test"]
+    assert_equal false, body["use_test_email"]
     assert_equal "romalopes@yahoo.com.br", body["test_email"]
   end
 
@@ -24,7 +24,7 @@ class Api::V1::Admin::ConfigurationsControllerTest < ActionDispatch::Integration
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal false, body["logs_saved_to_database"]
-    assert_equal true, body["test"]
+    assert_equal true, body["use_test_email"]
     assert_equal "qa@example.com", body["test_email"]
     assert_equal false, AppSetting.logs_enabled?
     assert_equal true, AppSetting.use_test_email?
@@ -37,7 +37,7 @@ class Api::V1::Admin::ConfigurationsControllerTest < ActionDispatch::Integration
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal true, body["logs_saved_to_database"]
-    assert_equal true, body["test"]
+    assert_equal true, body["use_test_email"]
     assert_equal "romalopes@yahoo.com.br", body["test_email"]
   end
 
