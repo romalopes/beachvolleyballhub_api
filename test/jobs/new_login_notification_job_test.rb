@@ -29,7 +29,8 @@ class NewLoginNotificationJobTest < ActiveSupport::TestCase
       mobile: false
     ).serializable_hash
 
-    # Use the test queue adapter so jobs are stored, not actually run.
+    # Use the test queue adapter to prove this job does not enqueue a second
+    # ActionMailer::MailDeliveryJob.
     ActiveJob::Base.queue_adapter = :test
   end
 
@@ -41,17 +42,17 @@ class NewLoginNotificationJobTest < ActiveSupport::TestCase
   test "delivers the new login email to the user" do
     assert_difference -> { ActionMailer::Base.deliveries.size }, 1 do
       NewLoginNotificationJob.perform_now(@user.id, @details_hash)
-      drain_active_job_queue
     end
 
+    assert_empty ActiveJob::Base.queue_adapter.enqueued_jobs
+
     mail = ActionMailer::Base.deliveries.last
-    assert_equal [@user.email_address], mail.to
+    assert_equal [ @user.email_address ], mail.to
     assert_includes mail.subject, "New sign-in"
   end
 
   test "email body contains ip, browser, os, device and sign-in method" do
     NewLoginNotificationJob.perform_now(@user.id, @details_hash)
-    drain_active_job_queue
 
     mail = ActionMailer::Base.deliveries.last
     body = mail.text_part&.body.to_s + mail.html_part&.body.to_s
@@ -66,28 +67,18 @@ class NewLoginNotificationJobTest < ActiveSupport::TestCase
   test "does nothing when the user is missing" do
     assert_no_difference -> { ActionMailer::Base.deliveries.size } do
       NewLoginNotificationJob.perform_now(-1, @details_hash)
-      drain_active_job_queue
     end
   end
 
   test "passes a plain-JSON-serialisable hash through ActiveJob arguments" do
     assert_nothing_raised do
-      ActiveJob::Arguments.serialize([@user.id, @details_hash])
+      ActiveJob::Arguments.serialize([ @user.id, @details_hash ])
     end
   end
 
   test "does not deliver when details_hash is blank" do
     assert_no_difference -> { ActionMailer::Base.deliveries.size } do
       NewLoginNotificationJob.perform_now(@user.id, {})
-      drain_active_job_queue
-    end
-  end
-
-  private
-
-  def drain_active_job_queue
-    while (job = ActiveJob::Base.queue_adapter.enqueued_jobs.shift)
-      ActiveJob::Base.execute(job)
     end
   end
 end

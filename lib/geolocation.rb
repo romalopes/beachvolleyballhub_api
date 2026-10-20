@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "json"
+require "net/http"
+require "uri"
 
 # Resolves an IP address to a coarse location using the ip2location.io API.
 #
@@ -55,6 +57,12 @@ class Geolocation
   rescue StandardError => e
     Rails.logger.warn("[geolocation] lookup failed for #{@ip}: #{e.class}")
     nil
+  end
+
+  private
+
+  def api_key
+    self.class.send(:api_key)
   end
 
   class << self

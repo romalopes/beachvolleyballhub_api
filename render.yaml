@@ -25,3 +25,57 @@ services:
         sync: false
       - key: MIGRATE_ON_BOOT
         value: "true"
+
+  # Solid Queue does not run in the Puma process. This continuously running
+  # worker consumes every queue configured in config/queue.yml, including the
+  # `background` queue used by login notifications and Rails' mailer queues.
+  - type: worker
+    name: bvb-api-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: ./bin/jobs
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: SECRET_KEY_BASE
+        sync: false
+      - key: JOB_CONCURRENCY
+        value: "1"
+      # Migrations run once in the web service's pre-deploy command. Avoid a
+      # web/worker boot race in bin/docker-entrypoint.
+      - key: MIGRATE_ON_BOOT
+        value: "false"
+      - key: FRONTEND_URL
+        sync: false
+      - key: APP_HOST
+        sync: false
+      - key: MAIL_TRANSPORT
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_REPLY_TO
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SMTP_ADDRESS
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_DOMAIN
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_AUTHENTICATION
+        sync: false
+      - key: SMTP_ENABLE_STARTTLS
+        sync: false
+      - key: IP2LOCATION_API_KEY
+        sync: false

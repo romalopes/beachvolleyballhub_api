@@ -3,8 +3,9 @@
 # Enqueued after every successful login (email/password).
 #
 # Receives the user's id and the serialisable `LoginDetails` hash so nothing
-# from the original request survives into the background job. The mailer is
-# delivered via `deliver_later` so the actual SMTP/API call is itself queued.
+# from the original request survives into the background job. The email is
+# delivered inside this job so delivery failures use this job's retry policy
+# instead of depending on a second queued MailDeliveryJob.
 #
 # Failures are logged and retried — they must never bubble back into the
 # login response.
@@ -21,10 +22,8 @@ class NewLoginNotificationJob < ApplicationJob
     return if details_hash.blank?
 
     # The plain hash — not the LoginDetails object — is what crosses the job
-    # boundary: only plain-JSON types are Active Job-serializable, and that
-    # includes the mailer's arguments when `deliver_later` wraps them in
-    # MailDeliveryJob. The mailer rehydrates its own LoginDetails.
-    SecurityMailer.new_login_email(user, details_hash).deliver_later
+    # boundary. The mailer rehydrates its own LoginDetails before delivery.
+    SecurityMailer.new_login_email(user, details_hash).deliver_now
   rescue StandardError => e
     Rails.logger.error(
       "[security] new-login notification failed for user #{user_id}: #{e.class}: #{e.message}"

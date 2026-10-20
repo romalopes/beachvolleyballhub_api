@@ -182,8 +182,14 @@ The build script installs gems, precompiles assets and runs primary/cache/queue/
 Create a **Background Worker** from the same API revision, with the same production database, Rails key, email and storage configuration:
 
 - Build command: `bundle install` (web-service deployment performs migrations first).
-- Start command: `bundle exec ruby bin/jobs`.
+- Docker command: `./bin/jobs` (or start command `bundle exec ruby bin/jobs`
+  for Render's native Ruby runtime).
 - Set `JOB_CONCURRENCY=1` initially.
+- Set `MIGRATE_ON_BOOT=false`; the web service pre-deploy command owns
+  migrations, preventing web/worker boot races.
+- Copy the web service's `DATABASE_URL`, `RAILS_MASTER_KEY`, and mail transport
+  variables to the worker. Both processes must use the same production queue
+  database.
 
 Production uses Solid Queue. Without its worker, queued password-reset and claim-decision emails will not be processed. No Redis service is required by the current configuration. See [Render's Rails deployment guide](https://render.com/docs/deploy-rails-8).
 
