@@ -326,6 +326,27 @@ class Api::V1::GroupsControllerTest < ActionDispatch::IntegrationTest
 
   # --- the group's organisation ---------------------------------------------
 
+  test "create with an accountless profile memberable rosters the profile" do
+    sign_in_as(@owner)
+    profile = PlayerProfile.create!(display_name: "Unclaimed Prospect")
+    OrganisationMembership.create!(
+      organisation: organisations(:sydney_club), memberable: profile,
+      role: "member", status: "active"
+    )
+
+    assert_difference "GroupMembership.count", 2 do
+      post_json api_v1_groups_path, {
+        group: { name: "Prospect squad", organisation_id: organisations(:sydney_club).id },
+        memberables: [ { type: "PlayerProfile", id: profile.id } ]
+      }
+    end
+
+    assert_response :created
+    membership = GroupMembership.find_by!(group: Group.find_by!(name: "Prospect squad"), memberable: profile)
+    assert_equal "active", membership.status
+    assert_nil membership.account_id
+  end
+
   test "a member creates a group for an organisation they are actually in" do
     # @owner is an active member (owner) of Sydney Beach Volleyball Club.
     sign_in_as(@owner)

@@ -86,6 +86,7 @@ module Api
             account: account, role: "owner", status: "active", joined_at: Time.current
           )
           assign_account_ids(Array(params[:account_ids])) if params[:account_ids].present?
+          assign_memberables(Array(params[:memberables])) if params[:memberables].present?
         end
         render json: { group: serialize_detail(@group.reload) }, status: :created
       rescue ActiveRecord::RecordInvalid => e
@@ -103,7 +104,8 @@ module Api
           }, status: :forbidden
         end
 
-        if params.key?(:account_ids)
+        roster_present = params.key?(:account_ids) || params.key?(:memberables)
+        if roster_present
           # Checked against the organisation this request *would* leave the group in,
           # and against the roster it *would* leave — a group being moved and
           # re-rostered together has to be judged as a whole, or the order of two
@@ -112,11 +114,14 @@ module Api
           @group.group_memberships.owners.each do |membership|
             proposed_accounts << membership.account_id if membership.account_id
           end
+          proposed_memberables = params.key?(:memberables) ? resolve_memberables(Array(params[:memberables])) : []
+          return if performed?
           target_organisation = params.dig(:group, :organisation_id).presence ||
                                 @group.organisation_id
 
           unless @group.shares_organisation?([], target_organisation,
-                                             account_ids: proposed_accounts.uniq)
+                                             account_ids: proposed_accounts.uniq,
+                                             memberables: proposed_memberables)
             return render json: {
               errors: [ "The roster must contain only active members of this group's organisation." ]
             }, status: :unprocessable_entity
@@ -124,7 +129,7 @@ module Api
         end
 
         if @group.update(group_params)
-          sync_account_ids(Array(params[:account_ids])) if params.key?(:account_ids)
+          sync_roster(Array(params[:account_ids]), Array(params[:memberables])) if roster_present
 
           render json: { group: serialize_detail(@group.reload) }
         else
@@ -555,6 +560,64 @@ module Api
         @group.group_memberships.active.where.not(account_id: nil).where.not(account_id: valid_ids.to_a)
               .find_each { |membership| membership.end_membership! }
         assign_account_ids(valid_ids.to_a)
+      end
+
+      # Full roster sync across both subject kinds: account rows plus
+      # accountless profile rows. Owners are always kept, whatever the caller
+      # sent. Profile rows not in the target list are ended, matching accounts.
+      def sync_roster(account_ids, memberables_params)
+        memberables = resolve_memberables(Array(memberables_params))
+        return if performed?
+
+        sync_account_ids(Array(account_ids))
+        return if performed?
+
+        targets = memberables.map { |m| [ m.class.name, m.id ] }.to_set
+        @group.group_memberships.active
+              .where(memberable_type: %w[PlayerProfile CoachProfile])
+              .where(account_id: nil)
+              .find_each do |membership|
+          unless targets.include?([ membership.memberable_type, membership.memberable_id ])
+            membership.end_membership!
+          end
+        end
+        assign_memberables(Array(memberables_params))
+      end
+
+      # Resolve `[{type, id}]` memberable payloads, rendering 422/404 on the
+      # first bad entry so a typo cannot silently add nobody.
+      def resolve_memberables(entries)
+        entries.filter_map do |entry|
+          type = entry[:type].presence || entry["type"].presence
+          id = entry[:id].presence || entry["id"].presence
+          unless %w[PlayerProfile CoachProfile].include?(type) && id.present?
+            render json: { errors: [ "Choose a PlayerProfile or CoachProfile member." ] },
+                   status: :unprocessable_entity
+            return nil
+          end
+          member = type.safe_constantize&.find_by(id: id)
+          if member.nil?
+            render json: { errors: [ "#{type.underscore.humanize} not found" ] }, status: :not_found
+            return nil
+          end
+          member
+        end
+      end
+
+      # Adds accountless profile subjects, re-activating ended rows rather than
+      # inserting duplicates (same rule `assign_account_ids` follows).
+      def assign_memberables(entries)
+        added = 0
+        Array(entries).each do |entry|
+          type = entry[:type].presence || entry["type"].presence
+          id = (entry[:id].presence || entry["id"].presence)&.to_i
+          next unless %w[PlayerProfile CoachProfile].include?(type) && id.present?
+
+          member = type.safe_constantize&.find_by(id: id)
+          next if member.nil?
+          added += 1 if assign_memberable(member)
+        end
+        added
       end
 
       # Resolve a profile subject (PlayerProfile/CoachProfile) from

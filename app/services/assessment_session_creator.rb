@@ -38,9 +38,10 @@ class AssessmentSessionCreator
   # attendance). Players already on the roster are skipped rather than raising,
   # so an overlapping group cannot block creation.
   #
-  # Roster membership is a Person and the roster rows are still PlayerProfile-keyed,
-  # so a member with no player profile has nothing to seed. They are skipped rather
-  # than created on the fly: a Participant row is a coach's record of a person
+  # Roster rows are polymorphic (Account vs accountless PlayerProfile/CoachProfile).
+  # An account-keyed member seeds through their first player profile; a member
+  # with no player profile has nothing to seed and is skipped rather than
+  # created on the fly: a Participant row is a coach's record of a person
   # assessed, and inventing a player profile to satisfy a roster would fabricate
   # exactly that. Only *active* memberships seed — somebody who left the squad is
   # not somebody being assessed.
@@ -48,12 +49,25 @@ class AssessmentSessionCreator
     return if session_record.group.nil?
 
     existing = session_record.participants.map(&:player_profile_id).to_set
-    session_record.group.group_memberships.active.includes(account: :player_profiles).each do |membership|
-      profile = membership.account.player_profiles.first
+    session_record.group.group_memberships.active.includes(:account, :memberable).each do |membership|
+      profile = profile_for_membership(membership)
       next if profile.nil?
       next if existing.include?(profile.id)
 
       session_record.participants.create!(player_profile: profile, inclusion: "included")
     end
+  end
+
+  # Resolve the player profile a group roster row seeds. Account rows seed
+  # through the account's first player profile; profile rows seed themselves
+  # when they are a PlayerProfile (a CoachProfile on a group roster has no
+  # player to assess). Anything else has nothing to seed.
+  def profile_for_membership(membership)
+    subject = membership.memberable
+    return subject if subject.is_a?(PlayerProfile)
+    return nil if subject.is_a?(CoachProfile)
+
+    account = membership.account || subject
+    account.respond_to?(:player_profiles) ? account.player_profiles.first : nil
   end
 end

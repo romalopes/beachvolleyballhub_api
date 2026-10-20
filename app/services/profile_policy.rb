@@ -26,7 +26,7 @@ class ProfilePolicy
     return false unless @profile && @actor
     return true if linked_account?(@profile)
     return true if admin? || curator?
-    return true if coach? && ProfileOwnership.created_by?(@profile, @actor)
+    return true if ProfileOwnership.created_by?(@profile, @actor)
     return true if @profile.visibility == "shared" && training_manager?
     return true if player_peer_access?
 
@@ -34,9 +34,8 @@ class ProfilePolicy
   end
 
   def update?
-    return false unless @profile
-    return true if admin?
-    coach? && view?
+    return false unless @profile && @actor
+    admin? || curator? || ProfileOwnership.created_by?(@profile, @actor)
   end
 
   def can_view_collection?
@@ -70,7 +69,7 @@ class ProfilePolicy
   end
 
   def destroy?
-    admin?
+    update?
   end
 
   def self.scope(relation, actor:)
