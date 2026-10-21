@@ -17,7 +17,7 @@ class TrainingSessionParticipant < ApplicationRecord
 
   scope :ordered, -> { order(:id) }
 
-    # Display helpers for the API payload.
+  # Display helpers for the API payload.
   def player_name
     player_profile&.full_name
   end

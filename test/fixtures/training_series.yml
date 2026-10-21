@@ -1,0 +1,46 @@
+# Recurrence definitions. The fixture dates are fixed so expansion tests can
+# assert exact occurrences without depending on the current date.
+
+monday_series:
+  training_template: monday_skills
+  organisation: sydney_club
+  created_by: three
+  frequency: weekly
+  interval: 1
+  weekdays: [mon, wed]
+  starts_on: 2026-11-02
+  ends_on: 2026-11-29
+  local_start_time: "07:00"
+  duration_minutes: 90
+  time_zone: Australia/Sydney
+  status: active
+  defaults_snapshot: { "title": "Monday Skills", "location": "Coogee Beach", "duration_minutes": 90, "visibility": "shared" }
+
+private_series:
+  training_template: private_lesson
+  created_by: three
+  frequency: weekly
+  interval: 1
+  weekdays: [wed]
+  starts_on: 2026-11-04
+  ends_on: 2026-12-16
+  local_start_time: "18:30"
+  duration_minutes: 60
+  time_zone: UTC
+  status: active
+  defaults_snapshot: { "title": "Private Setting Lesson", "visibility": "private" }
+
+stopped_series:
+  training_template: archived_template
+  created_by: three
+  frequency: weekly
+  interval: 1
+  weekdays: [fri]
+  starts_on: 2026-10-02
+  ends_on: 2026-10-30
+  local_start_time: "17:00"
+  duration_minutes: 45
+  time_zone: Australia/Sydney
+  status: stopped
+  stopped_at: 2026-10-20 00:00:00
+  defaults_snapshot: { "title": "Retired Fitness Block" }

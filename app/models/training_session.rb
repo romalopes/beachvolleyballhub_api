@@ -32,6 +32,17 @@ class TrainingSession < ApplicationRecord
 
   belongs_to :created_by, class_name: "User", optional: true
 
+  # Recurring training links. All are optional: one-off sessions (including
+  # every session created before this feature) have no series or template.
+  belongs_to :training_series, optional: true, inverse_of: :training_sessions
+  belongs_to :training_template, optional: true
+  # Schedule metadata copied from the series defaults. These are not an
+  # authorization boundary — training management stays role-based.
+  belongs_to :organisation, optional: true
+  belongs_to :group, optional: true
+  belongs_to :coach_profile, optional: true
+  belongs_to :cancelled_by, class_name: "User", optional: true
+
   has_many :training_focuses, -> { order(:position, :id) },
            dependent: :destroy, inverse_of: :training_session
   has_many :training_session_drills, -> { order(:position, :id) },
@@ -63,7 +74,14 @@ class TrainingSession < ApplicationRecord
   validates :ends_at, presence: true
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :visibility, presence: true, inclusion: { in: VISIBILITIES }
+  validates :recurrence_key, presence: true, if: :series_occurrence?
+  # The partial unique index in the database is the real guard against a
+  # double-generation race; this validation is what turns the collision into a
+  # readable error instead of a 500.
+  validates :recurrence_key, uniqueness: { scope: :training_series_id }, allow_nil: true
+  validates :capacity, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :ends_at_after_starts_at
+  validate :series_template_is_consistent
 
   scope :ordered, -> { order(:starts_at, :id) }
   # Calendar support: only load the window being displayed.
@@ -107,6 +125,49 @@ class TrainingSession < ApplicationRecord
   def self.participating_scope_for(player_profile)
     joins(:training_session_participants)
       .where(training_session_participants: { player_profile_id: player_profile.id })
+  end
+
+  # Occurrences generated from a series, and the upcoming slice used by the
+  # dashboard/eligibility helpers.
+  scope :for_series, ->(series) {
+    where(training_series_id: series.is_a?(TrainingSeries) ? series.id : series)
+  }
+  scope :starting_from, ->(time) { where(starts_at: time..) }
+  scope :scheduled, -> { where(status: "scheduled") }
+
+  def series_occurrence?
+    training_series_id.present?
+  end
+
+  # True once an occurrence has diverged from its series defaults. The keys are
+  # field names (e.g. "title", "coach_profile_id").
+  def overridden?
+    override_fields.present?
+  end
+
+  def overridden_field?(field)
+    override_fields.key?(field.to_s)
+  end
+
+  def cancellable?
+    draft? || scheduled?
+  end
+
+  # Deletion is deliberately narrower than cancellation: only a draft that has
+  # never accumulated participants or assessments can disappear.
+  def deletable_occurrence?
+    draft? && training_session_participants.none? && assessments.none?
+  end
+
+  # Cancellation keeps the row (and its recurrence_key) as a tombstone so a
+  # later generation run cannot resurrect it.
+  def mark_cancelled!(reason:, actor: nil)
+    update!(
+      status: "cancelled",
+      cancellation_reason: reason,
+      cancelled_at: Time.current,
+      cancelled_by: actor
+    )
   end
 
   def draft?
@@ -172,5 +233,12 @@ class TrainingSession < ApplicationRecord
     return if ends_at > starts_at
 
     errors.add(:ends_at, "must be after the start time")
+  end
+
+  def series_template_is_consistent
+    return if training_series.blank? || training_template_id.blank?
+    return if training_series.training_template_id == training_template_id
+
+    errors.add(:training_template, "must match the series' template")
   end
 end

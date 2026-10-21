@@ -305,6 +305,32 @@ Rails.application.routes.draw do
 
       resources :training_sessions
 
+      # Recurring training (IDENTITY-184). Templates are archived rather than
+      # deleted, so no destroy route is exposed. Series generation happens on
+      # create; bulk operations are added as later phases land.
+      resources :training_templates, only: %i[index show create update] do
+        member do
+          post :archive
+          post :restore
+          post :clone
+        end
+      end
+
+      resources :training_series, only: %i[index show create] do
+        collection do
+          post :preview
+        end
+        member do
+          get :sessions
+          post :bulk_cancel
+          post :bulk_delete
+          post :stop
+          post :cancel_future
+          post :update_future
+          post :split
+        end
+      end
+
       # Admin role management
       namespace :admin do
         resources :users, only: [ :index, :show, :destroy ] do

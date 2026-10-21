@@ -1,0 +1,36 @@
+# Reusable training definitions. `created_by` is audit only, exactly like
+# TrainingSession: management stays role-based.
+
+monday_skills:
+  name: Monday Skills
+  description: Serve reception and side-out work.
+  organisation: sydney_club
+  group: sydney_club_squad
+  coach_profile: maria_coach
+  location: Coogee Beach
+  location_detail: Court 1
+  level: intermediate
+  capacity: 12
+  duration_minutes: 90
+  visibility: shared
+  status: active
+  created_by: three
+
+private_lesson:
+  name: Private Setting Lesson
+  description: One-on-one setting refinement.
+  coach_profile: maria_coach
+  location: Maroubra Beach
+  level: advanced
+  capacity: 1
+  duration_minutes: 60
+  visibility: private
+  status: active
+  created_by: three
+
+archived_template:
+  name: Retired Fitness Block
+  duration_minutes: 45
+  visibility: shared
+  status: archived
+  created_by: three

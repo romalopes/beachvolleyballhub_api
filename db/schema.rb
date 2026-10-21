@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_19_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_21_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -720,6 +720,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000001) do
     t.check_constraint "skill_id IS NOT NULL AND custom_focus IS NULL OR skill_id IS NULL AND custom_focus IS NOT NULL", name: "training_focuses_skill_xor_custom_focus"
   end
 
+  create_table "training_series", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.jsonb "defaults_snapshot", default: {}, null: false
+    t.integer "duration_minutes", null: false
+    t.date "ends_on", null: false
+    t.string "frequency", default: "weekly", null: false
+    t.date "generated_through"
+    t.integer "interval", default: 1, null: false
+    t.datetime "last_generated_at"
+    t.time "local_start_time", null: false
+    t.bigint "organisation_id"
+    t.date "starts_on", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "stopped_at"
+    t.text "stopped_reason"
+    t.string "time_zone", default: "Australia/Sydney", null: false
+    t.bigint "training_template_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "weekdays", default: [], null: false, array: true
+    t.index ["created_by_id"], name: "index_training_series_on_created_by_id"
+    t.index ["organisation_id"], name: "index_training_series_on_organisation_id"
+    t.index ["starts_on"], name: "index_training_series_on_starts_on"
+    t.index ["status"], name: "index_training_series_on_status"
+    t.index ["training_template_id", "status"], name: "index_training_series_on_training_template_id_and_status"
+    t.index ["training_template_id"], name: "index_training_series_on_training_template_id"
+    t.check_constraint "\"interval\" >= 1", name: "training_series_interval_positive"
+    t.check_constraint "array_length(weekdays, 1) >= 1", name: "training_series_weekdays_present"
+    t.check_constraint "duration_minutes > 0", name: "training_series_duration_positive"
+    t.check_constraint "ends_on >= starts_on", name: "training_series_ends_on_after_starts_on"
+    t.check_constraint "frequency::text = 'weekly'::text", name: "training_series_frequency"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'stopped'::character varying]::text[])", name: "training_series_status"
+    t.check_constraint "weekdays <@ ARRAY['mon'::character varying, 'tue'::character varying, 'wed'::character varying, 'thu'::character varying, 'fri'::character varying, 'sat'::character varying, 'sun'::character varying]", name: "training_series_weekdays_valid"
+  end
+
   create_table "training_session_drills", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "drill_id", null: false
@@ -737,6 +772,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000001) do
   end
 
   create_table "training_session_participants", force: :cascade do |t|
+    t.datetime "cancellation_notified_at"
     t.datetime "created_at", null: false
     t.text "notes"
     t.bigint "player_profile_id", null: false
@@ -750,22 +786,74 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000001) do
   end
 
   create_table "training_sessions", force: :cascade do |t|
+    t.text "cancellation_reason"
+    t.datetime "cancelled_at"
+    t.bigint "cancelled_by_id"
+    t.integer "capacity"
+    t.bigint "coach_profile_id"
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.text "description"
     t.datetime "ends_at", null: false
+    t.bigint "group_id"
+    t.string "level"
     t.string "location"
+    t.string "location_detail"
+    t.bigint "organisation_id"
+    t.datetime "original_starts_at"
+    t.jsonb "override_fields", default: {}, null: false
+    t.string "recurrence_key"
     t.datetime "starts_at", null: false
     t.string "status", default: "draft", null: false
     t.string "title", null: false
+    t.bigint "training_series_id"
+    t.bigint "training_template_id"
     t.datetime "updated_at", null: false
     t.string "visibility", default: "shared", null: false
+    t.index ["cancelled_by_id"], name: "index_training_sessions_on_cancelled_by_id"
+    t.index ["coach_profile_id"], name: "index_training_sessions_on_coach_profile_id"
     t.index ["created_by_id"], name: "index_training_sessions_on_created_by_id"
+    t.index ["group_id"], name: "index_training_sessions_on_group_id"
+    t.index ["organisation_id"], name: "index_training_sessions_on_organisation_id"
     t.index ["starts_at"], name: "index_training_sessions_on_starts_at"
     t.index ["status"], name: "index_training_sessions_on_status"
+    t.index ["training_series_id", "recurrence_key"], name: "index_training_sessions_on_series_and_recurrence_key", unique: true, where: "((training_series_id IS NOT NULL) AND (recurrence_key IS NOT NULL))"
+    t.index ["training_series_id", "starts_at"], name: "index_training_sessions_on_series_and_starts_at"
+    t.index ["training_series_id"], name: "index_training_sessions_on_training_series_id"
+    t.index ["training_template_id"], name: "index_training_sessions_on_training_template_id"
     t.index ["visibility"], name: "index_training_sessions_on_visibility"
+    t.check_constraint "capacity IS NULL OR capacity > 0", name: "training_sessions_capacity_positive"
     t.check_constraint "ends_at > starts_at", name: "training_sessions_ends_at_after_starts_at"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'scheduled'::character varying::text, 'cancelled'::character varying::text, 'completed'::character varying::text])", name: "training_sessions_status"
+    t.check_constraint "training_series_id IS NULL OR recurrence_key IS NOT NULL", name: "training_sessions_series_requires_recurrence_key"
+  end
+
+  create_table "training_templates", force: :cascade do |t|
+    t.integer "capacity"
+    t.bigint "coach_profile_id"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.text "description"
+    t.integer "duration_minutes", default: 90, null: false
+    t.bigint "group_id"
+    t.string "level"
+    t.string "location"
+    t.string "location_detail"
+    t.string "name", null: false
+    t.bigint "organisation_id"
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.string "visibility", default: "shared", null: false
+    t.index ["coach_profile_id"], name: "index_training_templates_on_coach_profile_id"
+    t.index ["created_by_id"], name: "index_training_templates_on_created_by_id"
+    t.index ["group_id"], name: "index_training_templates_on_group_id"
+    t.index ["name"], name: "index_training_templates_on_name"
+    t.index ["organisation_id"], name: "index_training_templates_on_organisation_id"
+    t.index ["status"], name: "index_training_templates_on_status"
+    t.check_constraint "capacity IS NULL OR capacity > 0", name: "training_templates_capacity_positive"
+    t.check_constraint "duration_minutes > 0", name: "training_templates_duration_positive"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying]::text[])", name: "training_templates_status"
+    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying, 'private'::character varying]::text[])", name: "training_templates_visibility"
   end
 
   create_table "user_roles", force: :cascade do |t|
@@ -945,11 +1033,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000001) do
   add_foreign_key "tournaments", "organisations", on_delete: :restrict
   add_foreign_key "training_focuses", "skills"
   add_foreign_key "training_focuses", "training_sessions"
+  add_foreign_key "training_series", "organisations", on_delete: :nullify
+  add_foreign_key "training_series", "training_templates", on_delete: :restrict
+  add_foreign_key "training_series", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "training_session_drills", "drills"
   add_foreign_key "training_session_drills", "training_sessions"
   add_foreign_key "training_session_participants", "player_profiles"
   add_foreign_key "training_session_participants", "training_sessions"
+  add_foreign_key "training_sessions", "coach_profiles", on_delete: :nullify
+  add_foreign_key "training_sessions", "groups", on_delete: :nullify
+  add_foreign_key "training_sessions", "organisations", on_delete: :nullify
+  add_foreign_key "training_sessions", "training_series", on_delete: :restrict
+  add_foreign_key "training_sessions", "training_templates", on_delete: :restrict
+  add_foreign_key "training_sessions", "users", column: "cancelled_by_id", on_delete: :nullify
   add_foreign_key "training_sessions", "users", column: "created_by_id"
+  add_foreign_key "training_templates", "coach_profiles", on_delete: :nullify
+  add_foreign_key "training_templates", "groups", on_delete: :nullify
+  add_foreign_key "training_templates", "organisations", on_delete: :nullify
+  add_foreign_key "training_templates", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "user_roles", "roles"
   add_foreign_key "user_roles", "users"
   add_foreign_key "video_categories", "users", column: "created_by_id"

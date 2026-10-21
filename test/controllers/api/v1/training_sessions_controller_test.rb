@@ -105,7 +105,9 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
     get "/api/v1/training_sessions"
 
     entry = json.first
-    assert_equal %w[created_by created_by_id duration_minutes ends_at id location starts_at status status_label title visibility],
+    assert_equal %w[coach_profile_id created_by created_by_id duration_minutes ends_at id
+                    location location_detail recurrence_key starts_at status status_label
+                    title training_series_id training_template_id visibility],
                  entry.keys.sort
     assert_not entry.key?("drill")
     assert_not entry.key?("training_focuses")
@@ -654,6 +656,38 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
     delete "/api/v1/training_sessions/999999"
 
     assert_response :not_found
+  end
+
+  test "editing a series occurrence records and clears override fields" do
+    series = training_series(:monday_series)
+    TrainingSeriesGenerator.new(series).call
+    occurrence = series.training_sessions.first
+    sign_in_as(@coach)
+
+    patch_json "/api/v1/training_sessions/#{occurrence.id}",
+               training_session: { title: "Coach's custom title" }
+
+    assert_response :success
+    assert_equal true, occurrence.reload.override_fields["title"]
+
+    patch_json "/api/v1/training_sessions/#{occurrence.id}",
+               training_session: { title: "Monday Skills" }
+
+    assert_response :success
+    refute occurrence.reload.override_fields.key?("title")
+
+    original_start = occurrence.original_starts_at
+    patch_json "/api/v1/training_sessions/#{occurrence.id}",
+               training_session: { starts_at: (original_start + 1.hour).iso8601 }
+
+    assert_response :success
+    assert_equal true, occurrence.reload.override_fields["starts_at"]
+
+    patch_json "/api/v1/training_sessions/#{occurrence.id}",
+               training_session: { starts_at: original_start.iso8601 }
+
+    assert_response :success
+    refute occurrence.reload.override_fields.key?("starts_at")
   end
 
   test "show attaches the session's published assessments to their participants" do

@@ -167,6 +167,105 @@ class TrainingSessionTest < ActiveSupport::TestCase
     refute_includes participated, training_sessions(:three)       # not a participant
   end
 
+  # --- Recurring training -------------------------------------------------
+
+  test "a one-off session needs no recurrence fields" do
+    session = TrainingSession.new(valid_attributes)
+
+    assert session.valid?
+    refute session.series_occurrence?
+    refute session.overridden?
+  end
+
+  test "a series occurrence requires a recurrence key" do
+    session = TrainingSession.new(valid_attributes(training_series: training_series(:monday_series)))
+
+    assert_not session.valid?
+    assert_includes session.errors.attribute_names, :recurrence_key
+  end
+
+  test "recurrence keys are unique within a series" do
+    existing = TrainingSession.create!(
+      valid_attributes(training_series: training_series(:monday_series),
+                       recurrence_key: "2026-11-02T07:00")
+    )
+
+    duplicate = TrainingSession.new(
+      valid_attributes(training_series: training_series(:monday_series),
+                       recurrence_key: existing.recurrence_key)
+    )
+    assert_not duplicate.valid?
+    assert_includes duplicate.errors.attribute_names, :recurrence_key
+
+    other_series = TrainingSession.new(
+      valid_attributes(training_series: training_series(:private_series),
+                       recurrence_key: existing.recurrence_key)
+    )
+    assert other_series.valid?
+  end
+
+  test "the template must match the series template" do
+    session = TrainingSession.new(
+      valid_attributes(training_series: training_series(:monday_series),
+                       training_template: training_templates(:private_lesson),
+                       recurrence_key: "2026-11-02T07:00")
+    )
+
+    assert_not session.valid?
+    assert_includes session.errors.attribute_names, :training_template
+  end
+
+  test "mark_cancelled! records the tombstone fields" do
+    session = TrainingSession.create!(
+      valid_attributes(training_series: training_series(:monday_series),
+                       recurrence_key: "2026-11-04T07:00")
+    )
+
+    session.mark_cancelled!(reason: "Weather", actor: users(:three))
+
+    assert session.cancelled?
+    assert_equal "Weather", session.cancellation_reason
+    assert_not_nil session.cancelled_at
+    assert_equal users(:three), session.cancelled_by
+    assert_equal "2026-11-04T07:00", session.recurrence_key
+  end
+
+  test "cancellable? covers drafts and scheduled sessions" do
+    assert training_sessions(:two).cancellable?
+    assert training_sessions(:one).cancellable?
+
+    training_sessions(:one).update!(status: "completed")
+    refute training_sessions(:one).cancellable?
+  end
+
+  test "deletable_occurrence? is limited to unused drafts" do
+    assert training_sessions(:two).deletable_occurrence?
+    refute training_sessions(:one).deletable_occurrence?
+
+    TrainingSessionParticipant.create!(training_session: training_sessions(:two),
+                                       player_profile: player_profiles(:john_player),
+                                       status: "invited")
+    refute training_sessions(:two).reload.deletable_occurrence?
+  end
+
+  test "override tracking" do
+    session = TrainingSession.new(valid_attributes(override_fields: { "title" => "Moved" }))
+
+    assert session.overridden?
+    assert session.overridden_field?(:title)
+    refute session.overridden_field?(:location)
+  end
+
+  test "for_series only returns occurrences of that series" do
+    occurrence = TrainingSession.create!(
+      valid_attributes(training_series: training_series(:monday_series),
+                       recurrence_key: "2026-11-09T07:00")
+    )
+
+    assert_includes TrainingSession.for_series(training_series(:monday_series)), occurrence
+    refute_includes TrainingSession.for_series(training_series(:private_series)), occurrence
+  end
+
   private
 
   def valid_attributes(overrides = {})

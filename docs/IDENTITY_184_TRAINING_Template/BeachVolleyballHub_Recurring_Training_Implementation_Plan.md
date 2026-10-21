@@ -7,6 +7,29 @@
 
 > **Verification note:** This document is an implementation blueprint, not a verified line-by-line audit of the current repositories. A direct repository source fetch was unsuccessful in this environment. Model names, associations, API routes, and filenames below are candidates; Phase 0 requires the coding agent to inspect the actual code and revise them before any migration.
 
+## Implementation status
+
+| Phase | Status | Document |
+|---|---|---|
+| 0 — Audit & ADR | ✅ Complete | [`RECURRING_TRAINING_PHASE_00_AUDIT.md`](RECURRING_TRAINING_PHASE_00_AUDIT.md) · [`RECURRING_TRAINING_PHASE_00_ADR.md`](RECURRING_TRAINING_PHASE_00_ADR.md) |
+| 1 — Data model | ✅ Complete | [`RECURRING_TRAINING_PHASE_01_DATA_MODEL.md`](RECURRING_TRAINING_PHASE_01_DATA_MODEL.md) |
+| 2 — Recurrence & preview | ✅ Complete | [`RECURRING_TRAINING_PHASE_02_RECURRENCE_AND_PREVIEW.md`](RECURRING_TRAINING_PHASE_02_RECURRENCE_AND_PREVIEW.md) |
+| 3 — Generation | ✅ Complete | [`RECURRING_TRAINING_PHASE_03_GENERATION.md`](RECURRING_TRAINING_PHASE_03_GENERATION.md) |
+| 4 — API & authorization | ✅ Complete | [`RECURRING_TRAINING_PHASE_04_API_AND_AUTHORIZATION.md`](RECURRING_TRAINING_PHASE_04_API_AND_AUTHORIZATION.md) |
+| 5 — Frontend creation | ✅ Complete | [`RECURRING_TRAINING_PHASE_05_FRONTEND_CREATION.md`](RECURRING_TRAINING_PHASE_05_FRONTEND_CREATION.md) |
+| 6 — Series dashboard | ✅ Complete | [`RECURRING_TRAINING_PHASE_06_SERIES_DASHBOARD.md`](RECURRING_TRAINING_PHASE_06_SERIES_DASHBOARD.md) |
+| 7 — Overrides & splitting | ✅ Complete | [`RECURRING_TRAINING_PHASE_07_OVERRIDES_AND_SPLITTING.md`](RECURRING_TRAINING_PHASE_07_OVERRIDES_AND_SPLITTING.md) |
+| 8 — Notifications & audit | ✅ Complete | [`RECURRING_TRAINING_PHASE_08_NOTIFICATIONS_AUDIT_OBSERVABILITY.md`](RECURRING_TRAINING_PHASE_08_NOTIFICATIONS_AUDIT_OBSERVABILITY.md) |
+| 9 — QA & rollout | ✅ Complete | [`RECURRING_TRAINING_PHASE_09_QA_AND_ROLLOUT.md`](RECURRING_TRAINING_PHASE_09_QA_AND_ROLLOUT.md) |
+
+See [`README.md`](README.md) for the documentation map and verified audit findings.
+
+**Phase 0 adaptations (verified against the repositories):**
+- Training management is role-based (`content_manager?`); there is no row-level organisation RBAC for trainings. `organisation_id`/`group_id` are schedule metadata in V1.
+- No `Location`/`Court` model exists; `location` stays a string and `location_detail` is added. `location_id`/`court_id` are deferred to the Location feature.
+- Time zone is UTC by default, so series carry an explicit IANA `time_zone`.
+- New columns are additive; existing sessions require no backfill.
+
 ## 1. Objective and scope
 
 Enable an authorised coach or curator to create a reusable training definition, schedule repeated training occurrences, view/manage the resulting series, selectively cancel/delete sessions, and update a single occurrence or all eligible future occurrences. Preserve existing one-off training flows and registrations.
@@ -328,21 +351,21 @@ Review the complete recurring training feature against the approved ADR and acce
 
 ## 6. Acceptance criteria
 
-- [ ] Existing standalone TrainingSessions remain functional and do not require a template or series.
-- [ ] An authorised coach can create a reusable template and a finite weekly series with multiple weekdays.
-- [ ] Preview shows correct local times across Sydney DST boundaries and does not write sessions.
-- [ ] Creating/retrying a series never duplicates occurrences.
-- [ ] A manually moved or cancelled occurrence is not recreated by regeneration.
-- [ ] Coach can edit/cancel one occurrence without changing others.
-- [ ] Coach/curator can select noncontiguous sessions and cancel them in one action.
-- [ ] Bulk deletion rejects protected/published/registered/attended sessions according to policy.
-- [ ] Stop recurrence does not unexpectedly cancel existing sessions.
-- [ ] Edit future preserves history and manual overrides; rule changes use approved split semantics.
-- [ ] Every endpoint enforces actual organisation/group/coach scope server-side.
-- [ ] Location and court selection reuse canonical Location work.
-- [ ] Notifications are after-commit, deduplicated and retriable.
-- [ ] Audit logs record bulk actions and actor/reason.
-- [ ] API tests, frontend tests, lint, typecheck and build pass; rollout and rollback documented.
+- [x] Existing standalone TrainingSessions remain functional and do not require a template or series.
+- [x] An authorised coach can create a reusable template and a finite weekly series with multiple weekdays.
+- [x] Preview shows correct local times across Sydney DST boundaries and does not write sessions.
+- [x] Creating/retrying a series never duplicates occurrences.
+- [x] A manually moved or cancelled occurrence is not recreated by regeneration.
+- [x] Coach can edit/cancel one occurrence without changing others.
+- [x] Coach/curator can select noncontiguous sessions and cancel them in one action.
+- [x] Bulk deletion rejects protected/published/registered/attended sessions according to policy.
+- [x] Stop recurrence does not unexpectedly cancel existing sessions.
+- [x] Edit future preserves history and manual overrides; rule changes use approved split semantics.
+- [ ] Every endpoint enforces actual organisation/group/coach scope server-side. **(V1 mirrors the existing role-based training rule; row-level organisation RBAC is a documented follow-up.)**
+- [ ] Location and court selection reuse canonical Location work. **(No Location/Court model exists yet; `location` + `location_detail` are stored, `location_id`/`court_id` deferred.)**
+- [x] Notifications are after-commit, deduplicated and retriable.
+- [x] Audit logs record bulk actions and actor/reason.
+- [x] API tests, frontend tests, lint, typecheck and build pass; rollout and rollback documented.
 
 ## 7. Dependencies, risks and decisions to resolve
 

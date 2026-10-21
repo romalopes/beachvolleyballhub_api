@@ -1,0 +1,22 @@
+<h1>Training cancelled</h1>
+
+<p>Hi <%= @participant.player_name %>,</p>
+
+<p>The following training has been cancelled:</p>
+
+<p>
+  <strong><%= @session.title %></strong><br>
+  <%= @session.starts_at.in_time_zone(@time_zone).strftime("%A, %-d %B %Y at %-I:%M %p") %>
+  (<%= @time_zone %>)
+  <% if @session.location.present? %>
+    <br><%= [@session.location, @session.location_detail].compact_blank.join(" · ") %>
+  <% end %>
+  <% if @reason.present? %>
+    <br><strong>Reason:</strong> <%= @reason %>
+  <% end %>
+</p>
+
+<p>
+  The session remains in your schedule marked as cancelled. If you have any
+  questions, please contact the coach or club that scheduled it.
+</p>

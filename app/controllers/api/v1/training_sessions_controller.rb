@@ -19,12 +19,24 @@ module Api
     class TrainingSessionsController < ApplicationController
       include ContentAuthorization
 
-      CALENDAR_ATTRIBUTES = %i[id title starts_at ends_at location status visibility created_by_id].freeze
-      DETAIL_ATTRIBUTES = %i[id title description starts_at ends_at location status visibility created_by_id
-                             created_at updated_at].freeze
+      CALENDAR_ATTRIBUTES = %i[id title starts_at ends_at location location_detail status visibility
+                               created_by_id coach_profile_id training_series_id
+                               training_template_id recurrence_key].freeze
+      DETAIL_ATTRIBUTES = %i[id title description starts_at ends_at location location_detail status
+                             visibility created_by_id created_at updated_at capacity level
+                             organisation_id group_id coach_profile_id training_series_id
+                             training_template_id recurrence_key original_starts_at override_fields
+                             cancellation_reason cancelled_at cancelled_by_id].freeze
       FOCUS_ATTRIBUTES = %i[id skill_id custom_focus description position].freeze
       SESSION_DRILL_ATTRIBUTES = %i[id drill_id position duration_minutes notes].freeze
       PARTICIPANT_ATTRIBUTES = %i[id player_profile_id status notes].freeze
+      # Fields a series occurrence may diverge on. Editing one of these through
+      # the normal training form records an override so a later "update future"
+      # does not silently overwrite the coach's change.
+      SERIES_OVERRIDE_ATTRIBUTES = %i[
+        title description location location_detail level capacity
+        coach_profile_id group_id visibility
+      ].freeze
       # Single source of truth: the inline-person allow-list belongs to the
       # resolver that consumes it, so the two cannot drift apart.
       INLINE_PERSON_ATTRIBUTES = InlineParticipantResolver::PERSON_ATTRIBUTES
@@ -51,6 +63,7 @@ module Api
 
       def update
         @training_session.assign_attributes(training_session_params)
+        record_series_overrides!
         persist
       end
 
@@ -126,12 +139,17 @@ module Api
                   .includes(:created_by)
                   .ordered
         scope = scope.where(status: params[:status]) if params[:status].present?
+        if params[:training_series_id].present?
+          scope = scope.where(training_series_id: params[:training_series_id])
+        end
         scope
       end
 
       def set_training_session
         session = TrainingSession
-                    .includes(:created_by, training_focuses: { skill: :category },
+                    .includes(:created_by, :training_series, :training_template, :coach_profile,
+                              :organisation, :group,
+                              training_focuses: { skill: :category },
                               training_session_drills: { drill: { skills: :category } },
                               training_session_participants: { player_profile: { account: :contact_detail } },
                               video_references: :video)
@@ -149,6 +167,14 @@ module Api
       def detail_includes
         {
           created_by: { only: %i[id name] },
+          training_series: {
+            only: %i[id training_template_id frequency interval weekdays starts_on ends_on
+                     local_start_time duration_minutes time_zone status]
+          },
+          training_template: { only: %i[id name] },
+          coach_profile: { only: %i[id display_name] },
+          organisation: { only: %i[id name] },
+          group: { only: %i[id name] },
           training_focuses: {
             only: FOCUS_ATTRIBUTES,
             methods: %i[label],
@@ -218,9 +244,61 @@ module Api
         true
       end
 
+      # Records only the fields this request actually changed. Comparing with
+      # the effective defaults means resetting a field to the series value
+      # removes its override instead of leaving a stale flag.
+      def record_series_overrides!
+        series = @training_session.training_series
+        return if series.nil? || series.training_template.nil?
+
+        defaults = series.training_template.defaults_for_series.merge(series.defaults)
+        overrides = (@training_session.override_fields || {}).dup
+
+        SERIES_OVERRIDE_ATTRIBUTES.each do |attribute|
+          next unless @training_session.will_save_change_to_attribute?(attribute)
+
+          key = attribute.to_s
+          if @training_session.public_send(attribute) == defaults[attribute]
+            overrides.delete(key)
+          else
+            overrides[key] = true
+          end
+        end
+
+        record_time_overrides!(overrides, series)
+
+        @training_session.override_fields = overrides
+      end
+
+      # A moved occurrence keeps its recurrence_key but must still count as an
+      # override so a split cannot silently destroy the coach's change.
+      def record_time_overrides!(overrides, series)
+        original = @training_session.original_starts_at
+        return if original.blank?
+
+        if @training_session.will_save_change_to_attribute?(:starts_at)
+          if @training_session.starts_at == original
+            overrides.delete("starts_at")
+          else
+            overrides["starts_at"] = true
+          end
+        end
+
+        return unless @training_session.will_save_change_to_attribute?(:ends_at)
+
+        expected_end = original + series.duration_minutes.minutes
+        if @training_session.ends_at == expected_end
+          overrides.delete("ends_at")
+        else
+          overrides["ends_at"] = true
+        end
+      end
+
       def training_session_params
         permitted = params.require(:training_session).permit(
-          :title, :description, :starts_at, :ends_at, :location, :status,
+          :title, :description, :starts_at, :ends_at, :location, :location_detail,
+          :capacity, :level, :organisation_id, :group_id, :coach_profile_id,
+          :status,
           training_focuses_attributes: %i[id skill_id custom_focus description position _destroy],
           training_session_drills_attributes: %i[id drill_id position duration_minutes notes _destroy],
           training_session_participants_attributes: [
@@ -260,6 +338,8 @@ module Api
           "Drills must be unique within a training session"
         when /index_training_focuses_on_session_and_skill/
           "Skills must be unique within a training session"
+        when /index_training_sessions_on_series_and_recurrence_key/
+          "This occurrence already exists in the series"
         else
           "The training contains duplicate references"
         end
