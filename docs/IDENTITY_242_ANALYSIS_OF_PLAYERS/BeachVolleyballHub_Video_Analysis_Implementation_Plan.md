@@ -1,9 +1,9 @@
 # BeachVolleyballHub — Video Analysis & Assessment Implementation Plan
 
-**Status:** Proposed implementation plan (repository audit required)  
-**Backend:** https://github.com/romalopes/beachvolleyballhub_api  
-**Frontend:** https://github.com/romalopes/beachvolleyballhub_frontend  
-**Suggested repository destination:** `docs/FUTURE/Analysis/VIDEO_ANALYSIS_IMPLEMENTATION_PLAN.md`
+**Status:** Proposed implementation plan (repository audit required)
+**Backend:** https://github.com/romalopes/beachvolleyballhub_api
+**Frontend:** https://github.com/romalopes/beachvolleyballhub_frontend
+**Suggested repository destination:** `docs/IDENTITY_242_ANALYSIS_OF_PLAYERS/BeachVolleyballHub_Video_Analysis_Implementation_Plan.md` and `https://github.com/romalopes/beachvolleyballhub_api/issues/242`
 
 > This plan is based on the requested features and known project architecture (Rails API, React/Vite, PostgreSQL, Active Storage/R2, RBAC). It is **not** a verified audit of current repository contents. AI prompts below explicitly require inspecting the latest code before choosing model names, endpoints, or migrations.
 
@@ -14,6 +14,7 @@ Coaches can create an **Analysis** using one or more videos (external URL or upl
 ### MVP acceptance criteria
 
 - [ ] Coach can create, edit, view, archive and delete analyses according to permission policy.
+- [ ] Coach can create, edit, view, archive analyses that he created or was assigned to.
 - [ ] Coach can add multiple participating players, with organisation/group-scoped selection.
 - [ ] Each analysis supports multiple videos; each video is either an external URL or an upload.
 - [ ] Uploaded videos use existing Active Storage and R2 integration, not Render local disk.
@@ -59,16 +60,16 @@ Do not invent missing classes; do not write migrations until the architecture is
 
 ### 3.1 Proposed entities (adapt to actual repository)
 
-| Entity | Key fields / associations | Notes |
-|---|---|---|
-| `Analysis` | title, objective/description, summary_notes, status, visibility, author `CoachProfile`, organisation/group, optional training/tournament, published_at | Main resource; audit creator/updater |
-| `AnalysisPlayer` | analysis_id, player_profile_id, participation role, private player_notes | Unique pair; visibility rules |
-| `AnalysisVideo` | analysis_id, source_type (`upload`/`external`), url, provider, title, position, metadata, attachment | Exactly one source; multiple ordered videos |
-| `AnalysisAnnotation` | analysis_video_id, author, start_ms, end_ms, body, skill/category reference | Optionally many targeted players via join |
-| `AnalysisAnnotationPlayer` | annotation_id, player_profile_id | Player-specific annotation targeting |
-| `AnalysisComment` | analysis_id, author account/profile, parent_id nullable, body, optional annotation_id | Avoid duplicate generic comment models if present |
-| `AnalysisAssessmentSession` | analysis_id, assessment_session_id | Only if many-to-many is supported/needed; use existing model |
-| `AnalysisRequest` (optional foundation) | requester, requested coach, status, objective, player references, result analysis | Defer table until request form is actually enabled |
+| Entity                                  | Key fields / associations                                                                                                                              | Notes                                                        |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `Analysis`                              | title, objective/description, summary_notes, status, visibility, author `CoachProfile`, organisation/group, optional training/tournament, published_at | Main resource; audit creator/updater                         |
+| `AnalysisPlayer`                        | analysis_id, player_profile_id, participation role, private player_notes                                                                               | Unique pair; visibility rules                                |
+| `AnalysisVideo`                         | analysis_id, source_type (`upload`/`external`), url, provider, title, position, metadata, attachment                                                   | Exactly one source; multiple ordered videos                  |
+| `AnalysisAnnotation`                    | analysis_video_id, author, start_ms, end_ms, body, skill/category reference                                                                            | Optionally many targeted players via join                    |
+| `AnalysisAnnotationPlayer`              | annotation_id, player_profile_id                                                                                                                       | Player-specific annotation targeting                         |
+| `AnalysisComment`                       | analysis_id, author account/profile, parent_id nullable, body, optional annotation_id                                                                  | Avoid duplicate generic comment models if present            |
+| `AnalysisAssessmentSession`             | analysis_id, assessment_session_id                                                                                                                     | Only if many-to-many is supported/needed; use existing model |
+| `AnalysisRequest` (optional foundation) | requester, requested coach, status, objective, player references, result analysis                                                                      | Defer table until request form is actually enabled           |
 
 Use `bigint` timestamps in milliseconds for annotation offsets; constrain `start_ms >= 0`, `end_ms >= start_ms` if present. Validate uploaded vs URL exclusivity. Preserve ordering and stable identifiers. Add foreign keys, unique indexes, scoped indexes (`organisation_id`, `coach_profile_id`, `status`, `created_at`) and safe deletion rules. Confirm whether `Group` belongs to `Organisation` before adding both foreign keys. Consider separate `AnalysisVideo` access records only if required by current policies.
 
@@ -128,21 +129,21 @@ Do not broaden existing global admin rights without verifying intended semantics
 
 Follow actual route conventions; paths below are illustrative.
 
-| Method | Route | Purpose |
-|---|---|---|
-| GET | `/api/analyses` | List scoped analyses, filters/sort/pagination |
-| POST | `/api/analyses` | Create analysis and participants |
-| GET | `/api/analyses/:id` | Detail, permission-filtered nested data |
-| PATCH | `/api/analyses/:id` | Update, status transitions |
-| DELETE | `/api/analyses/:id` | Archive or policy-approved delete |
-| POST | `/api/analyses/:id/videos` | Add URL or initiate/upload attachment |
-| PATCH/DELETE | `/api/analyses/:id/videos/:video_id` | Edit/reorder/remove video |
-| POST | `/api/analyses/:id/annotations` | Add timestamp annotation |
-| PATCH/DELETE | `/api/analyses/:id/annotations/:annotation_id` | Edit/remove annotation |
-| GET/POST | `/api/analyses/:id/comments` | List/create discussion |
-| PATCH/DELETE | `/api/analyses/:id/comments/:comment_id` | Edit/delete authorised comment |
-| POST | `/api/analyses/:id/assessment_sessions` | Create/link assessment session |
-| DELETE | `/api/analyses/:id/assessment_sessions/:id` | Unlink without destroying assessment |
+| Method       | Route                                          | Purpose                                       |
+| ------------ | ---------------------------------------------- | --------------------------------------------- |
+| GET          | `/api/analyses`                                | List scoped analyses, filters/sort/pagination |
+| POST         | `/api/analyses`                                | Create analysis and participants              |
+| GET          | `/api/analyses/:id`                            | Detail, permission-filtered nested data       |
+| PATCH        | `/api/analyses/:id`                            | Update, status transitions                    |
+| DELETE       | `/api/analyses/:id`                            | Archive or policy-approved delete             |
+| POST         | `/api/analyses/:id/videos`                     | Add URL or initiate/upload attachment         |
+| PATCH/DELETE | `/api/analyses/:id/videos/:video_id`           | Edit/reorder/remove video                     |
+| POST         | `/api/analyses/:id/annotations`                | Add timestamp annotation                      |
+| PATCH/DELETE | `/api/analyses/:id/annotations/:annotation_id` | Edit/remove annotation                        |
+| GET/POST     | `/api/analyses/:id/comments`                   | List/create discussion                        |
+| PATCH/DELETE | `/api/analyses/:id/comments/:comment_id`       | Edit/delete authorised comment                |
+| POST         | `/api/analyses/:id/assessment_sessions`        | Create/link assessment session                |
+| DELETE       | `/api/analyses/:id/assessment_sessions/:id`    | Unlink without destroying assessment          |
 
 List query candidates: `status`, `organisation_id`, `group_id`, `coach_profile_id`, `player_profile_id`, `mine`, `training_session_id`, `tournament_id`, `q`, `sort`, `direction`, `page`, `per_page`. Allowlist sort keys; enforce server-side scopes. Provide consistent pagination metadata and deterministic secondary sorting. Design bulk participant assignment with transactional validation.
 
@@ -339,16 +340,16 @@ Create a short operator runbook for failed uploads, inaccessible videos, permiss
 
 ## 13. Suggested implementation sequence and PR boundaries
 
-| PR | Scope | Exit criteria |
-|---|---|---|
-| 0 | Audit and architecture documentation | Exact models and permissions verified |
-| 1 | Core Analysis schema, policy, CRUD API | Request/model tests pass |
-| 2 | Videos, R2 uploads, provider adapters | Private playback and error cases verified |
-| 3 | Sidebar, home, list, create/edit/detail | Basic coach workflow works end to end |
-| 4 | Annotations, comments, notifications | Authorised timestamp feedback works |
-| 5 | Assessment integration | Multi-player scoring and privacy verified |
-| 6 | Hire Analysis entry | Honest placeholder or functional request form |
-| 7 | E2E, security, performance, rollout | Pilot readiness checklist complete |
+| PR  | Scope                                   | Exit criteria                                 |
+| --- | --------------------------------------- | --------------------------------------------- |
+| 0   | Audit and architecture documentation    | Exact models and permissions verified         |
+| 1   | Core Analysis schema, policy, CRUD API  | Request/model tests pass                      |
+| 2   | Videos, R2 uploads, provider adapters   | Private playback and error cases verified     |
+| 3   | Sidebar, home, list, create/edit/detail | Basic coach workflow works end to end         |
+| 4   | Annotations, comments, notifications    | Authorised timestamp feedback works           |
+| 5   | Assessment integration                  | Multi-player scoring and privacy verified     |
+| 6   | Hire Analysis entry                     | Honest placeholder or functional request form |
+| 7   | E2E, security, performance, rollout     | Pilot readiness checklist complete            |
 
 ## 14. Product decisions requiring confirmation
 

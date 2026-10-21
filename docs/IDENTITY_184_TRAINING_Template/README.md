@@ -68,6 +68,15 @@ CoachProfile ───────────┘                  │          
   cannot resurrect it.
 - Generated sessions are `scheduled`; no participants are created automatically.
 
+## Training directory (SPA)
+
+`/training` is the single directory: a **List / Calendar toggle** switches views
+in place, calendar mode adds month/week ranges and period navigation, and the
+filters live in a tournament-style aside. `/calendar` redirects to
+`/training?view=calendar`. Templates and series directories use the same
+header-actions + filter-aside + card-grid layout. See
+[`RECURRING_TRAINING_PHASE_05_FRONTEND_CREATION.md`](RECURRING_TRAINING_PHASE_05_FRONTEND_CREATION.md).
+
 ## Known limitations (documented, deliberate)
 
 - Organisation/group **row-level** RBAC for trainings does not exist; V1 mirrors
