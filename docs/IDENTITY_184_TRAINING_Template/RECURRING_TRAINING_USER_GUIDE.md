@@ -4,6 +4,21 @@ This guide covers reusable training templates, weekly series, and the series
 dashboard. Everything is available to coaches, curators and admins
 (`Training → Templates` / `Training → Series`).
 
+## Finding trainings
+
+**Training** is now a single directory with a **List / Calendar** toggle:
+
+- **List** shows each session as a card (date, time, location, status, series
+  tag).
+- **Calendar** shows the schedule in a month or week grid with previous / Today
+  / next navigation.
+- The **Filters** panel narrows the schedule by status and by "only sessions I
+  participate in". Opening the page from a series dashboard adds a
+  `training_series_id` filter with a clear link.
+- The chosen view, period and filters are part of the URL, so a link can point
+  at any of them. `/calendar` still works: it redirects to
+  `/training?view=calendar`.
+
 ## 1. Create a template
 
 1. Go to **Training → Templates → New template**.

@@ -32,7 +32,7 @@ The single skip is the pre-existing placeholder
 ### Frontend run
 
 ```text
-npm test         # 94 files, 921 tests passed
+npm test         # 94 files, 923 tests passed
 npm run lint     # clean
 npm run build    # built; only pre-existing Sentry/chunk-size warnings
 npx tsc --noEmit # clean

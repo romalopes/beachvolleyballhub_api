@@ -23,11 +23,11 @@ training series for BeachVolleyballHub.
 | 2 — Recurrence & preview | ✅ Complete | Pure expander + preview; 19 tests (0 failures) — [`RECURRING_TRAINING_PHASE_02_RECURRENCE_AND_PREVIEW.md`](RECURRING_TRAINING_PHASE_02_RECURRENCE_AND_PREVIEW.md) |
 | 3 — Generation | ✅ Complete | Idempotent generator + transactional creator; 15 tests (0 failures) — [`RECURRING_TRAINING_PHASE_03_GENERATION.md`](RECURRING_TRAINING_PHASE_03_GENERATION.md) |
 | 4 — API & authorization | ✅ Complete | Templates/series endpoints, feature flag, 82 request tests (0 failures) — [`RECURRING_TRAINING_PHASE_04_API_AND_AUTHORIZATION.md`](RECURRING_TRAINING_PHASE_04_API_AND_AUTHORIZATION.md) |
-| 5 — Frontend creation | ✅ Complete | Template/series forms + preview; 17 new tests; full SPA suite 921 passing — [`RECURRING_TRAINING_PHASE_05_FRONTEND_CREATION.md`](RECURRING_TRAINING_PHASE_05_FRONTEND_CREATION.md) |
+| 5 — Frontend creation | ✅ Complete | Template/series forms + preview; tournament-style directory with list/calendar toggle; 20 new tests; full SPA suite 923 passing — [`RECURRING_TRAINING_PHASE_05_FRONTEND_CREATION.md`](RECURRING_TRAINING_PHASE_05_FRONTEND_CREATION.md) |
 | 6 — Series dashboard | ✅ Complete | Bulk cancel/delete, stop, cancel future + dashboard — [`RECURRING_TRAINING_PHASE_06_SERIES_DASHBOARD.md`](RECURRING_TRAINING_PHASE_06_SERIES_DASHBOARD.md) |
 | 7 — Overrides & splitting | ✅ Complete | Update-future, split, blockers, override preservation — [`RECURRING_TRAINING_PHASE_07_OVERRIDES_AND_SPLITTING.md`](RECURRING_TRAINING_PHASE_07_OVERRIDES_AND_SPLITTING.md) |
 | 8 — Notifications & audit | ✅ Complete | Cancellation email job + dedup + LogService audit — [`RECURRING_TRAINING_PHASE_08_NOTIFICATIONS_AUDIT_OBSERVABILITY.md`](RECURRING_TRAINING_PHASE_08_NOTIFICATIONS_AUDIT_OBSERVABILITY.md) |
-| 9 — QA & rollout | ✅ Complete | 217 targeted backend tests, 921 frontend tests, rollout/rollback + user guide — [`RECURRING_TRAINING_PHASE_09_QA_AND_ROLLOUT.md`](RECURRING_TRAINING_PHASE_09_QA_AND_ROLLOUT.md) |
+| 9 — QA & rollout | ✅ Complete | 217 targeted backend tests, 923 frontend tests, rollout/rollback + user guide — [`RECURRING_TRAINING_PHASE_09_QA_AND_ROLLOUT.md`](RECURRING_TRAINING_PHASE_09_QA_AND_ROLLOUT.md) |
 
 Each phase document records: scope, decisions, files changed, migrations, API
 contract changes, test evidence (actual command output), limitations, rollback

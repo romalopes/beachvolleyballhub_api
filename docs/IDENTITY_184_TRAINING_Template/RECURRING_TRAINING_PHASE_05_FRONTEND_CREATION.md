@@ -46,6 +46,35 @@ Updated:
   remains the authority and reports transactional errors.
 - Creating a series navigates to its dashboard.
 
+## Directory layout (tournament-style)
+
+The training directory now mirrors the tournaments directory:
+
+- **`/training` is the single directory.** `/calendar` redirects to
+  `/training?view=calendar`, and the sidebar has one Training entry instead of
+  Training + Calendar.
+- A **List / Calendar toggle** in the header switches views without leaving the
+  page. Calendar mode adds period navigation (previous / Today / next) and a
+  **Month / Week** range toggle; list mode renders a card grid.
+- State lives in the URL (`view`, `range`, `cursor`, `status`, `mine`,
+  `training_series_id`), so any view is linkable and survives refresh.
+- The left **Filters** aside (status, "only sessions I participate in") and the
+  card grid reuse the tournament `.filter-form` / `.form-group` layout and the
+  `.card` anatomy via new `training-*` classes.
+- Templates and series directories use the same header-actions + filter-aside +
+  card-grid layout, with `TrainingTemplateCard` and `TrainingSeriesCard`.
+
+New/updated components:
+
+- `src/components/training/TrainingSessionCard.tsx`
+- `src/components/training/TrainingCalendarGrid.tsx`
+- `src/components/training/TrainingFilterForm.tsx`
+- `src/components/training/TrainingTemplateCard.tsx`
+- `src/components/training/TrainingSeriesCard.tsx`
+- `src/pages/Training.tsx` (rewritten), `TrainingTemplates.tsx`,
+  `TrainingSeries.tsx` (rewritten)
+- `TrainingCalendar.tsx` deleted; its grid lives in `TrainingCalendarGrid`.
+
 ## Test evidence
 
 New frontend tests:
@@ -56,15 +85,19 @@ New frontend tests:
   payload/navigation, invalid preview).
 - `src/pages/TrainingTemplateFormPage.test.tsx` — 2 tests (create payload,
   server validation errors).
+- `src/pages/Training.test.tsx` — 6 tests (list cards, list/calendar toggle,
+  calendar navigation, month/week range, manager-only New Training, status
+  filter).
 
 ```text
 npx vitest run src/utils/recurringTraining.test.ts \
   src/components/training/SeriesOccurrenceTable.test.tsx \
   src/pages/TrainingSeriesFormPage.test.tsx \
-  src/pages/TrainingTemplateFormPage.test.tsx
-17 tests passed
+  src/pages/TrainingTemplateFormPage.test.tsx \
+  src/pages/Training.test.tsx
+20 tests passed
 
-npm test          # 94 files, 921 tests passed
+npm test          # 94 files, 923 tests passed
 npm run lint      # clean
 npm run build     # built (pre-existing Sentry/chunk-size warnings only)
 npx tsc --noEmit  # clean
