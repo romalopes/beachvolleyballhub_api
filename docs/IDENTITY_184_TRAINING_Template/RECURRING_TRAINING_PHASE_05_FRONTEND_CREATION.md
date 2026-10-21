@@ -56,6 +56,11 @@ The training directory now mirrors the tournaments directory:
 - A **List / Calendar toggle** in the header switches views without leaving the
   page. Calendar mode adds period navigation (previous / Today / next) and a
   **Month / Week** range toggle; list mode renders a card grid.
+- **List mode groups the cards into calendar weeks** (Monday–Sunday), each week
+  under a `Week from Sep 7 to Sep 13` heading. Weeks without sessions are not
+  rendered, and the sessions inside a week are ordered by start time. The week
+  boundaries are computed in the browser's local time, matching the existing
+  day grouping helpers.
 - State lives in the URL (`view`, `range`, `cursor`, `status`, `mine`,
   `training_series_id`), so any view is linkable and survives refresh.
 - The left **Filters** aside (status, "only sessions I participate in") and the
@@ -85,9 +90,11 @@ New frontend tests:
   payload/navigation, invalid preview).
 - `src/pages/TrainingTemplateFormPage.test.tsx` — 2 tests (create payload,
   server validation errors).
-- `src/pages/Training.test.tsx` — 6 tests (list cards, list/calendar toggle,
-  calendar navigation, month/week range, manager-only New Training, status
-  filter).
+- `src/pages/Training.test.tsx` — 8 tests (list cards, weekly grouping, list/calendar
+  toggle, calendar navigation, month/week range, manager-only New Training,
+  status filter).
+- `src/utils/training.test.ts` — 9 tests (week boundaries, grouping, ordering,
+  empty weeks, label formatting).
 
 ```text
 npx vitest run src/utils/recurringTraining.test.ts \

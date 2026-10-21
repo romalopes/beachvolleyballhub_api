@@ -9,7 +9,9 @@ dashboard. Everything is available to coaches, curators and admins
 **Training** is now a single directory with a **List / Calendar** toggle:
 
 - **List** shows each session as a card (date, time, location, status, series
-  tag).
+  tag), grouped into calendar weeks. Each week gets its own heading, e.g.
+  "Week from Sep 7 to Sep 13", so a long schedule reads week by week. Weeks
+  without sessions are not shown.
 - **Calendar** shows the schedule in a month or week grid with previous / Today
   / next navigation.
 - The **Filters** panel narrows the schedule by status and by "only sessions I

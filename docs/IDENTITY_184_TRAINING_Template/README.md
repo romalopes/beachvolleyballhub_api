@@ -72,7 +72,9 @@ CoachProfile ───────────┘                  │          
 
 `/training` is the single directory: a **List / Calendar toggle** switches views
 in place, calendar mode adds month/week ranges and period navigation, and the
-filters live in a tournament-style aside. `/calendar` redirects to
+filters live in a tournament-style aside. List mode groups the cards into
+calendar weeks (Monday–Sunday) under a `Week from <Mon> to <Sun>` heading.
+`/calendar` redirects to
 `/training?view=calendar`. Templates and series directories use the same
 header-actions + filter-aside + card-grid layout. See
 [`RECURRING_TRAINING_PHASE_05_FRONTEND_CREATION.md`](RECURRING_TRAINING_PHASE_05_FRONTEND_CREATION.md).
