@@ -1,0 +1,39 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+coach_led_draft:
+  title: "Spring Tournament Prep"
+  summary: "Draft analysis for upcoming spring tournament"
+  status: draft
+  created_by: six
+  assigned_coach_profile: maria_coach
+  organisation: sydney_club
+  group: u19_squad
+
+published_analysis:
+  title: "Winter Championship Review"
+  summary: "Published analysis of winter championship performance"
+  status: published
+  published_at: <%= 2.days.ago %>
+  created_by: six
+  assigned_coach_profile: maria_coach
+  organisation: sydney_club
+  group: u19_squad
+
+archived_analysis:
+  title: "Summer Camp Analysis"
+  summary: "Archived analysis from summer camp"
+  status: archived
+  archived_at: <%= 1.week.ago %>
+  created_by: six
+
+player_owned_analysis:
+  title: "Player Self Review"
+  summary: "Analysis owned by a regular player user"
+  status: draft
+  created_by: one
+
+curator_owned_analysis:
+  title: "Curator Review"
+  summary: "Analysis owned by curator"
+  status: draft
+  created_by: three

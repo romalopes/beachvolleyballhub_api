@@ -45,6 +45,19 @@ class GroupMembership < ApplicationRecord
   scope :active, -> { where(status: "active") }
   scope :pending, -> { where(status: "pending") }
   scope :ended, -> { where(status: "ended") }
+  # A signed-in account may be rostered directly or through one of its linked
+  # player/coach profiles. Treat those as one subject when building a self-service
+  # join catalogue, just as OrganisationMembership.for_user_subjects does.
+  scope :for_user_subjects, ->(user) {
+    account = user&.account
+    if account.nil?
+      none
+    else
+      relation = where(account_id: account.id).or(where(memberable: account))
+      relation = relation.or(where(memberable_type: "PlayerProfile", memberable_id: account.player_profiles.select(:id)))
+      relation.or(where(memberable_type: "CoachProfile", memberable_id: account.coach_profiles.select(:id)))
+    end
+  }
   # The one active owner, if there is one. The database guarantees at most one
   # (a partial unique index); this is how that fact is read back.
   scope :owners, -> { where(role: "owner", status: "active") }

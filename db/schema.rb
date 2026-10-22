@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_21_000005) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -75,6 +75,97 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_000005) do
     t.index ["action", "created_at"], name: "index_admin_activities_on_action_and_created_at"
     t.index ["entity_type", "entity_id"], name: "index_admin_activities_on_entity_type_and_entity_id"
     t.index ["user_id"], name: "index_admin_activities_on_user_id"
+  end
+
+  create_table "analyses", force: :cascade do |t|
+    t.datetime "archived_at"
+    t.bigint "assigned_coach_profile_id"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id", null: false
+    t.bigint "group_id"
+    t.bigint "organisation_id"
+    t.datetime "published_at"
+    t.string "status", default: "draft", null: false
+    t.text "summary"
+    t.string "title", null: false
+    t.bigint "tournament_id"
+    t.bigint "training_session_id"
+    t.datetime "updated_at", null: false
+    t.index ["assigned_coach_profile_id"], name: "index_analyses_on_assigned_coach_profile_id"
+    t.index ["created_by_id"], name: "index_analyses_on_created_by_id"
+    t.index ["group_id"], name: "index_analyses_on_group_id"
+    t.index ["organisation_id"], name: "index_analyses_on_organisation_id"
+    t.index ["status", "updated_at"], name: "index_analyses_on_status_and_updated_at"
+    t.index ["tournament_id"], name: "index_analyses_on_tournament_id"
+    t.index ["training_session_id"], name: "index_analyses_on_training_session_id"
+    t.check_constraint "status::text <> 'archived'::text OR archived_at IS NOT NULL", name: "analyses_archived_at"
+    t.check_constraint "status::text <> 'published'::text OR published_at IS NOT NULL", name: "analyses_published_at"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'published'::character varying, 'archived'::character varying]::text[])", name: "analyses_status"
+  end
+
+  create_table "analysis_annotations", force: :cascade do |t|
+    t.bigint "analysis_video_id", null: false
+    t.bigint "author_id", null: false
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.bigint "player_profile_id"
+    t.integer "timestamp_seconds", null: false
+    t.datetime "updated_at", null: false
+    t.index ["analysis_video_id", "timestamp_seconds"], name: "idx_on_analysis_video_id_timestamp_seconds_1522cf9aaa"
+    t.index ["analysis_video_id"], name: "index_analysis_annotations_on_analysis_video_id"
+    t.index ["author_id"], name: "index_analysis_annotations_on_author_id"
+    t.index ["player_profile_id"], name: "index_analysis_annotations_on_player_profile_id"
+    t.check_constraint "timestamp_seconds >= 0", name: "analysis_annotations_timestamp"
+  end
+
+  create_table "analysis_assessment_sessions", force: :cascade do |t|
+    t.bigint "analysis_id", null: false
+    t.bigint "assessment_session_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["analysis_id", "assessment_session_id"], name: "index_analysis_assessment_sessions_unique", unique: true
+    t.index ["analysis_id"], name: "index_analysis_assessment_sessions_on_analysis_id"
+    t.index ["assessment_session_id"], name: "index_analysis_assessment_sessions_on_assessment_session_id"
+  end
+
+  create_table "analysis_comments", force: :cascade do |t|
+    t.bigint "analysis_id", null: false
+    t.bigint "author_id", null: false
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.bigint "parent_id"
+    t.datetime "updated_at", null: false
+    t.index ["analysis_id", "created_at"], name: "index_analysis_comments_on_analysis_id_and_created_at"
+    t.index ["analysis_id"], name: "index_analysis_comments_on_analysis_id"
+    t.index ["author_id"], name: "index_analysis_comments_on_author_id"
+    t.index ["parent_id"], name: "index_analysis_comments_on_parent_id"
+  end
+
+  create_table "analysis_participants", force: :cascade do |t|
+    t.bigint "analysis_id", null: false
+    t.datetime "created_at", null: false
+    t.text "notes"
+    t.bigint "player_profile_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["analysis_id", "player_profile_id"], name: "index_analysis_participants_unique", unique: true
+    t.index ["analysis_id"], name: "index_analysis_participants_on_analysis_id"
+    t.index ["player_profile_id"], name: "index_analysis_participants_on_player_profile_id"
+  end
+
+  create_table "analysis_videos", force: :cascade do |t|
+    t.bigint "analysis_id", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.integer "position", default: 0, null: false
+    t.string "source_type", null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.bigint "video_id"
+    t.index ["analysis_id", "position"], name: "index_analysis_videos_on_analysis_id_and_position"
+    t.index ["analysis_id"], name: "index_analysis_videos_on_analysis_id"
+    t.index ["video_id"], name: "index_analysis_videos_on_video_id"
+    t.check_constraint "source_type::text = 'external'::text AND video_id IS NOT NULL OR source_type::text = 'upload'::text AND video_id IS NULL", name: "analysis_videos_source"
+    t.check_constraint "source_type::text = ANY (ARRAY['external'::character varying, 'upload'::character varying]::text[])", name: "analysis_videos_source_type"
   end
 
   create_table "app_settings", force: :cascade do |t|
@@ -955,6 +1046,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_000005) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "admin_activities", "users"
+  add_foreign_key "analyses", "coach_profiles", column: "assigned_coach_profile_id", on_delete: :nullify
+  add_foreign_key "analyses", "groups", on_delete: :nullify
+  add_foreign_key "analyses", "organisations", on_delete: :nullify
+  add_foreign_key "analyses", "tournaments", on_delete: :nullify
+  add_foreign_key "analyses", "training_sessions", on_delete: :nullify
+  add_foreign_key "analyses", "users", column: "created_by_id", on_delete: :restrict
+  add_foreign_key "analysis_annotations", "analysis_videos", on_delete: :cascade
+  add_foreign_key "analysis_annotations", "player_profiles", on_delete: :nullify
+  add_foreign_key "analysis_annotations", "users", column: "author_id", on_delete: :restrict
+  add_foreign_key "analysis_assessment_sessions", "analyses", on_delete: :cascade
+  add_foreign_key "analysis_assessment_sessions", "assessment_sessions", on_delete: :cascade
+  add_foreign_key "analysis_comments", "analyses", on_delete: :cascade
+  add_foreign_key "analysis_comments", "analysis_comments", column: "parent_id", on_delete: :cascade
+  add_foreign_key "analysis_comments", "users", column: "author_id", on_delete: :restrict
+  add_foreign_key "analysis_participants", "analyses", on_delete: :cascade
+  add_foreign_key "analysis_participants", "player_profiles", on_delete: :restrict
+  add_foreign_key "analysis_videos", "analyses", on_delete: :cascade
+  add_foreign_key "analysis_videos", "videos", on_delete: :nullify
   add_foreign_key "assessment_categories", "assessment_definitions"
   add_foreign_key "assessment_categories", "categories"
   add_foreign_key "assessment_categories", "category_customs"

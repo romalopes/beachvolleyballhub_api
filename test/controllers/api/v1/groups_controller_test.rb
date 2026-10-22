@@ -4,7 +4,8 @@ require "test_helper"
 #
 # Groups are reusable participant rosters (squads) for assessment sessions.
 # They are a selection aid, not an authorization boundary.
-# Read is open to training managers (coach/curator/admin).
+# Full catalogue read is open to training managers (coach/curator/admin), while
+# authenticated users have a narrow joinable catalogue for their organisations.
 # Any player, coach, curator, or admin can create a group. Updates, deletion,
 # and membership manipulation retain their existing ownership/management rules.
 # Deleting a group with associated assessment sessions is refused (archive instead).
@@ -51,6 +52,46 @@ class Api::V1::GroupsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(@player_user)
     get api_v1_groups_path
     assert_response :forbidden
+  end
+
+  test "player joinable index lists active groups in their organisations with summary metadata" do
+    account = Account.create!(user: @player_user)
+    club = organisations(:sydney_club)
+    OrganisationMembership.create!(
+      organisation: club, account: account, memberable: account,
+      role: "member", status: "active"
+    )
+    joinable = Group.create!(
+      name: "Player joinable squad", organisation: club, created_by: @owner
+    )
+    joinable.group_memberships.create!(
+      account: @owner.account, memberable: @owner.account,
+      role: "owner", status: "active", joined_at: Time.current
+    )
+    archived = Group.create!(
+      name: "Archived joinable squad", organisation: club, created_by: @owner,
+      status: "archived"
+    )
+    archived.group_memberships.create!(
+      account: @owner.account, memberable: @owner.account,
+      role: "owner", status: "active", joined_at: Time.current
+    )
+    already_joined = groups(:sydney_club_squad)
+    already_joined.group_memberships.create!(
+      account: account, memberable: account, role: "member", status: "pending"
+    )
+
+    sign_in_as(@player_user)
+    get api_v1_groups_path, params: { joinable: 1, status: "all" }
+
+    assert_response :success
+    groups_by_name = json["data"].index_by { |group| group["name"] }
+    assert groups_by_name.key?(joinable.name)
+    assert_not groups_by_name.key?(archived.name)
+    assert_not groups_by_name.key?(already_joined.name)
+    assert_not groups_by_name.key?(groups(:northern_club_squad).name)
+    assert_equal 1, groups_by_name.dig(joinable.name, "player_count")
+    assert_equal club.name, groups_by_name.dig(joinable.name, "organisation", "name")
   end
 
   test "curator can read index and create groups" do

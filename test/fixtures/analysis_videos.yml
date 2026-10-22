@@ -1,0 +1,9 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+coach_led_video_1:
+  analysis: coach_led_draft
+  video:
+  source_type: upload
+  title: "Serve Technique Review"
+  description: "Video of serve technique for review"
+  position: 0

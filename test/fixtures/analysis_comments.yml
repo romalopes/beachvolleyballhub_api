@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+coach_led_comment_1:
+  analysis: coach_led_draft
+  author: six
+  body: "Great progress this session"
+  parent:
+
+reply_to_coach_comment:
+  analysis: coach_led_draft
+  author: one
+  body: "Thank you for the feedback"
+  parent: coach_led_comment_1

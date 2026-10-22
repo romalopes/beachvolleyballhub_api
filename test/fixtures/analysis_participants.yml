@@ -1,0 +1,16 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+john_in_coach_led:
+  analysis: coach_led_draft
+  player_profile: john_player
+  notes: "Strong performance in serve"
+
+pedro_in_coach_led:
+  analysis: coach_led_draft
+  player_profile: pedro_player
+  notes: "Improving footwork"
+
+john_in_published:
+  analysis: published_analysis
+  player_profile: john_player
+  notes: "Consistent setter play"

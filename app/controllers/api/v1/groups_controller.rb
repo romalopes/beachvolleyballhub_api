@@ -7,8 +7,10 @@ module Api
     # Archive-not-delete: a group that has run assessment sessions cannot be
     # destroyed (preventing orphaned history); it must be archived instead.
     #
-    # Read access is open to training managers (coach/curator/admin). Any
-    # player, coach, curator, or admin may create a group; later mutation stays
+    # Full catalogue read access is open to training managers
+    # (coach/curator/admin). Authenticated users also have a narrow `joinable`
+    # catalogue containing active, visible groups in organisations they belong to.
+    # Any player, coach, curator, or admin may create a group; later mutation stays
     # subject to the ownership and management rules below. Private groups observe
     # soft visibility: hidden from other coaches unless administrator or curator.
     class GroupsController < ApplicationController
@@ -16,7 +18,8 @@ module Api
       include Pagination
 
       before_action :require_authentication
-      before_action :require_training_manager!, except: %i[create show update destroy join leave add_created_profile_membership remove_created_profile_membership]
+      before_action :require_training_manager!, except: %i[index create show update destroy join leave add_created_profile_membership remove_created_profile_membership]
+      before_action :require_group_index_access!, only: :index
       before_action :require_group_creator!, only: :create
       before_action :require_content_creator!, only: %i[add_members remove_member]
       before_action :set_group, only: %i[show update destroy add_members remove_member
@@ -31,7 +34,9 @@ module Api
       def index
         groups = group_scope
                  .ordered
-                 .includes(:created_by, :group_memberships)
+                 .includes(:created_by, :group_memberships, :organisation)
+
+        groups = joinable_group_scope(groups) if joinable_index?
 
         if params[:q].present?
           term = "%#{params[:q]}%"
@@ -42,7 +47,7 @@ module Api
           groups = groups.where(organisation_id: params[:organisation_id])
         end
 
-        unless params[:include_private].present?
+        if joinable_index? || !params[:include_private].present?
           groups = groups.visible_to(Current.user)
         end
 
@@ -465,6 +470,8 @@ module Api
       end
 
       def group_scope
+        return Group.active if joinable_index?
+
         status = params[:status].presence
         if status == "all"
           Group.all
@@ -473,6 +480,34 @@ module Api
         else
           Group.active
         end
+      end
+
+      # The ordinary catalogue remains a training-management resource. The narrow
+      # joinable mode is self-service: any authenticated account can discover only
+      # active groups belonging to organisations where one of its account/profile
+      # subjects has an active membership.
+      def require_group_index_access!
+        return true if Current.user&.content_manager? || joinable_index?
+
+        render_unauthorized_or_forbidden
+        false
+      end
+
+      def joinable_index?
+        ActiveModel::Type::Boolean.new.cast(params[:joinable])
+      end
+
+      def joinable_group_scope(groups)
+        organisation_ids = OrganisationMembership
+                           .for_user_subjects(Current.user)
+                           .active
+                           .select(:organisation_id)
+        current_group_ids = GroupMembership
+                            .for_user_subjects(Current.user)
+                            .where.not(status: "ended")
+                            .select(:group_id)
+
+        groups.where(organisation_id: organisation_ids).where.not(id: current_group_ids)
       end
 
       def set_group

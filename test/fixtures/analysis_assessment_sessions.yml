@@ -1,0 +1,5 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+coach_led_linked_session:
+  analysis: coach_led_draft
+  assessment_session: draft_squad
