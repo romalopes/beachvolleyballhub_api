@@ -109,7 +109,7 @@ module Api
 
         invitations = ClaimInvitation.where(invitee_email: Current.user.email_address)
           .order(created_at: :desc).limit(100)
-        render json: invitations.map(&:summary)
+        render json: invitations.map { |invitation| invitation.summary(include_claimable_name: true) }
       end
 
       def accept

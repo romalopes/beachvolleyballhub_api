@@ -244,6 +244,33 @@ class Api::V1::PlayersControllerTest < ActionDispatch::IntegrationTest
     assert_includes body.fetch("assessments").map { |row| row.fetch("id") }, assessments(:skill_active).id
   end
 
+  test "show exposes assessment rubric coach account session and scheduled date" do
+    player = player_profiles(:pedro_player)
+    coach = coach_profiles(:maria_coach)
+    coach.update!(display_name: "Coach profile")
+    session = assessment_sessions(:draft_squad)
+    assessment = Assessment.create!(
+      player_profile: player,
+      coach_profile: coach,
+      created_by: @trainer,
+      assessment_definition: assessment_definitions(:balanced),
+      assessment_session: session,
+      status: "draft"
+    )
+    sign_in_as(@trainer)
+
+    get api_v1_player_path(player)
+
+    assert_response :success
+    row = JSON.parse(response.body).fetch("assessments").find { |item| item.fetch("id") == assessment.id }
+    assert_equal "A-Level Assessment", row.dig("assessment_definition", "name")
+    assert_equal "Coach profile", row.fetch("coach_name")
+    assert_equal "Maria Silva", row.fetch("coach_account_name")
+    assert_equal "Tuesday squad screening", row.fetch("assessment_session_name")
+    assert_equal session.scheduled_on.iso8601, row.fetch("assessment_session_scheduled_on")
+    assert_equal @trainer.name, row.dig("created_by", "name")
+  end
+
   private
 
   def private_player_owned_by(owner)

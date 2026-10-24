@@ -87,7 +87,7 @@ class PlayerClaim < ApplicationRecord
 
   # `include_profile_name` is the historic keyword; the subject name is shown
   # instead when the caller may see it.
-  def summary(include_profile_name: false, include_review_details: false)
+  def summary(include_profile_name: false, include_review_details: false, include_claimant_details: false)
     result = {
       id: id,
       player_profile_id: player_profile_key,
@@ -98,11 +98,17 @@ class PlayerClaim < ApplicationRecord
       created_at: created_at,
       reviewed_at: reviewed_at
     }
-    result[:player_name] = subject&.full_name if include_profile_name
+    if include_profile_name
+      result[:player_name] = subject&.full_name
+      result[:claimable_name] = subject&.display_name
+    end
     if include_review_details
       result[:reviewed_by_account_id] = reviewed_by_account_id
       result[:verification_method] = verification_method
       result[:rejection_reason] = rejection_reason if status == "rejected"
+    end
+    if include_claimant_details
+      result[:claimant_account_name] = claimant_account&.full_name.presence
     end
     result
   end

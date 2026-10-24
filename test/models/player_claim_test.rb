@@ -37,4 +37,22 @@ class PlayerClaimTest < ActiveSupport::TestCase
     assert_includes PlayerClaim.pending_for_owner(users(:three)), claim
     assert_empty PlayerClaim.pending_for_owner(users(:six))
   end
+
+  test "named summary includes the profile display name" do
+    profile = PlayerProfile.create!(display_name: "Player One", created_by: users(:three))
+    claim = PlayerClaim.create!(claimable: profile, claimant_account: users(:five).account,
+                                initiated_by_account: users(:five).account, status: "pending")
+
+    assert_equal "Player One", claim.summary(include_profile_name: true)[:claimable_name]
+  end
+
+  test "management summary includes the claimant account name when requested" do
+    profile = PlayerProfile.create!(display_name: "Player Two", created_by: users(:three))
+    claim = PlayerClaim.create!(claimable: profile, claimant_account: users(:five).account,
+                                initiated_by_account: users(:five).account, status: "pending")
+
+    summary = claim.summary(include_claimant_details: true)
+
+    assert_equal users(:five).account.full_name, summary[:claimant_account_name]
+  end
 end

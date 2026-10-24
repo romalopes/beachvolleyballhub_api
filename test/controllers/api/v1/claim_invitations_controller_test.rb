@@ -143,6 +143,8 @@ class Api::V1::ClaimInvitationsControllerTest < ActionDispatch::IntegrationTest
     ids = JSON.parse(response.body).map { |row| row.fetch("id") }
     assert_includes ids, accepted.id
     assert_includes ids, declined.id
+    assert_includes JSON.parse(response.body).map { |row| row.fetch("claimable_name") }, "Accept Profile"
+    assert_includes JSON.parse(response.body).map { |row| row.fetch("claimable_name") }, "Decline Profile"
     assert_not_includes response.body, accepted.token_digest
 
     post "/api/v1/claim_invitations/#{accepted.id}/accept"

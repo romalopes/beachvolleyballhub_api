@@ -105,8 +105,9 @@ module Api
         payload["assessments"] = Assessment.visible_to(Current.user)
                                          .where(player_profile_id: @player.id)
                                          .ordered
-                                         .includes(:category, :created_by, :coach_profile)
-                                         .map(&:metadata)
+                                         .includes(:category, :assessment_definition, :assessment_session, :created_by,
+                                                   coach_profile: :account)
+                                         .map { |assessment| assessment_payload(assessment) }
 
         render json: payload
       rescue ActiveRecord::RecordNotFound
@@ -256,6 +257,39 @@ module Api
         # the key always being present (nil = recorded before Phase C).
         payload["created_by"] = nil unless payload.key?("created_by")
         payload["account"] = nil unless payload.key?("account")
+        payload
+      end
+
+      def assessment_payload(assessment)
+        payload = assessment.metadata.stringify_keys
+        payload["assessment_definition_id"] = assessment.assessment_definition_id
+        payload["assessment_definition"] = if assessment.assessment_definition
+          {
+            "id" => assessment.assessment_definition.id,
+            "name" => assessment.assessment_definition.name,
+            "status" => assessment.assessment_definition.status
+          }
+        end
+        payload["created_by"] = if assessment.created_by
+          { "id" => assessment.created_by.id, "name" => assessment.created_by.name }
+        end
+        payload["coach_profile"] = {
+          "id" => assessment.coach_profile.id,
+          "display_name" => assessment.coach_profile.display_name,
+          "account_name" => assessment.coach_profile.account&.full_name&.presence
+        }
+        payload["coach_name"] = assessment.coach_profile.display_name
+        payload["coach_account_name"] = assessment.coach_profile.account&.full_name&.presence
+        payload["assessment_session_id"] = assessment.assessment_session_id
+        payload["assessment_session"] = if assessment.assessment_session
+          {
+            "id" => assessment.assessment_session.id,
+            "name" => assessment.assessment_session.name,
+            "scheduled_on" => assessment.assessment_session.scheduled_on
+          }
+        end
+        payload["assessment_session_name"] = assessment.assessment_session&.name
+        payload["assessment_session_scheduled_on"] = assessment.assessment_session&.scheduled_on
         payload
       end
 

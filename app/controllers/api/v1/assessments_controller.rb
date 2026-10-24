@@ -38,8 +38,8 @@ module Api
       # `five_scale` let the SPA show the rating on either scale without
       # converting it again.
       ASSESSMENT_ONLY = %i[
-        id player_profile_id coach_profile_id category_id custom_category
-        training_session_id score reported_value scale notes status
+        id player_profile_id coach_profile_id assessment_definition_id category_id custom_category
+        assessment_session_id training_session_id score reported_value scale notes status
         created_at updated_at
       ].freeze
       ASSESSMENT_METHODS = %i[
@@ -47,7 +47,7 @@ module Api
         player_profile_id coach_profile_id category_scores
       ].freeze
       ASSESSMENT_INCLUDES = {
-        created_by: { only: %i[id name] },
+        created_by: { only: %i[id] },
         category: { only: %i[id name slug] },
         assessment_definition: { only: %i[id name status] }
       }.freeze
@@ -56,7 +56,9 @@ module Api
         rows = Assessment
                  .visible_to(Current.user)
                  .ordered
-                 .includes(:player_profile, :coach_profile, :created_by, :category)
+                 .includes(player_profile: :account)
+                 .includes(coach_profile: :account)
+                 .includes(:created_by, :category, :assessment_definition, :assessment_session)
         rows = rows.where(player_profile_id: params[:player_id]) if params[:player_id].present?
         rows = rows.where(coach_profile_id: params[:coach_id]) if params[:coach_id].present?
         rows = rows.where(category_id: params[:category_id]) if params[:category_id].present?
@@ -326,9 +328,32 @@ module Api
         )
         # `as_json(include:)` drops a nil `belongs_to`, but the SPA relies on
         # the key always being present (nil = recorded before provenance).
-        payload["created_by"] = nil unless payload.key?("created_by")
+        payload["created_by"] = if row.created_by
+          { "id" => row.created_by.id, "name" => row.created_by.name }
+        end
         payload["category"] = nil unless payload.key?("category")
         payload["assessment_definition"] = nil unless payload.key?("assessment_definition")
+        payload["player_profile"] = {
+          "id" => row.player_profile.id,
+          "display_name" => row.player_profile.display_name,
+          "account_name" => row.player_profile.account&.full_name&.presence
+        }
+        payload["coach_profile"] = {
+          "id" => row.coach_profile.id,
+          "display_name" => row.coach_profile.display_name,
+          "account_name" => row.coach_profile.account&.full_name&.presence
+        }
+        payload["coach_name"] = row.coach_profile.display_name
+        payload["coach_account_name"] = row.coach_profile.account&.full_name&.presence
+        payload["assessment_session"] = if row.assessment_session
+          {
+            "id" => row.assessment_session.id,
+            "name" => row.assessment_session.name,
+            "scheduled_on" => row.assessment_session.scheduled_on
+          }
+        end
+        payload["assessment_session_name"] = row.assessment_session&.name
+        payload["assessment_session_scheduled_on"] = row.assessment_session&.scheduled_on
         payload
       end
     end

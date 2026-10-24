@@ -48,7 +48,7 @@ module Api
 
         payloads = own_claims.to_a.map do |claim|
           can_review = claim.reviewable_by?(Current.user)
-          [ claim.id, claim.summary(include_profile_name: can_review,
+          [ claim.id, claim.summary(include_profile_name: true,
                                     include_review_details: can_review) ]
         end.to_h
         review_claims.each do |claim|
@@ -153,10 +153,12 @@ module Api
           return render json: { error: "Unsupported profile type" }, status: :unprocessable_entity unless ProfileClaimability::PROFILE_TYPES.include?(params[:claimable_type])
           claims = claims.where(claimable_type: params[:claimable_type])
         end
-        claims = claims.order(created_at: :desc)
+        claims = claims.includes(claimant_account: :contact_detail).order(created_at: :desc)
         records, meta = paginate(claims)
         render json: { data: records.map { |claim|
-          claim.summary(include_profile_name: true, include_review_details: claim.reviewable_by?(user)).merge(can_review: claim.reviewable_by?(user))
+          claim.summary(include_profile_name: true,
+                        include_review_details: claim.reviewable_by?(user),
+                        include_claimant_details: true).merge(can_review: claim.reviewable_by?(user))
         }, meta: meta }
       end
 
