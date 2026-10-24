@@ -225,6 +225,7 @@ class Api::V1::RankingConsolidationsController < ApplicationController
         assessment_session_id: join.assessment_session_id,
         name: session&.name,
         coach_name: session&.coach_profile&.full_name,
+        coach_account_name: session&.coach_profile&.account&.full_name.presence,
         # Carried so the UI can mark an unfinished source and the publish gate can
         # say which session is holding a draft back.
         status: session&.status,
@@ -246,10 +247,11 @@ class Api::V1::RankingConsolidationsController < ApplicationController
       }
     end
 
-    rows = consolidation.rows.sort_by { |row| [ row.rank || 999_999, row.player_profile_id ] }.map do |row|
+    rows = consolidation.rows.includes(player_profile: :account).sort_by { |row| [ row.rank || 999_999, row.player_profile_id ] }.map do |row|
       {
         player_profile_id: row.player_profile_id,
         player_name: row.player_profile.full_name.presence || "Player ##{row.player_profile_id}",
+        account_name: row.player_profile.account&.full_name.presence,
         coach_scores: row.scores_by_session,
         coverage: row.coverage,
         average_score: row.average_score,

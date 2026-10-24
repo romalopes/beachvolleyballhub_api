@@ -16,12 +16,12 @@ class Api::V1::AssessmentSessionsController < ApplicationController
 
   def index
     sessions = AssessmentSession.ordered
-                       .includes(:assessment_definition, :coach_profile, :group,
+                       .includes(:assessment_definition, { coach_profile: :account }, :group,
                                  # Preloaded because `serialize` reads the session's
                                  # consolidations for every row; without this the list
                                  # would issue a query per session.
                                  consolidation_sessions: :ranking_consolidation,
-                                 participants: :player_profile,
+                                 participants: { player_profile: :account },
                                  assessments: { assessment_category_scores: :assessment_category })
     render json: { assessment_sessions: sessions.map { |s| serialize(s) } }
   end
@@ -268,7 +268,10 @@ class Api::V1::AssessmentSessionsController < ApplicationController
       coach_profile_id: session_record.coach_profile_id,
       coach_profile: {
         id: session_record.coach_profile_id,
-        full_name: session_record.coach_profile.full_name
+        full_name: session_record.coach_profile.full_name,
+        # Same rule as roster players: clients show "Account (profile)" when
+        # the coach profile is claimed by an account.
+        account_name: session_record.coach_profile.account&.full_name.presence
       },
       group_id: session_record.group_id,
       assessment_definition: serialize_definition(session_record.assessment_definition),
@@ -279,10 +282,16 @@ class Api::V1::AssessmentSessionsController < ApplicationController
         excluded: ranking[:excluded]
       },
       participants: session_record.participants.map do |participant|
+        profile = participant.player_profile
         {
           id: participant.id,
           player_profile_id: participant.player_profile_id,
-          player_name: participant.player_profile.full_name,
+          player_name: profile.full_name,
+          # The linked account name, when the profile is claimed by an account.
+          # Clients lead with it and keep the profile display name in
+          # parentheses, so a staff label that drifted from the identity stays
+          # visible. nil for a profile-only (staff-recorded) player.
+          account_name: profile.account&.full_name.presence,
           inclusion: participant.inclusion,
           missing_reason: participant.missing_reason,
           result: results[participant.player_profile_id]

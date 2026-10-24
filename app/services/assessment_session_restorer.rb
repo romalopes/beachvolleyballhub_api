@@ -3,8 +3,9 @@
 # `to_status` is explicit rather than a boolean, because the two destinations are
 # genuinely different operations and the caller has to choose deliberately:
 #
-#   "draft"     — puts the session back in progress. The coach rescores it and
-#                 publishes again on their own terms.
+#   "draft"     — puts the session back in progress, and its published
+#                 results back to draft with it (the inverse of the publisher).
+#                 The coach rescores it and publishes again on their own terms.
 #   "published" — republishes it. This is NOT a status write: it runs the
 #                 publisher so the session's assessments are re-activated. A
 #                 plain `update!` would leave a published session whose results
@@ -44,28 +45,31 @@ class AssessmentSessionRestorer
   private
 
   def restore_to_draft
-    @session.update!(status: "draft", published_at: nil)
+    AssessmentSession.transaction do
+      @session.update!(status: "draft", published_at: nil)
+      # Returning the session to draft returns its results to draft too - the
+      # inverse of the publisher, which is what activates drafts on publish. A
+      # session that is back in progress cannot keep endorsing its numbers as
+      # club knowledge, so every non-draft row (active, or individually
+      # withdrawn by its author) goes back to draft; republishing re-activates
+      # them from there.
+      @session.assessments.where.not(status: "draft").find_each do |assessment|
+        assessment.update!(status: "draft")
+      end
+    end
     @session
   end
 
-  # Delegating to the publisher is what makes this safe: the draft→published
+  # Delegating to the publisher is what makes this safe: the draft-to-published
   # transition already knows how to refuse a session that is not ready, and
   # reusing it means a restore can never be more permissive than a first
-  # publication. The flip to draft happens first because the publisher only ever
-  # accepts a draft, and it is the same transaction the session would have had.
+  # publication. The full return-to-draft (session AND results) happens first
+  # because the publisher only ever accepts a draft. If the publisher refuses,
+  # nothing needs rolling back: the session and its results are already in a
+  # coherent draft state, which is where a withdrawn session that was not ready
+  # to come back belongs - the admin fixes the scores there.
   def republish
-    AssessmentSession.transaction do
-      @session.update!(status: "draft", published_at: nil)
-    end
-
-    begin
-      AssessmentSessionPublisher.new(@session).call
-    rescue AssessmentSessionPublisher::Error
-      # Leave the session in draft rather than half-published: a withdrawn
-      # session that was not ready to come back belongs in progress, and the
-      # admin can fix the scores there.
-      @session.update!(status: "draft", published_at: nil)
-      raise
-    end
+    restore_to_draft
+    AssessmentSessionPublisher.new(@session).call
   end
 end

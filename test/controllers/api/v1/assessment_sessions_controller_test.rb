@@ -50,5 +50,43 @@ class Api::V1::AssessmentSessionsControllerTest < ActionDispatch::IntegrationTes
     assert_nil profile.account_id
     assert_equal "Test TESt", participant.fetch("player_name")
     assert_equal "included", participant.fetch("inclusion")
+    assert_nil participant.fetch("account_name")
+  end
+
+  test "participants expose the linked account name" do
+    sign_in_as(@coach_user)
+    session_id = create_draft_session
+
+    post_json "/api/v1/assessment_sessions/#{session_id}/add_players", players: [ {
+      player_profile_id: player_profiles(:john_player).id,
+      inclusion: "included"
+    } ]
+    assert_response :created
+
+    participant = json.dig("assessment_session", "participants").sole
+    assert_equal "John Smith", participant.fetch("account_name")
+    assert_equal "John Smith", participant.fetch("player_name")
+  end
+
+  test "account_name differs from the profile display name when staff renamed the profile" do
+    sign_in_as(@coach_user)
+    session_id = create_draft_session
+
+    profile = PlayerProfile.create!(
+      account: accounts(:one),
+      display_name: "Coogee 2",
+      status: "active",
+      visibility: "shared"
+    )
+
+    post_json "/api/v1/assessment_sessions/#{session_id}/add_players", players: [ {
+      player_profile_id: profile.id,
+      inclusion: "included"
+    } ]
+    assert_response :created
+
+    participant = json.dig("assessment_session", "participants").sole
+    assert_equal "John Smith", participant.fetch("account_name")
+    assert_equal "Coogee 2", participant.fetch("player_name")
   end
 end

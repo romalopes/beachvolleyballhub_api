@@ -49,6 +49,7 @@ class AssessmentSessionRanking
       {
         player_profile_id: participant.player_profile_id,
         player_name: player_name(participant),
+        account_name: participant.player_profile.account&.full_name.presence,
         status: "excluded",
         overall_score: nil,
         rank: nil,
@@ -106,6 +107,10 @@ class AssessmentSessionRanking
     {
       player_profile_id: participant.player_profile_id,
       player_name: player_name(participant),
+      # The linked account name, when the profile is claimed by an account.
+      # Clients show "Account (profile)" so a display name a coach recorded
+      # separately from the identity stays visible. nil for profile-only rows.
+      account_name: participant.player_profile.account&.full_name.presence,
       assessment_id: assessment&.id,
       overall_score: nil,
       rank: nil,
