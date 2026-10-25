@@ -25,6 +25,18 @@ services:
         sync: false
       - key: MIGRATE_ON_BOOT
         value: "true"
+      - key: GEOCODING_ENABLED
+        value: "true"
+      - key: GEOCODING_PROVIDER
+        value: geoapify
+      - key: GEOAPIFY_API_KEY
+        sync: false
+      - key: GEOCODING_USER_AGENT
+        sync: false
+      - key: GEOCODING_OPEN_TIMEOUT
+        value: "3"
+      - key: GEOCODING_READ_TIMEOUT
+        value: "5"
 
   # Solid Queue does not run in the Puma process. This continuously running
   # worker consumes every queue configured in config/queue.yml, including the
@@ -79,3 +91,15 @@ services:
         sync: false
       - key: IP2LOCATION_API_KEY
         sync: false
+      - key: GEOCODING_ENABLED
+        value: "true"
+      - key: GEOCODING_PROVIDER
+        value: geoapify
+      - key: GEOAPIFY_API_KEY
+        sync: false
+      - key: GEOCODING_USER_AGENT
+        sync: false
+      - key: GEOCODING_OPEN_TIMEOUT
+        value: "3"
+      - key: GEOCODING_READ_TIMEOUT
+        value: "5"

@@ -1,6 +1,8 @@
 class Tournament < ApplicationRecord
   belongs_to :organisation
   belongs_to :created_by_account, class_name: 'Account'
+  belongs_to :location, optional: true
+  belongs_to :court, optional: true
   has_many :divisions, class_name: 'TournamentDivision', dependent: :destroy
   has_many :participations, class_name: 'TournamentParticipation', dependent: :destroy
   has_many :watch_links, class_name: 'TournamentWatchLink', dependent: :destroy
@@ -23,11 +25,26 @@ class Tournament < ApplicationRecord
   validates :publication_state, presence: true, inclusion: { in: publication_states.keys }
   validates :website_url, format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]), allow_blank: true }
   validate :ends_after_starts
+  validate :location_is_selectable_for_new_assignment
+  validate :court_matches_location
 
   def ends_after_starts
     if starts_at.present? && ends_at.present? && ends_at <= starts_at
       errors.add(:ends_at, "must be after the start date")
     end
+  end
+
+  def location_is_selectable_for_new_assignment
+    return if location_id.blank? || !will_save_change_to_location_id? || location&.usable_by?(created_by_account)
+
+    errors.add(:location, "must be verified or your own active proposal")
+  end
+
+  def court_matches_location
+    return if court_id.blank?
+    return if location_id.present? && court&.location_id == location_id
+
+    errors.add(:court, "must belong to the selected location")
   end
 
   def active_divisions

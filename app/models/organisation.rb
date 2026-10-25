@@ -51,6 +51,7 @@ class Organisation < ApplicationRecord
 
   belongs_to :parent_organisation, class_name: "Organisation", optional: true
   belongs_to :created_by_account, class_name: "Account", optional: true
+  belongs_to :default_location, class_name: "Location", optional: true
 
   # The first attachment in this application. The storage service was already
   # configured but never installed, so this is what the Active Storage tables
@@ -62,6 +63,8 @@ class Organisation < ApplicationRecord
   # only — who recorded the row — so there are never two competing answers to "who
   # owns this club", which is how a transferred club ends up unmanageable by anyone.
   has_many :organisation_memberships, dependent: :destroy
+  has_many :organisation_locations, dependent: :destroy
+  has_many :locations, through: :organisation_locations
   has_many :tournaments, foreign_key: :organisation_id, dependent: :restrict_with_error
   # `members` means *current* members. Going through the raw association would
   # include accounts who had left, so "is this account one of ours?" would keep
@@ -105,6 +108,7 @@ class Organisation < ApplicationRecord
             },
             allow_blank: true
   validates :status, presence: true, inclusion: { in: STATUSES }
+  validate :default_location_is_associated
 
   # Join policy selected from /identity self-service: when true, a join request
   # creates a `pending` membership for review instead of an active row. Open
@@ -408,6 +412,7 @@ class Organisation < ApplicationRecord
                            Current&.user&.curator? || Current&.user&.admin?,
       requires_approval: requires_approval,
       approval_required: approval_required?,
+      default_location: default_location&.summary,
       created_by_account: created_by_account && {
         id: created_by_account.id,
         name: created_by_account.full_name
@@ -418,6 +423,18 @@ class Organisation < ApplicationRecord
   end
 
   private
+
+  def default_location_is_associated
+    return if default_location_id.blank?
+    unless default_location&.selectable?
+      errors.add(:default_location, "must be active and verified")
+      return
+    end
+    return if organisation_locations.any? { |row| row.location_id == default_location_id }
+    return if organisation_locations.where(location_id: default_location_id).exists?
+
+    errors.add(:default_location, "must be one of the organisation's locations")
+  end
 
   # Mirrors `ContentAuthorization#oversight?`. Repeated rather than shared because a
   # model must not depend on a controller concern; both are two lines and the test

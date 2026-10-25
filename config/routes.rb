@@ -107,6 +107,13 @@ Rails.application.routes.draw do
       resources :coaches, only: %i[index show create update destroy] do
         member { post :merge }
       end
+      resources :locations, only: %i[index show create update destroy] do
+        member do
+          post :verify
+          post :archive
+        end
+        resources :courts, only: %i[index create update destroy]
+      end
       resources :tournaments, only: [:index, :show, :create, :update, :destroy] do
         member do
           patch :archive
@@ -198,6 +205,7 @@ Rails.application.routes.draw do
       # placeholder never used — and neither the tree below it nor the membership
       # history of a real club may be destroyed as a side effect of tidying up.
       resources :organisations, only: %i[index show create update destroy] do
+        resources :organisation_locations, path: :locations, only: %i[index create destroy]
         member do
           post :archive
           post :restore

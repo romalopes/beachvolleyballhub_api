@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_25_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -376,6 +376,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.index ["account_id"], name: "index_contact_details_on_account_id", unique: true
   end
 
+  create_table "courts", force: :cascade do |t|
+    t.text "access_instructions"
+    t.datetime "created_at", null: false
+    t.decimal "latitude", precision: 10, scale: 7
+    t.bigint "location_id", null: false
+    t.decimal "longitude", precision: 10, scale: 7
+    t.string "name", null: false
+    t.string "normalized_name", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id", "normalized_name"], name: "index_courts_on_location_id_and_normalized_name", unique: true
+    t.index ["location_id"], name: "index_courts_on_location_id"
+    t.check_constraint "(latitude IS NULL) = (longitude IS NULL)", name: "courts_coordinates_pair"
+    t.check_constraint "latitude IS NULL OR latitude >= '-90'::integer::numeric AND latitude <= 90::numeric", name: "courts_latitude_range"
+    t.check_constraint "longitude IS NULL OR longitude >= '-180'::integer::numeric AND longitude <= 180::numeric", name: "courts_longitude_range"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying]::text[])", name: "courts_status"
+  end
+
   create_table "criteria", force: :cascade do |t|
     t.bigint "assessment_category_id", null: false
     t.datetime "created_at", null: false
@@ -444,6 +462,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
   create_table "groups", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
+    t.bigint "default_location_id"
     t.text "description"
     t.string "name", null: false
     t.bigint "organisation_id"
@@ -454,6 +473,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.string "visibility", default: "shared", null: false
     t.index "lower((name)::text)", name: "index_groups_on_lower_name", unique: true
     t.index ["created_by_id"], name: "index_groups_on_created_by_id"
+    t.index ["default_location_id"], name: "index_groups_on_default_location_id"
     t.index ["name"], name: "index_groups_on_name"
     t.index ["organisation_id"], name: "index_groups_on_organisation_id"
     t.index ["slug"], name: "index_groups_on_slug", unique: true
@@ -461,6 +481,59 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.index ["visibility"], name: "index_groups_on_visibility"
     t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'archived'::character varying::text])", name: "groups_status"
     t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying::text, 'private'::character varying::text])", name: "groups_visibility"
+  end
+
+  create_table "location_aliases", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "location_id", null: false
+    t.string "name", null: false
+    t.string "normalized_name", null: false
+    t.string "source"
+    t.datetime "updated_at", null: false
+    t.index ["location_id", "normalized_name"], name: "index_location_aliases_unique_name", unique: true
+    t.index ["location_id"], name: "index_location_aliases_on_location_id"
+    t.index ["normalized_name"], name: "index_location_aliases_on_normalized_name"
+  end
+
+  create_table "locations", force: :cascade do |t|
+    t.string "administrative_area"
+    t.datetime "archived_at"
+    t.string "coordinate_source"
+    t.string "country_code", limit: 2
+    t.datetime "created_at", null: false
+    t.string "formatted_address"
+    t.string "geocoding_status", default: "not_requested", null: false
+    t.text "internal_notes"
+    t.decimal "latitude", precision: 10, scale: 7
+    t.string "locality"
+    t.string "location_type", default: "beach", null: false
+    t.decimal "longitude", precision: 10, scale: 7
+    t.bigint "merged_into_id"
+    t.string "name", null: false
+    t.string "normalized_name", null: false
+    t.bigint "proposed_by_account_id"
+    t.string "slug", null: false
+    t.string "source"
+    t.string "source_reference"
+    t.string "status", default: "active", null: false
+    t.string "timezone"
+    t.datetime "updated_at", null: false
+    t.string "verification_status", default: "proposed", null: false
+    t.datetime "verified_at"
+    t.bigint "verified_by_account_id"
+    t.index ["locality", "administrative_area", "country_code"], name: "index_locations_on_locality_scope"
+    t.index ["merged_into_id"], name: "index_locations_on_merged_into_id"
+    t.index ["normalized_name"], name: "index_locations_on_normalized_name"
+    t.index ["proposed_by_account_id"], name: "index_locations_on_proposed_by_account_id"
+    t.index ["slug"], name: "index_locations_on_slug", unique: true
+    t.index ["status", "verification_status"], name: "index_locations_on_status_and_verification_status"
+    t.index ["verified_by_account_id"], name: "index_locations_on_verified_by_account_id"
+    t.check_constraint "(latitude IS NULL) = (longitude IS NULL)", name: "locations_coordinates_pair"
+    t.check_constraint "geocoding_status::text = ANY (ARRAY['not_requested'::character varying, 'pending'::character varying, 'resolved'::character varying, 'failed'::character varying, 'manual'::character varying]::text[])", name: "locations_geocoding_status"
+    t.check_constraint "latitude IS NULL OR latitude >= '-90'::integer::numeric AND latitude <= 90::numeric", name: "locations_latitude_range"
+    t.check_constraint "longitude IS NULL OR longitude >= '-180'::integer::numeric AND longitude <= 180::numeric", name: "locations_longitude_range"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying, 'merged'::character varying]::text[])", name: "locations_status"
+    t.check_constraint "verification_status::text = ANY (ARRAY['proposed'::character varying, 'verified'::character varying, 'rejected'::character varying]::text[])", name: "locations_verification_status"
   end
 
   create_table "log_objects", force: :cascade do |t|
@@ -493,6 +566,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.index ["user_id"], name: "index_logs_on_user_id"
   end
 
+  create_table "organisation_locations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "location_id", null: false
+    t.text "notes"
+    t.bigint "organisation_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id"], name: "index_organisation_locations_on_location_id"
+    t.index ["organisation_id", "location_id"], name: "index_organisation_locations_unique", unique: true
+    t.index ["organisation_id"], name: "index_organisation_locations_on_organisation_id"
+  end
+
   create_table "organisation_memberships", force: :cascade do |t|
     t.bigint "account_id"
     t.datetime "created_at", null: false
@@ -520,6 +604,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.string "acronym"
     t.datetime "created_at", null: false
     t.bigint "created_by_account_id"
+    t.bigint "default_location_id"
     t.text "description"
     t.string "name", null: false
     t.string "organisation_type", default: "other", null: false
@@ -531,6 +616,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.index "lower((name)::text)", name: "index_organisations_on_lower_name", unique: true
     t.index ["acronym"], name: "index_organisations_on_acronym"
     t.index ["created_by_account_id"], name: "index_organisations_on_created_by_account_id"
+    t.index ["default_location_id"], name: "index_organisations_on_default_location_id"
     t.index ["organisation_type"], name: "index_organisations_on_organisation_type"
     t.index ["parent_organisation_id"], name: "index_organisations_on_parent_organisation_id"
     t.index ["slug"], name: "index_organisations_on_slug", unique: true
@@ -770,11 +856,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.boolean "all_day", default: false, null: false
     t.string "city"
     t.string "country"
+    t.bigint "court_id"
     t.datetime "created_at", null: false
     t.bigint "created_by_account_id", null: false
     t.text "description"
     t.string "division_scheme", null: false
     t.datetime "ends_at", null: false
+    t.string "location_detail"
+    t.bigint "location_id"
     t.string "location_name"
     t.string "name", null: false
     t.bigint "organisation_id", null: false
@@ -785,8 +874,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.string "timezone", null: false
     t.datetime "updated_at", null: false
     t.string "website_url"
+    t.index ["court_id"], name: "index_tournaments_on_court_id"
     t.index ["created_by_account_id"], name: "index_tournaments_on_created_by_account_id"
     t.index ["ends_at"], name: "index_tournaments_on_ends_at"
+    t.index ["location_id"], name: "index_tournaments_on_location_id"
     t.index ["organisation_id"], name: "index_tournaments_on_organisation_id"
     t.index ["publication_state"], name: "index_tournaments_on_publication_state"
     t.index ["starts_at"], name: "index_tournaments_on_starts_at"
@@ -882,6 +973,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.bigint "cancelled_by_id"
     t.integer "capacity"
     t.bigint "coach_profile_id"
+    t.bigint "court_id"
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.text "description"
@@ -890,6 +982,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.string "level"
     t.string "location"
     t.string "location_detail"
+    t.bigint "location_id"
     t.bigint "organisation_id"
     t.datetime "original_starts_at"
     t.jsonb "override_fields", default: {}, null: false
@@ -903,8 +996,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
     t.string "visibility", default: "shared", null: false
     t.index ["cancelled_by_id"], name: "index_training_sessions_on_cancelled_by_id"
     t.index ["coach_profile_id"], name: "index_training_sessions_on_coach_profile_id"
+    t.index ["court_id"], name: "index_training_sessions_on_court_id"
     t.index ["created_by_id"], name: "index_training_sessions_on_created_by_id"
     t.index ["group_id"], name: "index_training_sessions_on_group_id"
+    t.index ["location_id"], name: "index_training_sessions_on_location_id"
     t.index ["organisation_id"], name: "index_training_sessions_on_organisation_id"
     t.index ["starts_at"], name: "index_training_sessions_on_starts_at"
     t.index ["status"], name: "index_training_sessions_on_status"
@@ -1093,18 +1188,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
   add_foreign_key "coach_profiles", "coach_profiles", column: "merged_into_profile_id"
   add_foreign_key "coach_profiles", "users", column: "created_by_id"
   add_foreign_key "contact_details", "accounts", on_delete: :restrict
+  add_foreign_key "courts", "locations"
   add_foreign_key "criteria", "assessment_categories"
   add_foreign_key "drill_skills", "drills"
   add_foreign_key "drill_skills", "skills"
   add_foreign_key "drills", "users", column: "created_by_id"
   add_foreign_key "group_memberships", "accounts"
   add_foreign_key "group_memberships", "groups"
+  add_foreign_key "groups", "locations", column: "default_location_id"
   add_foreign_key "groups", "organisations"
   add_foreign_key "groups", "users", column: "created_by_id"
+  add_foreign_key "location_aliases", "locations"
+  add_foreign_key "locations", "accounts", column: "proposed_by_account_id"
+  add_foreign_key "locations", "accounts", column: "verified_by_account_id"
+  add_foreign_key "locations", "locations", column: "merged_into_id"
   add_foreign_key "log_objects", "logs"
+  add_foreign_key "organisation_locations", "locations"
+  add_foreign_key "organisation_locations", "organisations"
   add_foreign_key "organisation_memberships", "accounts"
   add_foreign_key "organisation_memberships", "organisations"
   add_foreign_key "organisations", "accounts", column: "created_by_account_id"
+  add_foreign_key "organisations", "locations", column: "default_location_id"
   add_foreign_key "organisations", "organisations", column: "parent_organisation_id"
   add_foreign_key "player_claims", "accounts", column: "claimant_account_id"
   add_foreign_key "player_claims", "accounts", column: "initiated_by_account_id"
@@ -1139,6 +1243,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
   add_foreign_key "tournament_participations", "tournaments"
   add_foreign_key "tournament_watch_links", "tournaments"
   add_foreign_key "tournaments", "accounts", column: "created_by_account_id"
+  add_foreign_key "tournaments", "courts"
+  add_foreign_key "tournaments", "locations"
   add_foreign_key "tournaments", "organisations", on_delete: :restrict
   add_foreign_key "training_focuses", "skills"
   add_foreign_key "training_focuses", "training_sessions"
@@ -1150,7 +1256,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_000001) do
   add_foreign_key "training_session_participants", "player_profiles"
   add_foreign_key "training_session_participants", "training_sessions"
   add_foreign_key "training_sessions", "coach_profiles", on_delete: :nullify
+  add_foreign_key "training_sessions", "courts"
   add_foreign_key "training_sessions", "groups", on_delete: :nullify
+  add_foreign_key "training_sessions", "locations"
   add_foreign_key "training_sessions", "organisations", on_delete: :nullify
   add_foreign_key "training_sessions", "training_series", on_delete: :restrict
   add_foreign_key "training_sessions", "training_templates", on_delete: :restrict

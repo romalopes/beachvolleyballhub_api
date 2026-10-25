@@ -194,6 +194,44 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     assert_nil json["parent_organisation_id"]
   end
 
+  test "an admin creates an organisation with an attached default location" do
+    location = Location.create!(
+      name: "Manly Beach",
+      verification_status: "verified",
+      verified_at: Time.current,
+      verified_by_account: @admin.account
+    )
+    sign_in_as(@admin)
+
+    post_json "/api/v1/organisations", organisation: {
+      name: "Manly Volleyball",
+      organisation_type: "club",
+      default_location_id: location.id
+    }
+
+    assert_response :created
+    organisation = Organisation.find(json.fetch("id"))
+    assert_equal location.id, organisation.default_location_id
+    assert organisation.organisation_locations.exists?(location: location)
+    assert_equal location.id, json.dig("default_location", "id")
+  end
+
+  test "an invalid initial location rolls back the organisation" do
+    proposal = Location.create!(name: "Unverified Beach", proposed_by_account: @admin.account)
+    sign_in_as(@admin)
+
+    assert_no_difference [ -> { Organisation.count }, -> { OrganisationLocation.count } ] do
+      post_json "/api/v1/organisations", organisation: {
+        name: "Invalid Location Club",
+        organisation_type: "club",
+        default_location_id: proposal.id
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_match(/active and verified/, json.fetch("errors").join(" "))
+  end
+
   test "a re-parent that would close a cycle is refused, and writes nothing" do
     sign_in_as(@admin)
 

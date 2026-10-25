@@ -192,18 +192,39 @@ module Api
       end
 
       def create
-        @organisation = Organisation.new(organisation_params)
+        attributes = organisation_params
+        initial_location_id = attributes.delete(:default_location_id)
+        @organisation = Organisation.new(attributes)
         @organisation.created_by_account = Current.user.account
 
-        if Organisation.transaction do
-             @organisation.save && @organisation.organisation_memberships.create!(
+        created = Organisation.transaction do
+          @organisation.save!
+          @organisation.organisation_memberships.create!(
                account: Current.user.account,
                memberable: Current.user.account,
                role: "owner",
                status: "active",
                joined_at: Time.current
              )
-           end
+          if initial_location_id.present?
+            location = Location.find(initial_location_id)
+            @organisation.organisation_locations.create!(location: location)
+            @organisation.update!(default_location: location)
+          end
+          true
+        rescue ActiveRecord::RecordNotFound
+          @organisation.errors.add(:default_location, "was not found")
+          raise ActiveRecord::Rollback
+        rescue ActiveRecord::RecordInvalid => error
+          if error.record != @organisation
+            error.record.errors.full_messages.each do |message|
+              @organisation.errors.add(:default_location, message)
+            end
+          end
+          raise ActiveRecord::Rollback
+        end
+
+        if created
           render json: serialize(@organisation), status: :created
         else
           render json: { errors: @organisation.errors.full_messages },
@@ -813,6 +834,7 @@ module Api
       def organisation_params
         params.require(:organisation).permit(
           :name, :description, :acronym, :organisation_type, :status, :parent_organisation_id,
+          :default_location_id,
           # The join policy: who a self-service `join` writes for this club. Editing
           # it rides the same gate as editing the record — the club's own officers —
           # rather than admin-only, because "how people join us" is the club's business.

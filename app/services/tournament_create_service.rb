@@ -16,6 +16,13 @@ class TournamentCreateService
       tournament.city = params[:city]
       tournament.state = params[:state]
       tournament.country = params[:country]
+      default_location = LocationDefaultResolver.for_event(organisation_id: params[:organisation_id])
+      tournament.location_id = params.key?(:location_id) ? params[:location_id] : default_location&.id
+      tournament.court_id = params[:court_id]
+      tournament.location_detail = params[:location_detail]
+      if default_location && tournament.location_id == default_location.id && tournament.location_name.blank?
+        tournament.location_name = default_location.name
+      end
       tournament.timezone = params[:timezone]
 
       # Handle all-day event and timezone conversion

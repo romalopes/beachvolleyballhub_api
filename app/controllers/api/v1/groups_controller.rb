@@ -548,7 +548,7 @@ module Api
 
       def group_params
         params.require(:group).permit(:name, :description, :visibility, :status,
-                                      :organisation_id,
+                                      :organisation_id, :default_location_id,
                                       # Join policy, same split as organisations: open
                                       # joins are immediate, approval-required ones
                                       # become a `pending` row the owner reviews.

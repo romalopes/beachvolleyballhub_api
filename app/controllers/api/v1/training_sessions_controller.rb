@@ -19,10 +19,10 @@ module Api
     class TrainingSessionsController < ApplicationController
       include ContentAuthorization
 
-      CALENDAR_ATTRIBUTES = %i[id title starts_at ends_at location location_detail status visibility
+      CALENDAR_ATTRIBUTES = %i[id title starts_at ends_at location location_id court_id location_detail status visibility
                                created_by_id coach_profile_id training_series_id
                                training_template_id recurrence_key].freeze
-      DETAIL_ATTRIBUTES = %i[id title description starts_at ends_at location location_detail status
+      DETAIL_ATTRIBUTES = %i[id title description starts_at ends_at location location_id court_id location_detail status
                              visibility created_by_id created_at updated_at capacity level
                              organisation_id group_id coach_profile_id training_series_id
                              training_template_id recurrence_key original_starts_at override_fields
@@ -34,7 +34,7 @@ module Api
       # the normal training form records an override so a later "update future"
       # does not silently overwrite the coach's change.
       SERIES_OVERRIDE_ATTRIBUTES = %i[
-        title description location location_detail level capacity
+        title description location location_id court_id location_detail level capacity
         coach_profile_id group_id visibility
       ].freeze
       # Single source of truth: the inline-person allow-list belongs to the
@@ -57,7 +57,9 @@ module Api
       end
 
       def create
-        @training_session = TrainingSession.new(training_session_params.merge(created_by: Current.user))
+        attributes = training_session_params
+        apply_location_default!(attributes)
+        @training_session = TrainingSession.new(attributes.merge(created_by: Current.user))
         persist
       end
 
@@ -119,6 +121,8 @@ module Api
           participant["assessments"] =
             Array(assessments_by_player[participant["player_profile_id"]]).map(&:metadata)
         end
+        payload["canonical_location"] = @training_session.canonical_location&.summary
+        payload["court"] = @training_session.court&.summary
 
         render json: payload, status: status
       end
@@ -296,7 +300,7 @@ module Api
 
       def training_session_params
         permitted = params.require(:training_session).permit(
-          :title, :description, :starts_at, :ends_at, :location, :location_detail,
+          :title, :description, :starts_at, :ends_at, :location, :location_id, :court_id, :location_detail,
           :capacity, :level, :organisation_id, :group_id, :coach_profile_id,
           :status,
           training_focuses_attributes: %i[id skill_id custom_focus description position _destroy],
@@ -316,6 +320,19 @@ module Api
         fill_missing_positions!(permitted, :training_focuses_attributes)
         fill_missing_positions!(permitted, :training_session_drills_attributes)
         permitted
+      end
+
+      def apply_location_default!(attributes)
+        return if attributes.key?(:location_id)
+
+        location = LocationDefaultResolver.for_event(
+          group_id: attributes[:group_id],
+          organisation_id: attributes[:organisation_id]
+        )
+        return unless location
+
+        attributes[:location_id] = location.id
+        attributes[:location] = location.name if attributes[:location].blank?
       end
 
       # The submitted array order is the intended order. Explicit positions are

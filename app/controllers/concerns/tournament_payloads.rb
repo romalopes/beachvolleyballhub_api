@@ -27,6 +27,9 @@ module TournamentPayloads
       city: tournament.city,
       state: tournament.state,
       country: tournament.country,
+      location: tournament.location&.summary,
+      court: tournament.court&.summary,
+      location_detail: tournament.location_detail,
       timezone: tournament.timezone,
       all_day: tournament.all_day,
       starts_at: tournament.starts_at,
@@ -50,6 +53,7 @@ module TournamentPayloads
     return false unless Current.user
 
     Current.real_user&.admin? ||
+      tournament.created_by_account_id == Current.user.account&.id ||
       OrganisationAccess.edits_record_by_membership?(tournament.organisation, Current.user.account)
   end
 

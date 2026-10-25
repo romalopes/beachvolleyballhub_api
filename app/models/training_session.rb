@@ -40,6 +40,9 @@ class TrainingSession < ApplicationRecord
   # authorization boundary — training management stays role-based.
   belongs_to :organisation, optional: true
   belongs_to :group, optional: true
+  belongs_to :canonical_location, class_name: "Location", foreign_key: :location_id,
+             optional: true, inverse_of: :training_sessions
+  belongs_to :court, optional: true
   belongs_to :coach_profile, optional: true
   belongs_to :cancelled_by, class_name: "User", optional: true
 
@@ -82,6 +85,8 @@ class TrainingSession < ApplicationRecord
   validates :capacity, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :ends_at_after_starts_at
   validate :series_template_is_consistent
+  validate :location_is_selectable_for_new_assignment
+  validate :court_matches_location
 
   scope :ordered, -> { order(:starts_at, :id) }
   # Calendar support: only load the window being displayed.
@@ -227,6 +232,19 @@ class TrainingSession < ApplicationRecord
   end
 
   private
+
+  def location_is_selectable_for_new_assignment
+    return if location_id.blank? || !will_save_change_to_location_id? || canonical_location&.usable_by?(created_by&.account)
+
+    errors.add(:location, "must be verified or your own active proposal")
+  end
+
+  def court_matches_location
+    return if court_id.blank?
+    return if location_id.present? && court&.location_id == location_id
+
+    errors.add(:court, "must belong to the selected location")
+  end
 
   def ends_at_after_starts_at
     return if starts_at.nil? || ends_at.nil?

@@ -72,6 +72,8 @@ group :development do
 end
 
 group :test do
+  # Measure application coverage before Rails loads application code.
+  gem "simplecov", require: false
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"

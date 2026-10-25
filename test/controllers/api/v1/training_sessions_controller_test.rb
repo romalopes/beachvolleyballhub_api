@@ -105,8 +105,8 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
     get "/api/v1/training_sessions"
 
     entry = json.first
-    assert_equal %w[coach_profile_id created_by created_by_id duration_minutes ends_at id
-                    location location_detail recurrence_key starts_at status status_label
+    assert_equal %w[coach_profile_id court_id created_by created_by_id duration_minutes ends_at id
+                    location location_detail location_id recurrence_key starts_at status status_label
                     title training_series_id training_template_id visibility],
                  entry.keys.sort
     assert_not entry.key?("drill")

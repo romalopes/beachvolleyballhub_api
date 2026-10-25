@@ -31,6 +31,9 @@ class TournamentUpdateService
       tournament.city = params[:city] if params.key?(:city)
       tournament.state = params[:state] if params.key?(:state)
       tournament.country = params[:country] if params.key?(:country)
+      tournament.location_id = params[:location_id] if params.key?(:location_id)
+      tournament.court_id = params[:court_id] if params.key?(:court_id)
+      tournament.location_detail = params[:location_detail] if params.key?(:location_detail)
       tournament.timezone = params[:timezone] if params.key?(:timezone)
       # An invalid timezone must fail loudly at assignment time, even when no
       # date parsing follows (a timezone-only update still changes how stored

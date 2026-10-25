@@ -76,7 +76,9 @@ module Api
         end
         return unless authorize_tournament_creation!(organisation)
 
-        tournament = TournamentCreateService.call(tournament_params)
+        tournament = TournamentCreateService.call(
+          tournament_params.merge(created_by_account_id: Current.user.account&.id)
+        )
         render json: tournament_payload(tournament), status: :created
       rescue ActiveRecord::RecordInvalid => e
         render json: { errors: invalid_record_errors(e) }, status: :unprocessable_entity
@@ -223,9 +225,10 @@ module Api
 
       def tournament_params
         params.require(:tournament).permit(
-          :name, :organisation_id, :created_by_account_id, :scope, :division_scheme,
+          :name, :organisation_id, :scope, :division_scheme,
           :publication_state, :website_url, :description,
           :location_name, :city, :state, :country, :timezone,
+          :location_id, :court_id, :location_detail,
           :all_day, :starts_at, :ends_at
         )
       end

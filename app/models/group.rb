@@ -34,6 +34,7 @@ class Group < ApplicationRecord
   # Optional: see the migration — no existing group had one and none can be
   # inferred, so requiring it here would refuse every pre-existing row.
   belongs_to :organisation, optional: true
+  belongs_to :default_location, class_name: "Location", optional: true
 
   # Membership rows only describe the roster; removing the group removes the
   # roster, which is not history in the way a session is.
@@ -49,6 +50,8 @@ class Group < ApplicationRecord
   validates :name, presence: true, uniqueness: { case_sensitive: false }
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :visibility, presence: true, inclusion: { in: VISIBILITIES }
+  validate :default_location_is_selectable
+  validate :default_location_belongs_to_organisation
 
   # The decision recorded in plan §10 — a group is members who *share* an
   # Organisation — is only enforceable now that the organisation is stored. Checked
@@ -204,6 +207,8 @@ class Group < ApplicationRecord
       end,
       # Present but null for a group placed before this column existed.
       organisation: organisation && { id: organisation.id, name: organisation.name },
+      default_location: default_location&.summary,
+      effective_default_location: effective_default_location&.summary,
       # Audit only — deliberately not named "owner".
       created_by: created_by ? { id: created_by.id, name: created_by.name } : nil,
       created_at: created_at,
@@ -212,6 +217,23 @@ class Group < ApplicationRecord
   end
 
   private
+
+  def effective_default_location
+    default_location || organisation&.default_location
+  end
+
+  def default_location_is_selectable
+    return if default_location_id.blank? || default_location&.selectable?
+
+    errors.add(:default_location, "must be active and verified")
+  end
+
+  def default_location_belongs_to_organisation
+    return if default_location_id.blank? || organisation_id.blank?
+    return if organisation&.locations&.where(id: default_location_id)&.exists?
+
+    errors.add(:default_location, "must be one of the organisation's locations")
+  end
 
   # Is this subject an active member of the organisation, whether the membership
   # row is keyed on its Account or on the profile itself?

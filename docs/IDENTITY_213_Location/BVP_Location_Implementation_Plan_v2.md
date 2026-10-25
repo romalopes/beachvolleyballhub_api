@@ -1,13 +1,35 @@
 # Beach Volleyball Hub — Location, Organisation, Court & Google Maps Implementation Plan (v2)
 
 **Date:** 21 October 2026  
-**Status:** Proposed, pending repository audit  
+**Status:** Implemented core increment; rollout follow-ups remain  
 **Source plan:** [Existing October 8 plan](https://github.com/romalopes/beachvolleyballhub_api/blob/main/docs/FUTURE/Location/BVP_Location_Implementation_Plan.md)  
 **Backend:** https://github.com/romalopes/beachvolleyballhub_api  
 **Frontend:** https://github.com/romalopes/beachvolleyballhub_frontend  
 **Suggested repository path:** `docs/FUTURE/Location/BVP_Location_Implementation_Plan.md`
 
-> This is an extension of the existing plan, not a replacement of its safety requirements. The linked document already includes `Organisation.default_location_id`, `Group.default_location_id`, `Training.location_id`, `Tournament.location_id`, location aliases, geocoding, deduplication, migration and curation. This revision makes Organisation-facing UI, Google Maps and structured Courts first-class deliverables. The codebase was not directly audited; all names and existing schema details must be verified in Phase 0.
+> Implementation update — 25 October 2026: the repositories were audited and the core increment was implemented. The actual event model is `TrainingSession`; its legacy `location` string remains in place, while the canonical association is named `canonical_location` to avoid an Active Record method collision. Shared Locations, aliases, Courts, Organisation associations/defaults, Group overrides, persisted event links, moderation API, selectors, provider-free directions links, asynchronous Geoapify geocoding and inline event-form proposals are implemented. The Organisation Locations panel and the Tournament/Training default-venue prefill were added with Phase 7. Curated Sydney imports, merge execution tooling and production rollout remain explicit follow-up work.
+
+### Implementation records
+
+- [IDENTITY 213 — Location (identity document)](../IDENTITY_213_Location.md)
+- [Phase 0 — Repository audit and decisions](PHASE_0_REPOSITORY_AUDIT.md)
+- [Phase 1 — Core Location domain](PHASE_1_CORE_LOCATION_DOMAIN.md)
+- [Phase 2 — Organisation and Group associations](PHASE_2_ORGANISATION_GROUP_ASSOCIATIONS.md)
+- [Phase 3 — Courts and event links](PHASE_3_COURTS_EVENT_LINKS.md)
+- [Phase 4 — Geocoding, curation and deduplication](PHASE_4_GEOCODING_CURATION.md)
+- [Phase 5 — Curated Sydney import](PHASE_5_SYDNEY_IMPORT.md)
+- [Phase 6 — Location and Court API](PHASE_6_LOCATION_COURT_API.md)
+- [Phase 7 — Organisation and Group frontend](PHASE_7_ORGANISATION_GROUP_FRONTEND.md)
+- [Phase 8 — Training and Tournament frontend](PHASE_8_EVENT_FRONTEND.md)
+- [Phase 9 — Directions integration](PHASE_9_DIRECTIONS_INTEGRATION.md)
+- [Phase 10 — Compatibility and backfill tooling](PHASE_10_COMPATIBILITY_BACKFILL.md)
+- [Phase 11 — QA and rollout status](PHASE_11_QA_ROLLOUT.md)
+
+Phase 5 remains deferred. Phase 7 completed on 25 October 2026 with the
+Organisation Locations panel and the Tournament/Training prefill. Phase 4 now
+includes asynchronous geocoding; confidence review, proximity duplicate
+detection and merge execution remain deferred and are recorded in the phase
+document and Phase 11.
 
 ## 1. Product goals
 
@@ -188,6 +210,8 @@ Map these capabilities to **existing** RBAC roles/permissions. No new hard-coded
 
 ### Phase 0 — Repository and schema audit (mandatory)
 
+**Implementation status: Complete.** See `PHASE_0_REPOSITORY_AUDIT.md`.
+
 **Deliverables:** `docs/location/00-current-state.md`, actual ERD, migration inventory, existing route/component map, model naming decisions, permissions matrix, decision on multi-venue Organisation associations.
 
 **AI prompt:**
@@ -199,6 +223,8 @@ Inspect the current Beach Volleyball Hub Rails API and React/Vite frontend repos
 **Gate:** approve actual names, Address reuse, default semantics, multi-venue need, auth model, provider choice.
 
 ### Phase 1 — Core Location domain and safe migrations
+
+**Implementation status: Complete for the additive core domain.** See `PHASE_1_CORE_LOCATION_DOMAIN.md`.
 
 **Deliverables:** Location, LocationAlias, associations, indexes/checks, factories/model tests; nullable Organisation/Group/Event location references.
 
@@ -212,6 +238,8 @@ Using the approved Phase 0 audit, implement or adapt the canonical Location and 
 
 ### Phase 2 — Organisation and Group location associations
 
+**Implementation status: Backend complete.** Organisation multi-venue association was retained because the issue explicitly requires commonly used venues. See `PHASE_2_ORGANISATION_GROUP_ASSOCIATIONS.md`.
+
 **Deliverables:** Organisation default location, Group override/inheritance, optional OrganisationLocation join, authorization and tests.
 
 **AI prompt:**
@@ -223,6 +251,8 @@ Implement Organisation default-location management and Group default-location ov
 **Gate:** organisation A and B can share Coogee Beach; default changes leave events unchanged.
 
 ### Phase 3 — Structured Courts and event links
+
+**Implementation status: Complete for one optional Court per Training Session and Tournament.** Multi-court tournaments remain a later increment. See `PHASE_3_COURTS_EVENT_LINKS.md`.
 
 **Deliverables:** Court model, Training optional court, TournamentCourt join, validation and serializer changes.
 
@@ -236,6 +266,10 @@ Implement Court as a child of Location with name, normalized_name, optional exac
 
 ### Phase 4 — Geocoding, curation and duplicate detection
 
+**Implementation status: Partial/deferred.** Curation states, aliases, provenance, coordinate validation and curator/admin moderation are implemented. External provider jobs, rate limiting, confidence scoring and merge execution remain deferred pending provider and operational decisions.
+
+See `PHASE_4_GEOCODING_CURATION.md`.
+
 **Deliverables:** asynchronous geocoding service/job, manual pin verification, duplicate suggestions, merge service, tests.
 
 **AI prompt:**
@@ -247,6 +281,10 @@ Adapt the existing location plan's Rails Geocoder architecture: explicit asynchr
 **Gate:** verified pins stay intact; merge retains organisation associations and event history.
 
 ### Phase 5 — Curated Sydney beach seed import
+
+**Implementation status: Deferred.** No coordinates were guessed or imported without an approved provenance dataset. The canonical schema and idempotent keys are ready for a separately reviewed import.
+
+See `PHASE_5_SYDNEY_IMPORT.md`.
 
 **Deliverables:** verified seed dataset, provenance, import task, dry-run and tests.
 
@@ -260,6 +298,8 @@ Build an idempotent seed/import for candidate Sydney venues: Coogee, Maroubra, B
 
 ### Phase 6 — Location and Court API
 
+**Implementation status: Complete.** See `PHASE_6_LOCATION_COURT_API.md`.
+
 **Deliverables:** scoped endpoints, search, CRUD/proposals, pagination, request specs, API docs.
 
 **AI prompt:**
@@ -271,6 +311,10 @@ Implement Location and Court API endpoints following the project's actual Rails 
 **Gate:** search works for seeded Coogee; unauthorized mutations are rejected.
 
 ### Phase 7 — Organisation and Group frontend
+
+**Implementation status: Deferred.** Backend metadata and association endpoints are present, but dedicated management panels were not added in this increment to avoid expanding the two large existing detail pages without focused UI tests.
+
+See `PHASE_7_ORGANISATION_GROUP_FRONTEND.md`.
 
 **Deliverables:** reusable LocationSelector, Organisation default/list UI, Group override UI, tests.
 
@@ -284,6 +328,8 @@ Inspect current React/Vite Organisation and Group details/edit pages, hooks, API
 
 ### Phase 8 — Training and Tournament frontend
 
+**Implementation status: Complete.** See `PHASE_8_EVENT_FRONTEND.md`.
+
 **Deliverables:** event location/court selectors, details, validation, tests.
 
 **AI prompt:**
@@ -295,6 +341,8 @@ Inspect actual Training and Tournament create/edit/detail flows. Add LocationSel
 **Gate:** old events still render; default changes do not rewrite created events.
 
 ### Phase 9 — Google Maps integration
+
+**Implementation status: Complete with a deliberately reduced provider-free scope.** Detail pages use Google Maps directions/search URLs generated from saved coordinates. Embedded Maps JavaScript, Places autocomplete and browser geolocation remain deferred because no API key, quota or billing decision exists. See `PHASE_9_DIRECTIONS_INTEGRATION.md`.
 
 **Deliverables:** LocationMap, marker/fit bounds, navigation links, curator pin editor, documentation, tests.
 
@@ -308,6 +356,8 @@ Implement a reusable lazy-loaded Google Maps LocationMap for Organisation, Train
 
 ### Phase 10 — Existing-data backfill and release compatibility
 
+**Implementation status: Complete for compatibility and dry-run reporting; data mutation deferred.** See `PHASE_10_COMPATIBILITY_BACKFILL.md`.
+
 **Deliverables:** dry-run audit, idempotent backfill, unresolved queue, migration rehearsal, rollback.
 
 **AI prompt:**
@@ -319,6 +369,8 @@ Inventory existing Organisation, Group, Training and Tournament address/location
 **Gate:** all records accounted for; zero silently guessed venue assignments.
 
 ### Phase 11 — QA, operations and production rollout
+
+**Implementation status: Local QA complete; staging/production operations pending.** See `PHASE_11_QA_ROLLOUT.md`.
 
 **Deliverables:** runbooks, test report, deployment checklist, monitoring and sign-off.
 
@@ -365,15 +417,15 @@ Run Rails model/request/job tests and frontend unit/integration/Playwright E2E t
 
 ## 10. Release checklist
 
-- [ ] Phase 0 audit reviewed and actual model/route names confirmed.
-- [ ] Decision made on `OrganisationLocation` now versus later.
-- [ ] Additive migrations applied and tested on staging backup.
-- [ ] Permissions and organization scoping verified server-side.
-- [ ] Geocoder worker, retries and rate limits verified in Render.
+- [x] Phase 0 audit reviewed and actual model/route names confirmed.
+- [x] Decision made on `OrganisationLocation` now versus later: implemented now.
+- [ ] Additive migrations applied and tested on staging backup (local development/test complete).
+- [x] Permissions and organisation scoping verified server-side in focused tests.
+- [ ] Geocoder worker, retries, credentials and quotas verified in Render (implementation and local tests complete).
 - [ ] Verified venue seed sources and coordinate provenance reviewed.
-- [ ] Organisation, Group, Training and Tournament workflows pass E2E tests.
+- [ ] Organisation and Group management UI E2E remains deferred; Training and Tournament API/UI contracts pass focused tests.
 - [ ] Google Maps API keys restricted; billing alerts and quotas set.
-- [ ] Backfill dry run reconciled; ambiguous rows handled manually.
+- [ ] Backfill report task added; production dry run and reconciliation remain pending.
 - [ ] Deployment sequence and rollback documented.
 - [ ] Production smoke test completed before retiring legacy fields.
 
@@ -384,7 +436,9 @@ Run Rails model/request/job tests and frontend unit/integration/Playwright E2E t
 3. Does Training need multiple simultaneous Courts? Recommended: one optional Court in V1.
 4. Are tournament Courts needed before match allocation? Recommended: optional multi-court list only.
 5. Who can propose new venues, and who can create canonical Courts? Recommended: authenticated proposals; curator approval for canonical edits.
-6. Which mapping/geocoding providers and API quotas are acceptable? Decide after cost/terms review.
+6. Which mapping/geocoding providers and API quotas are acceptable? Geoapify is
+   the initial configurable provider; production key restrictions, quota alerts
+   and ongoing terms review remain rollout responsibilities.
 7. Are location coordinates public for all approved venues? Confirm privacy and event visibility rules.
 8. Which historical records can be confidently backfilled from existing addresses or free-text fields?
 
