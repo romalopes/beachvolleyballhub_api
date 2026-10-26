@@ -348,7 +348,7 @@ module Api
 
       def members
         render json: {
-          organisation: { id: @organisation.id, name: @organisation.name },
+          organisation: { id: @organisation.id, name: @organisation.name, slug: @organisation.slug },
           data: visible_memberships.map(&:metadata)
         }
       end
@@ -815,7 +815,10 @@ module Api
       def set_organisation
         @organisation = Organisation
                         .includes(:parent_organisation, :created_by_account)
-                        .find(params[:id])
+                        .find_by(slug: params[:id]) ||
+                        Organisation
+                          .includes(:parent_organisation, :created_by_account)
+                          .find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Organisation not found" }, status: :not_found
       end
@@ -833,7 +836,7 @@ module Api
       # and is not the caller's to choose.
       def organisation_params
         params.require(:organisation).permit(
-          :name, :description, :acronym, :organisation_type, :status, :parent_organisation_id,
+          :name, :slug, :description, :acronym, :organisation_type, :status, :parent_organisation_id,
           :default_location_id,
           # The join policy: who a self-service `join` writes for this club. Editing
           # it rides the same gate as editing the record — the club's own officers —

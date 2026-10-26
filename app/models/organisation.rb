@@ -17,6 +17,12 @@ class Organisation < ApplicationRecord
   include Sluggable
   source_column :name
 
+  # Browser-facing organisation URLs use this value, so accept a deliberately
+  # edited slug while still keeping generated slugs URL-safe. If a name and slug
+  # are changed together, the explicit slug wins; changing only the name keeps the
+  # existing Sluggable behaviour and regenerates it.
+  normalizes :slug, with: ->(value) { value.to_s.parameterize.presence }
+
   # Archive-not-delete, using the same vocabulary as every other lifecycle here
   # rather than an `archived_at` column, so the state is queryable in one place.
   STATUSES = %w[active archived].freeze
@@ -385,7 +391,8 @@ class Organisation < ApplicationRecord
       parent_organisation_id: parent_organisation_id,
       parent_organisation: parent_organisation && {
         id: parent_organisation.id,
-        name: parent_organisation.name
+        name: parent_organisation.name,
+        slug: parent_organisation.slug
       },
       child_count: child_counts ? child_counts.fetch(id, 0) : child_organisations.count,
       depth: depth,
@@ -423,6 +430,10 @@ class Organisation < ApplicationRecord
   end
 
   private
+
+  def slug_needs_update?
+    slug.blank? || (source_value_changed? && !will_save_change_to_slug?)
+  end
 
   def default_location_is_associated
     return if default_location_id.blank?

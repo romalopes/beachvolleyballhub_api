@@ -13,9 +13,6 @@ class TournamentCreateService
       tournament.website_url = params[:website_url]
       tournament.description = params[:description]
       tournament.location_name = params[:location_name]
-      tournament.city = params[:city]
-      tournament.state = params[:state]
-      tournament.country = params[:country]
       default_location = LocationDefaultResolver.for_event(organisation_id: params[:organisation_id])
       tournament.location_id = params.key?(:location_id) ? params[:location_id] : default_location&.id
       tournament.court_id = params[:court_id]

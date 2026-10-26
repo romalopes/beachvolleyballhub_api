@@ -1,4 +1,9 @@
 class Tournament < ApplicationRecord
+  # Keep retired attributes out of generated SQL during rolling deployments.
+  # This is safe both before and after the removal migration: new application
+  # processes stop reading/writing the columns before PostgreSQL drops them.
+  self.ignored_columns += %w[city state country]
+
   belongs_to :organisation
   belongs_to :created_by_account, class_name: 'Account'
   belongs_to :location, optional: true

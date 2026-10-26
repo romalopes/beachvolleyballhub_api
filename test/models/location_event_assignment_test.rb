@@ -7,6 +7,10 @@ class LocationEventAssignmentTest < ActiveSupport::TestCase
     @proposal = Location.create!(name: "Pending Beach", proposed_by_account: @proposer)
   end
 
+  test "tournament ignores retired location columns" do
+    assert_empty Tournament.column_names & %w[city state country]
+  end
+
   test "tournament accepts its creator's proposal and rejects another account's proposal" do
     tournament = Tournament.new(
       organisation: organisations(:sydney_club),

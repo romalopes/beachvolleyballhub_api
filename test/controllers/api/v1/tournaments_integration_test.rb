@@ -57,6 +57,52 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @tournament.id, json["id"]
     assert_equal "Sand Series Open", json["name"]
     assert_nil json["my_participation"]
+    assert_not json.key?("city")
+    assert_not json.key?("state")
+    assert_not json.key?("country")
+  end
+
+  test "directory search matches canonical location fields" do
+    location = Location.create!(
+      name: "Harbour Courts",
+      locality: "Wollongong",
+      administrative_area: "NSW",
+      country_code: "AU",
+      proposed_by_account: @account
+    )
+    @tournament.update!(location: location)
+
+    get "/api/v1/tournaments", params: { search: "Wollongong" }
+
+    assert_response :success
+    assert_includes json["tournaments"].map { |row| row["id"] }, @tournament.id
+  end
+
+  test "create derives the creator from the authenticated account" do
+    sign_in_as(@admin)
+    authenticated_account = @admin.account
+    forged_account = accounts(:three)
+
+    post_json "/api/v1/tournaments", {
+      organisation_id: @organisation.id,
+      tournament: {
+        name: "Authenticated Creator Open",
+        organisation_id: @organisation.id,
+        created_by_account_id: forged_account.id,
+        scope: "club",
+        division_scheme: "numbered",
+        publication_state: "draft",
+        timezone: "Australia/Sydney",
+        all_day: true,
+        starts_at: "2026-11-01",
+        ends_at: "2026-11-02"
+      }
+    }
+
+    assert_response :created
+    created = Tournament.find(json.fetch("id"))
+    assert_equal authenticated_account.id, created.created_by_account_id
+    assert_not_equal forged_account.id, created.created_by_account_id
   end
 
   # --- participation (self-link) ---------------------------------------------

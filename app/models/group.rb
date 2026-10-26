@@ -206,7 +206,11 @@ class Group < ApplicationRecord
           name: membership.player_name }
       end,
       # Present but null for a group placed before this column existed.
-      organisation: organisation && { id: organisation.id, name: organisation.name },
+      organisation: organisation && {
+        id: organisation.id,
+        name: organisation.name,
+        slug: organisation.slug
+      },
       default_location: default_location&.summary,
       effective_default_location: effective_default_location&.summary,
       # Audit only — deliberately not named "owner".

@@ -863,6 +863,17 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     assert json["can_manage_members"]
   end
 
+  test "show supports slug lookup and includes slugs in parent summaries" do
+    sign_in_as(@coach)
+
+    get "/api/v1/organisations/#{@club.slug}"
+
+    assert_response :success
+    assert_equal @club.id, json["id"]
+    assert_equal @club.slug, json["slug"]
+    assert_equal @nsw.slug, json.dig("parent_organisation", "slug")
+  end
+
   # --- who may edit an organisation -------------------------------------------
 
   test "a curator may edit an organisation" do
@@ -881,6 +892,18 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal "Renamed By Owner", @club.reload.name
+  end
+
+  test "an editor may set a normalized slug independently of the name" do
+    sign_in_as(users(:six))
+
+    patch_json "/api/v1/organisations/#{@club.slug}", organisation: {
+      slug: " Sydney Harbour Club "
+    }
+
+    assert_response :success
+    assert_equal "sydney-harbour-club", @club.reload.slug
+    assert_equal "sydney-harbour-club", json["slug"]
   end
 
   test "the creator may edit it while they are still a member" do

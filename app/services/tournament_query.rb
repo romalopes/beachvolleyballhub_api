@@ -8,7 +8,7 @@ class TournamentQuery
   # @option params [String] :division_scheme division scheme (letter, numbered)
   # @option params [Array<String>] :letter_levels letter levels (e.g., ['B', 'BB'])
   # @option params [Array<Integer>] :division_numbers division numbers
-  # @option params [String] :location text search across location_name, city, state, country
+  # @option params [String] :location text search across the tournament venue label and canonical location
   # @option params [String] :temporal_status one of 'upcoming', 'ongoing', 'completed'
   # @option params [Boolean] :mine when true, only tournaments where current account participates (legacy "participating")
   # @option params [Array<String>] :relationship tie kinds to filter by ('created', 'participating', 'following'), OR-combined
@@ -18,7 +18,7 @@ class TournamentQuery
   # @option params [Integer] :page page number for pagination
   # @option params [Integer] :per_page per page size for pagination
   def self.call(params = {})
-    relation = Tournament.all
+    relation = Tournament.left_joins(:organisation, :location)
 
     # Text search
     if params[:search].present?
@@ -26,10 +26,9 @@ class TournamentQuery
       # Escape wildcard characters for ILIKE
       escaped_search = search.gsub(/[%_]/, '\\\\\\&')
       relation = relation.where(
-        "tournaments.name ILIKE ? OR organisations.name ILIKE ? OR organisations.acronym ILIKE ? OR tournaments.location_name ILIKE ? OR tournaments.city ILIKE ? OR tournaments.state ILIKE ? OR tournaments.country ILIKE ?",
-        "%#{escaped_search}%", "%#{escaped_search}%", "%#{escaped_search}%",
-        "%#{escaped_search}%", "%#{escaped_search}%", "%#{escaped_search}%", "%#{escaped_search}%"
-      ).joins(:organisation)
+        "tournaments.name ILIKE ? OR organisations.name ILIKE ? OR organisations.acronym ILIKE ? OR tournaments.location_name ILIKE ? OR locations.name ILIKE ? OR locations.formatted_address ILIKE ? OR locations.locality ILIKE ? OR locations.administrative_area ILIKE ? OR locations.country_code ILIKE ?",
+        *Array.new(9, "%#{escaped_search}%")
+      )
     end
 
     # Scope filter
@@ -67,13 +66,13 @@ class TournamentQuery
       )
     end
 
-    # Location filter (text search across location fields)
+    # Location filter (free-text venue label plus canonical location fields)
     if params[:location].present?
       location = params[:location].strip
       escaped_location = location.gsub(/[%_]/, '\\\\\\&')
       relation = relation.where(
-        "tournaments.location_name ILIKE ? OR tournaments.city ILIKE ? OR tournaments.state ILIKE ? OR tournaments.country ILIKE ?",
-        "%#{escaped_location}%", "%#{escaped_location}%", "%#{escaped_location}%", "%#{escaped_location}%"
+        "tournaments.location_name ILIKE ? OR locations.name ILIKE ? OR locations.formatted_address ILIKE ? OR locations.locality ILIKE ? OR locations.administrative_area ILIKE ? OR locations.country_code ILIKE ?",
+        *Array.new(6, "%#{escaped_location}%")
       )
     end
 

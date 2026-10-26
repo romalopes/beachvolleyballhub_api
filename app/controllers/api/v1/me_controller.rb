@@ -58,6 +58,7 @@ module Api
               organisation: {
                 id: membership.organisation.id,
                 name: membership.organisation.name,
+                slug: membership.organisation.slug,
                 status: membership.organisation.status
               }
             }
@@ -76,7 +77,11 @@ module Api
                 id: group.id,
                 name: group.name,
                 status: group.status,
-                organisation: group.organisation && { id: group.organisation.id, name: group.organisation.name }
+                organisation: group.organisation && {
+                  id: group.organisation.id,
+                  name: group.organisation.name,
+                  slug: group.organisation.slug
+                }
               }
             }
           end : []

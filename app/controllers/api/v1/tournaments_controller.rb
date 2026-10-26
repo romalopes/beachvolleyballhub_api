@@ -227,7 +227,7 @@ module Api
         params.require(:tournament).permit(
           :name, :organisation_id, :scope, :division_scheme,
           :publication_state, :website_url, :description,
-          :location_name, :city, :state, :country, :timezone,
+          :location_name, :timezone,
           :location_id, :court_id, :location_detail,
           :all_day, :starts_at, :ends_at
         )
