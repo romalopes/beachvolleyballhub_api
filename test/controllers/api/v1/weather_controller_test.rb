@@ -12,7 +12,22 @@ class Api::V1::WeatherControllerTest < ActionDispatch::IntegrationTest
           condition: "Sunny",
           icon_url: "https://cdn.weatherapi.com/icon.png",
           rain_chance_percent: 20,
-          max_wind_kph: 24.0
+          max_wind_kph: 24.0,
+          max_wind_direction: "NE"
+        }
+      ],
+      hourly: [
+        {
+          time: "2026-10-27 18:00",
+          time_epoch: 1_793_107_200,
+          temperature_c: 22.0,
+          feels_like_c: 23.0,
+          condition: "Partly cloudy",
+          icon_url: "https://cdn.weatherapi.com/hour.png",
+          rain_chance_percent: 20,
+          wind_kph: 18.0,
+          wind_gust_kph: 27.0,
+          wind_direction: "NE"
         }
       ],
       current: {
