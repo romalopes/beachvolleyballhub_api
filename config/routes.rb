@@ -46,6 +46,13 @@ Rails.application.routes.draw do
       get "health", to: "health#index"
       get "health/detailed", to: "health#detailed"
 
+      # Weather endpoint
+      get "weather", to: "weather#show"
+
+      # Geocoding endpoint (SPA home search resolves free-text queries to
+      # coordinates so the weather forecast can follow the searched place)
+      get "geocode", to: "geocoding#show"
+
       # Health diagnostics send-test-email tool (Issue 226): read-only config
       # plus a manual, admin-only POST that delivers a one-off message whose
       # subject/body embed the effectively used transport.
