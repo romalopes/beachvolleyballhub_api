@@ -71,3 +71,12 @@ Ensure `src/api.ts` or `src/services/api.ts` has the `api.weather(lat, lon)` met
 - **Attribution**: WeatherAPI.com attribution required
 - **Responsive design**: Cards must work on mobile and desktop
 - **Loading/error states**: Must handle all states gracefully
+
+## Implemented Frontend Composition — 28 October 2026
+
+- `Home.tsx` loads weather, upcoming training sessions, and all paginated upcoming tournaments independently and preserves loading/error states.
+- The location/map and compact upcoming agenda occupy the left Home column; the weather summary/forecast occupies the right column.
+- Hourly conditions are rendered once in a full-width row. `WeatherWidget` supports `showHourly={false}` for this composition.
+- `UpcomingAgenda` combines and sorts both event types before applying a six-item cap, then groups only the visible events by date.
+- The agenda provides direct event links plus “View all training” and “View all tournaments” links.
+- Shared `CalendarGrid` and `CalendarEvent` components unify the training calendar, tournament calendar, and Home agenda presentation without introducing unverified “My event” filtering semantics.

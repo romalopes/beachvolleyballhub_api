@@ -65,7 +65,24 @@ Test and validate the Weather Advisor implementation to ensure correctness, reli
 
 ## Documentation Updates
 After successful testing, update:
-- [ ] `BeachVolleyballHub_Weather_Advisor_Plan.md` with implementation notes
-- [ ] Phase doc files referenced in the plan
+- [x] `BeachVolleyballHub_Weather_Advisor_Plan.md` with implementation notes
+- [x] Phase doc files referenced in the plan
 - [ ] `.env.example` with correct API key placeholder
-- [ ] Any additional notes in the plan file's "Estimated cost and constraints" section
+- [x] Confirmed that the agenda/calendar UI refactor does not change the existing cost constraints
+
+## Frontend Validation Update — 28 October 2026
+
+- Focused Home, weather, training-calendar, tournament-calendar, agenda, and shared-calendar validation passes: 6 test files and 35 tests.
+- The full frontend suite passes: 120 test files and 1,101 tests.
+- Production TypeScript/Vite build passes; existing unrelated Sentry export and bundle-size warnings remain.
+- ESLint completes with zero errors and five pre-existing unrelated warnings.
+- Home agenda tests verify chronological mixing, grouping, configured display limits, omitted later events, and full-calendar links.
+- Training and tournament page tests verify that shared calendar events still open the correct detail routes.
+- Frontend and documentation `git diff --check` validation passes.
+
+### Remaining manual browser checks
+
+- Confirm `/` displays no more than six combined agenda events and both full-calendar links.
+- Confirm `/training?view=calendar` renders correctly and event selection opens the expected detail view.
+- Confirm `/tournaments` renders correctly and event selection opens the expected detail route.
+- Confirm narrow-screen calendar overflow and Home column stacking remain usable in a real browser.

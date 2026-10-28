@@ -418,6 +418,14 @@ The following phase documentation files have been created to track the implement
 
 These phase files complement the original implementation plan and provide detailed guidance for each development stage.
 
+### Implementation update — 28 October 2026
+
+- The Home location area now uses a responsive two-column layout with the location/map and compact upcoming agenda alongside the weather widget.
+- Hourly conditions render in a full-width row below those columns; `WeatherWidget` exposes `showHourly` so the Home composition does not duplicate hourly output.
+- The Home agenda combines training sessions and tournaments chronologically, limits the display to the next six events, and links to the complete training and tournament calendars.
+- Calendar presentation is shared through reusable React components used by the training calendar, tournament calendar, and Home agenda event cards. Domain-specific status, relationship, timezone, and navigation behavior remains in each adapter.
+- Frontend coverage includes weather visibility, Home loading and API behavior, mixed agenda ordering, agenda limits, full-calendar links, shared calendar rendering, and Training/Tournament event navigation. Final automated validation passed 120 test files with 1,101 tests; the production build and `git diff --check` also passed, while ESLint completed with zero errors and five pre-existing unrelated warnings.
+
 ## 13. Official references (review before deployment)
 
 - WeatherAPI product and free tier: https://www.weatherapi.com/
