@@ -42,6 +42,19 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
     patch path, params: payload.to_json, headers: { "Content-Type" => "application/json" }
   end
 
+  # Only verified locations may be attached to a training session, and only
+  # located ones can be measured by the radius filter.
+  def verified_location!(name, latitude:, longitude:)
+    Location.create!(
+      name: name,
+      latitude: latitude,
+      longitude: longitude,
+      verification_status: "verified",
+      verified_at: Time.current,
+      source: "test"
+    )
+  end
+
   def valid_payload(overrides = {})
     {
       title: "New Training",
@@ -175,6 +188,76 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
     titles = json.map { |s| s["title"] }.sort
     assert_includes titles, @draft.title
     assert_includes titles, "Private Drill Design"
+  end
+
+  test "index keeps only sessions within the requested radius" do
+    near = verified_location!("Coogee Beach", latitude: -33.9205, longitude: 151.2580)
+    # Inside the 25 km bounding box (0.2203° of latitude, 0.2665° of longitude)
+    # but ~34.7 km away, so only the haversine term can reject it.
+    corner = verified_location!("Box Corner Beach", latitude: -34.14, longitude: 151.525)
+    @session.update!(canonical_location: near)
+    training_sessions(:three).update!(canonical_location: corner)
+
+    get "/api/v1/training_sessions",
+        params: { latitude: -33.9197, longitude: 151.2585, radius_km: 25 }
+
+    assert_response :success
+    titles = json.map { |s| s["title"] }
+    assert_includes titles, @session.title
+    assert_not_includes titles, training_sessions(:three).title
+  end
+
+  test "index radius filter excludes a session without canonical coordinates" do
+    near = verified_location!("Coogee Beach", latitude: -33.9205, longitude: 151.2580)
+    @session.update!(canonical_location: near)
+
+    get "/api/v1/training_sessions",
+        params: { latitude: -33.9197, longitude: 151.2585, radius_km: 25 }
+
+    # training_sessions(:three) has only the free-text venue "Bondi Beach".
+    assert_not_includes json.map { |s| s["title"] }, training_sessions(:three).title
+  end
+
+  test "index combines the radius filter with mine" do
+    near = verified_location!("Coogee Beach", latitude: -33.9205, longitude: 151.2580)
+    corner = verified_location!("Box Corner Beach", latitude: -34.14, longitude: 151.525)
+    @session.update!(canonical_location: near)
+    far = training_sessions(:three)
+    far.update!(canonical_location: corner)
+    TrainingSessionParticipant.create!(
+      training_session: far, player_profile: player_profiles(:john_player), status: "confirmed"
+    )
+
+    # john_player's account belongs to users(:five); users(:one) is accountless.
+    sign_in_as(users(:five))
+    get "/api/v1/training_sessions", params: { mine: "1" }
+    assert_response :success
+    assert_includes json.map { |s| s["title"] }, far.title
+
+    # Both filters are active, so the far session drops out even though the
+    # player participates in it.
+    get "/api/v1/training_sessions",
+        params: { mine: "1", latitude: -33.9197, longitude: 151.2585, radius_km: 25 }
+    assert_response :success
+    titles = json.map { |s| s["title"] }
+    assert_includes titles, @session.title
+    assert_not_includes titles, far.title
+  end
+
+  test "index rejects an unusable radius filter" do
+    get "/api/v1/training_sessions",
+        params: { latitude: -33.9197, longitude: 151.2585, radius_km: 0 }
+
+    assert_response :unprocessable_entity
+    assert_includes json["errors"], "radius_km must be a positive number"
+  end
+
+  test "index rejects a partial radius filter" do
+    get "/api/v1/training_sessions", params: { longitude: 151.2585 }
+
+    assert_response :unprocessable_entity
+    assert_includes json["errors"],
+                    "latitude, longitude and radius_km must be provided together"
   end
 
   # --- show ----------------------------------------------------------------

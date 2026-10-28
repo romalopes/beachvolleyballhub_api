@@ -130,23 +130,31 @@ module Api
       def filtered_training_sessions
         # mine=1 narrows the calendar to the current player's own sessions
         # ("my schedule"): sessions visible to them that they participate in.
-        if params[:mine] == "1"
-          profile = Current.user&.account&.player_profiles&.active&.order(:id)&.first
-          return TrainingSession.none unless profile
+        scope =
+          if params[:mine] == "1"
+            profile = Current.user&.account&.player_profiles&.active&.order(:id)&.first
+            return TrainingSession.none unless profile
 
-          return TrainingSession.visible_to(Current.user).participated_by(profile).ordered
+            TrainingSession.visible_to(Current.user).participated_by(profile)
+          else
+            visible = TrainingSession
+                      .visible_to(Current.user)
+                      .starting_between(params[:starts_at_from], params[:starts_at_to])
+                      .includes(:created_by)
+            visible = visible.where(status: params[:status]) if params[:status].present?
+            if params[:training_series_id].present?
+              visible = visible.where(training_series_id: params[:training_series_id])
+            end
+            visible
+          end
+
+        # The radius filter ANDs with whatever else is active, and is applied
+        # last so it narrows both the shared calendar and "my schedule".
+        if (point = GeoRadius.point(params[:latitude], params[:longitude], params[:radius_km]))
+          scope = scope.within_radius_of(*point)
         end
 
-        scope = TrainingSession
-                  .visible_to(Current.user)
-                  .starting_between(params[:starts_at_from], params[:starts_at_to])
-                  .includes(:created_by)
-                  .ordered
-        scope = scope.where(status: params[:status]) if params[:status].present?
-        if params[:training_series_id].present?
-          scope = scope.where(training_series_id: params[:training_series_id])
-        end
-        scope
+        scope.ordered
       end
 
       def set_training_session
@@ -227,8 +235,8 @@ module Api
         }
       end
 
-      # Date/status filters are validated so bad input returns the standard
-      # error shape instead of a database error.
+      # Date/status/radius filters are validated so bad input returns the
+      # standard error shape instead of a database error.
       def validate_index_filters!
         errors = []
         errors << "starts_at_from is not a valid date" if invalid_date_param?(:starts_at_from)
@@ -236,6 +244,7 @@ module Api
         if params[:status].present? && !TrainingSession::STATUSES.include?(params[:status])
           errors << "status is not included in the list"
         end
+        errors.concat(GeoRadius.errors_for(params[:latitude], params[:longitude], params[:radius_km]))
 
         render json: { errors: errors }, status: :unprocessable_entity if errors.any?
       end

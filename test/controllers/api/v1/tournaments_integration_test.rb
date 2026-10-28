@@ -48,6 +48,19 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
     delete path, headers: { "Content-Type" => "application/json" }
   end
 
+  # Only verified locations may be attached to a tournament, and only located
+  # ones can be measured by the radius filter.
+  def verified_location!(name, latitude:, longitude:)
+    Location.create!(
+      name: name,
+      latitude: latitude,
+      longitude: longitude,
+      verification_status: "verified",
+      verified_at: Time.current,
+      source: "test"
+    )
+  end
+
   # --- detail (public) --------------------------------------------------------
 
   test "guest can read a tournament detail with no participation" do
@@ -76,6 +89,51 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes json["tournaments"].map { |row| row["id"] }, @tournament.id
+  end
+
+  test "directory keeps only tournaments within the requested radius" do
+    near = verified_location!("Coogee Beach", latitude: -33.9205, longitude: 151.2580)
+    # Inside the 25 km bounding box (0.2203° of latitude, 0.2665° of longitude)
+    # but ~34.7 km away, so only the haversine term can reject it.
+    corner = verified_location!("Box Corner Beach", latitude: -34.14, longitude: 151.525)
+    @tournament.update!(location: near)
+    far = Tournament.create!(
+      name: "Corner Sand Series",
+      organisation: @organisation,
+      created_by_account: @account,
+      location: corner,
+      scope: "club",
+      division_scheme: "letter",
+      publication_state: "active",
+      starts_at: 3.days.from_now,
+      ends_at: 4.days.from_now,
+      timezone: "UTC",
+      all_day: false
+    )
+
+    get "/api/v1/tournaments",
+        params: { latitude: -33.9197, longitude: 151.2585, radius_km: 25 }
+
+    assert_response :success
+    ids = json["tournaments"].map { |row| row["id"] }
+    assert_includes ids, @tournament.id
+    assert_not_includes ids, far.id
+  end
+
+  test "directory rejects an unusable radius filter" do
+    get "/api/v1/tournaments",
+        params: { latitude: 91, longitude: 151.2585, radius_km: 25 }
+
+    assert_response :unprocessable_entity
+    assert_includes json["errors"], "latitude must be a number between -90 and 90"
+  end
+
+  test "directory rejects a partial radius filter" do
+    get "/api/v1/tournaments", params: { latitude: -33.9197 }
+
+    assert_response :unprocessable_entity
+    assert_includes json["errors"],
+                    "latitude, longitude and radius_km must be provided together"
   end
 
   test "create derives the creator from the authenticated account" do

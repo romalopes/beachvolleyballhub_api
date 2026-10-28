@@ -15,6 +15,9 @@ class TournamentQuery
   # @option params [String] :publication_state publication state (draft, active, cancelled, archived)
   # @option params [String] :starts_at start of date range for overlap (UTC timestamp string)
   # @option params [String] :ends_at end of date range for overlap (UTC timestamp string)
+  # @option params [Numeric] :latitude centre latitude for the radius filter
+  # @option params [Numeric] :longitude centre longitude for the radius filter
+  # @option params [Numeric] :radius_km radius in kilometres; needs latitude and longitude
   # @option params [Integer] :page page number for pagination
   # @option params [Integer] :per_page per page size for pagination
   def self.call(params = {})
@@ -87,6 +90,20 @@ class TournamentQuery
       when 'completed'
         relation = relation.where("tournaments.ends_at <= ?", now)
       end
+    end
+
+    # Radius filter: keep only tournaments whose canonical venue sits within
+    # `radius_km` of (latitude, longitude). A bounding box on the plain
+    # latitude/longitude columns narrows the candidate set, then the haversine
+    # term rejects the box corners. Tournaments without canonical coordinates
+    # (a free-text `location_name` only) cannot be measured and are excluded
+    # while this filter is active.
+    if (point = GeoRadius.point(params[:latitude], params[:longitude], params[:radius_km]))
+      latitude, longitude, radius_km = point
+      relation = relation.where(
+        "locations.latitude BETWEEN ? AND ? AND locations.longitude BETWEEN ? AND ?",
+        *GeoRadius.bounding_box(latitude, longitude, radius_km)
+      ).where(GeoRadius::HAVERSINE_DISTANCE_SQL, latitude, latitude, longitude, radius_km)
     end
 
     # Mine filter: tournaments where the given account has a participation.

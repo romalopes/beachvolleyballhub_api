@@ -20,6 +20,9 @@ module Api
           :publication_state,
           :starts_at,
           :ends_at,
+          :latitude,
+          :longitude,
+          :radius_km,
           :page,
           :per_page,
           :format,
@@ -29,6 +32,13 @@ module Api
           division_numbers: [],
           relationship: []
         )
+        # The radius triple is validated up front so unusable input returns the
+        # standard error shape instead of a database error.
+        geo_errors = GeoRadius.errors_for(
+          query_params[:latitude], query_params[:longitude], query_params[:radius_km]
+        )
+        return render json: { errors: geo_errors }, status: :unprocessable_entity if geo_errors.any?
+
         # Convert array parameters - REMOVED (redundant, query object handles type checking)
         # query_params[:letter_levels] = params[:letter_levels] if params[:letter_levels].is_a?(Array)
         # query_params[:division_numbers] = params[:division_numbers] if params[:division_numbers].is_a?(Array)

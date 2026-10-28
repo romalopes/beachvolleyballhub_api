@@ -96,6 +96,18 @@ class TrainingSession < ApplicationRecord
     scope = scope.where(starts_at: ..to) if to.present?
     scope
   }
+  # Calendar radius filter: sessions whose canonical venue sits within
+  # `radius_km` of a point. See GeoRadius for the bounding-box + haversine
+  # split; sessions without canonical coordinates cannot be measured and are
+  # excluded while this filter is active.
+  scope :within_radius_of, ->(latitude, longitude, radius_km) {
+    joins(:canonical_location)
+      .where(
+        "locations.latitude BETWEEN ? AND ? AND locations.longitude BETWEEN ? AND ?",
+        *GeoRadius.bounding_box(latitude, longitude, radius_km)
+      )
+      .where(GeoRadius::HAVERSINE_DISTANCE_SQL, latitude, latitude, longitude, radius_km)
+  }
   # Sessions a given PlayerProfile participates in ("my schedule").
   # Note: this scope is participation only — it includes drafts and private
   # sessions. Gate user-facing access through `visible_to`, which excludes

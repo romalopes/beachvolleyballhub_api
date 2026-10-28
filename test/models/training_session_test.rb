@@ -266,7 +266,43 @@ class TrainingSessionTest < ActiveSupport::TestCase
     refute_includes TrainingSession.for_series(training_series(:private_series)), occurrence
   end
 
+  test "within_radius_of keeps only sessions at a venue inside the circle" do
+    near = verified_location!("Coogee Beach", latitude: -33.9205, longitude: 151.2580)
+    # Inside the 25 km bounding box (0.2203° of latitude, 0.2665° of longitude)
+    # but ~34.7 km away, so only the haversine term can reject it.
+    corner = verified_location!("Box Corner Beach", latitude: -34.14, longitude: 151.525)
+
+    near_session = TrainingSession.create!(valid_attributes(canonical_location: near))
+    corner_session = TrainingSession.create!(valid_attributes(canonical_location: corner))
+
+    found = TrainingSession.within_radius_of(-33.9197, 151.2585, 25)
+
+    assert_includes found, near_session
+    refute_includes found, corner_session
+  end
+
+  test "within_radius_of excludes a session with no canonical location" do
+    # training_sessions(:one) carries only the free-text venue "Coogee Beach",
+    # which has no coordinates to measure.
+    found = TrainingSession.within_radius_of(-33.9197, 151.2585, 25)
+
+    refute_includes found, training_sessions(:one)
+  end
+
   private
+
+  # Only verified locations may be attached to a training session, and only
+  # located ones can be measured by the radius filter.
+  def verified_location!(name, latitude:, longitude:)
+    Location.create!(
+      name: name,
+      latitude: latitude,
+      longitude: longitude,
+      verification_status: "verified",
+      verified_at: Time.current,
+      source: "test"
+    )
+  end
 
   def valid_attributes(overrides = {})
     {
