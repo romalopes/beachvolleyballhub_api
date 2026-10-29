@@ -27,6 +27,7 @@ Rails.application.routes.draw do
     get "users", to: "users#index"
     post "users/:id/roles", to: "users#add_role", as: :user_add_role
     delete "users/:id/roles/:role", to: "users#remove_role", as: :user_remove_role
+    resources :users, only: %i[index create]
 
     # Admin Settings CRUD (server-rendered views)
     get "settings", to: "dashboard#index", as: :settings
@@ -370,7 +371,7 @@ Rails.application.routes.draw do
 
       # Admin role management
       namespace :admin do
-        resources :users, only: [ :index, :show, :destroy ] do
+        resources :users, only: [ :index, :show, :destroy, :create ] do
           post "roles", to: "users#add_role", as: :add_role
           delete "roles/:role", to: "users#remove_role", as: :remove_role
         end

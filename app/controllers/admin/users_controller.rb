@@ -6,6 +6,17 @@ module Admin
       @users = User.includes(:roles).order(:id)
     end
 
+    def create
+      @user = User.new(user_create_params)
+
+      if @user.save
+        @user.add_role(:player)
+        redirect_to admin_users_path, notice: "User created successfully."
+      else
+        redirect_to admin_users_path, alert: "Failed to create user: #{@user.errors.full_messages.join(', ')}"
+      end
+    end
+
     def add_role
       @user = User.find(params[:id])
       @user.add_role(params[:role])
@@ -24,6 +35,17 @@ module Admin
         @user.remove_role(role)
         redirect_to admin_users_path, notice: "Role removed from #{@user.name}."
       end
+    end
+
+    private
+
+    def user_create_params
+      params.require(:user).permit(
+        :email_address,
+        :password,
+        :first_name,
+        :last_name
+      )
     end
   end
 end

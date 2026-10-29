@@ -59,6 +59,77 @@ class Api::V1::Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_includes account["group_memberships"].map { |membership| membership["group"]["name"] }, "U19 squad"
   end
 
+  test "admin can create a user with an account and player role" do
+    sign_in_as(@admin)
+    email = "created-#{SecureRandom.hex(6)}@example.com"
+
+    assert_difference [ "User.count", "Account.count", "ContactDetail.count" ], 1 do
+      post "/api/v1/admin/users", params: {
+        email_address: email,
+        password: "password123",
+        first_name: "John",
+        last_name: "Doe"
+      }, as: :json
+    end
+
+    assert_response :created
+    body = JSON.parse(response.body)
+    user = User.find(body["id"])
+
+    assert_equal email, user.email_address
+    assert user.player?
+    assert_equal "John", user.account.first_name
+    assert_equal "Doe", user.account.last_name
+    assert_equal email, user.account.email
+    assert_equal "John", body["first_name"]
+    assert_equal "Doe", body["last_name"]
+  end
+
+  test "admin user creation uses the email prefix when first name is omitted" do
+    sign_in_as(@admin)
+    email = "fallback-name-#{SecureRandom.hex(6)}@example.com"
+
+    post "/api/v1/admin/users", params: {
+      email_address: email,
+      password: "password123"
+    }, as: :json
+
+    assert_response :created
+    user = User.find(JSON.parse(response.body)["id"])
+    assert_equal email.split("@", 2).first, user.account.first_name
+  end
+
+  test "invalid admin user creation does not persist partial records" do
+    sign_in_as(@admin)
+
+    assert_no_difference [ "User.count", "Account.count", "ContactDetail.count" ] do
+      post "/api/v1/admin/users", params: {
+        email_address: "not-an-email",
+        password: "short",
+        first_name: "John"
+      }, as: :json
+    end
+
+    assert_response :unprocessable_entity
+    assert JSON.parse(response.body)["errors"].present?
+  end
+
+  test "admin user creation returns a message when the email already exists" do
+    sign_in_as(@admin)
+
+    assert_no_difference [ "User.count", "Account.count", "ContactDetail.count" ] do
+      post "/api/v1/admin/users", params: {
+        email_address: @player.email_address.upcase,
+        password: "password123",
+        first_name: "Duplicate",
+        last_name: "User"
+      }, as: :json
+    end
+
+    assert_response :unprocessable_entity
+    assert_equal [ "Email address has already been taken" ], JSON.parse(response.body)["errors"]
+  end
+
   test "admin can remove a role from another user" do
     sign_in_as(@admin)
     delete "/api/v1/admin/users/#{@coach.id}/roles/coach"

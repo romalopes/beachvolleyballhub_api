@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_26_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_29_084236) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -25,6 +25,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_26_000001) do
     t.string "street_address"
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_account_addresses_on_account_id", unique: true
+  end
+
+  create_table "account_invitations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "declined_at"
+    t.datetime "emailed_at"
+    t.datetime "expires_at", null: false
+    t.bigint "invited_by_id", null: false
+    t.string "invitee_email"
+    t.datetime "revoked_at"
+    t.string "status", default: "active", null: false
+    t.string "token_digest", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "used_at"
+    t.bigint "used_by_id"
+    t.index ["expires_at"], name: "index_account_invitations_on_expires_at"
+    t.index ["invited_by_id"], name: "index_account_invitations_on_invited_by_id"
+    t.index ["status"], name: "index_account_invitations_on_status"
+    t.index ["token_digest"], name: "index_account_invitations_on_token_digest", unique: true
+    t.index ["used_by_id"], name: "index_account_invitations_on_used_by_id"
   end
 
   create_table "accounts", force: :cascade do |t|
@@ -1134,6 +1154,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_26_000001) do
   end
 
   add_foreign_key "account_addresses", "accounts"
+  add_foreign_key "account_invitations", "users", column: "invited_by_id"
+  add_foreign_key "account_invitations", "users", column: "used_by_id"
   add_foreign_key "accounts", "users"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"

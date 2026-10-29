@@ -95,6 +95,35 @@ module Api
           head :no_content
         end
 
+        # POST /api/v1/admin/users
+        # { email_address, password, first_name, last_name }
+        def create
+          @user = User.new(user_create_params)
+
+          created = User.transaction do
+            next false unless @user.save
+
+            @user.add_role(:player)
+            Account.create!(
+              user: @user,
+              contact_detail: ContactDetail.new(
+                first_name: account_create_params[:first_name].presence || default_first_name,
+                last_name: account_create_params[:last_name],
+                email: @user.email_address
+              )
+            )
+            true
+          end
+
+          if created
+            render json: user_payload(@user, include_account: true), status: :created
+          else
+            render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
+          end
+        rescue ActiveRecord::RecordInvalid => e
+          render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+        end
+
         private
 
         def user_payload(user, include_account: false)
@@ -185,6 +214,18 @@ module Api
               }
             }
           end
+        end
+
+        def user_create_params
+          params.permit(:email_address, :password)
+        end
+
+        def account_create_params
+          params.permit(:first_name, :last_name)
+        end
+
+        def default_first_name
+          @user.email_address.to_s.split("@", 2).first
         end
       end
     end
