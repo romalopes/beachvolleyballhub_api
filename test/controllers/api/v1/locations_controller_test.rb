@@ -108,6 +108,98 @@ class Api::V1::LocationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @admin.account.id, proposal.verified_by_account_id
   end
 
+  test "curator can verify and reject a proposal" do
+    curator = users(:four)
+    account = Account.create!(user: curator)
+    proposal = Location.create!(name: "Curated Beach")
+    sign_in_as(curator)
+
+    post verify_api_v1_location_path(proposal)
+    assert_response :success
+    assert_equal account.id, proposal.reload.verified_by_account_id
+
+    post reject_api_v1_location_path(proposal)
+    assert_response :success
+    proposal.reload
+    assert_equal "rejected", proposal.verification_status
+    assert_nil proposal.verified_by_account_id
+    assert_nil proposal.verified_at
+  end
+
+  test "ordinary users cannot moderate or change location lifecycle" do
+    proposal = Location.create!(name: "Protected Beach")
+    sign_in_as(@player)
+
+    post verify_api_v1_location_path(proposal)
+    assert_response :forbidden
+    post reject_api_v1_location_path(proposal)
+    assert_response :forbidden
+    post archive_api_v1_location_path(proposal)
+    assert_response :forbidden
+    post activate_api_v1_location_path(proposal)
+    assert_response :forbidden
+  end
+
+  test "admin can archive and reactivate a location" do
+    sign_in_as(@admin)
+
+    post archive_api_v1_location_path(@verified)
+    assert_response :success
+    assert_equal "archived", @verified.reload.status
+    assert_not_nil @verified.archived_at
+
+    post activate_api_v1_location_path(@verified)
+    assert_response :success
+    assert_equal "active", @verified.reload.status
+    assert_nil @verified.archived_at
+  end
+
+  test "merged locations cannot be activated" do
+    target = Location.create!(name: "Canonical Beach")
+    merged = Location.create!(name: "Old Beach", status: "merged", merged_into: target)
+    sign_in_as(@admin)
+
+    post activate_api_v1_location_path(merged)
+
+    assert_response :unprocessable_entity
+    assert_equal "merged", merged.reload.status
+    assert_includes response.parsed_body.fetch("errors"), "Merged locations cannot be activated"
+  end
+
+  test "created by me lists every lifecycle and verification state for only the current account" do
+    account_player = users(:five)
+    own_proposal = Location.create!(name: "My Pending Beach", proposed_by_account: account_player.account)
+    own_rejected = Location.create!(
+      name: "My Rejected Beach",
+      proposed_by_account: account_player.account,
+      verification_status: "rejected"
+    )
+    own_archived = Location.create!(
+      name: "My Archived Beach",
+      proposed_by_account: account_player.account,
+      status: "archived"
+    )
+    Location.create!(name: "Another Account Beach", proposed_by_account: accounts(:two))
+    sign_in_as(account_player)
+
+    get api_v1_locations_path, params: { created_by_me: 1, per_page: 100 }
+
+    assert_response :success
+    ids = response.parsed_body.fetch("locations").map { |row| row.fetch("id") }
+    assert_equal [ own_archived.id, own_proposal.id, own_rejected.id ].sort, ids.sort
+  end
+
+  test "created by me returns no unowned locations when the user has no account" do
+    unowned = Location.create!(name: "Legacy Unowned Beach")
+    sign_in_as(@player)
+
+    get api_v1_locations_path, params: { created_by_me: 1 }
+
+    assert_response :success
+    assert_empty response.parsed_body.fetch("locations")
+    assert_not_nil unowned
+  end
+
   test "changing an automatically geocoded address clears stale coordinates when geocoding is disabled" do
     location = Location.create!(
       name: "Old Beach",

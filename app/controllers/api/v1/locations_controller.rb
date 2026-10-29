@@ -5,17 +5,22 @@ module Api
       include LocationPayloads
 
       before_action :require_authentication
-      before_action :set_location, only: %i[show update verify archive destroy]
-      before_action :require_location_oversight!, only: %i[update verify archive destroy]
+      before_action :set_location, only: %i[show update verify reject archive activate destroy]
+      before_action :require_location_oversight!, only: %i[update verify reject archive activate destroy]
 
       def index
         scope = Location.includes(:aliases).ordered
+        if ActiveModel::Type::Boolean.new.cast(params[:created_by_me])
+          account = Current.user.account
+          scope = account ? scope.where(proposed_by_account_id: account.id) : scope.none
+        elsif !location_oversight?
+          scope = scope.usable_by(Current.user.account)
+        end
         scope = scope.search(params[:q]).distinct if params[:q].present?
         scope = scope.where(status: params[:status]) if params[:status].present?
         if params[:verification_status].present?
           scope = scope.where(verification_status: params[:verification_status])
         end
-        scope = scope.usable_by(Current.user.account) unless location_oversight?
         records, meta = paginate(scope)
         rows = records.map { |location| location_summary(location) }
         render json: { data: rows, locations: rows, meta: meta }
@@ -72,16 +77,22 @@ module Api
       end
 
       def reject
-        unless Current.user.admin? || Current.user.curator?
-          return render json: { error: "Only a curator or admin can reject a location" }, status: :forbidden
-        end
-
-        @location.update!(verification_status: "rejected")
+        @location.reject!
         render json: { location: location_detail(@location) }
       end
 
       def archive
         @location.archive!
+        render json: { location: location_detail(@location) }
+      end
+
+      def activate
+        if @location.status == "merged"
+          return render json: { errors: [ "Merged locations cannot be activated" ] },
+                        status: :unprocessable_entity
+        end
+
+        @location.activate!
         render json: { location: location_detail(@location) }
       end
 

@@ -125,8 +125,18 @@ class Location < ApplicationRecord
     update!(verification_status: "verified", verified_by_account: account, verified_at: Time.current)
   end
 
+  def reject!
+    update!(verification_status: "rejected", verified_by_account: nil, verified_at: nil)
+  end
+
   def archive!
     update!(status: "archived", archived_at: Time.current)
+  end
+
+  def activate!
+    raise ActiveRecord::RecordInvalid, self if status == "merged"
+
+    update!(status: "active", archived_at: nil)
   end
 
   def summary

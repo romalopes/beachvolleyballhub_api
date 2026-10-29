@@ -117,7 +117,9 @@ Rails.application.routes.draw do
       resources :locations, only: %i[index show create update destroy] do
         member do
           post :verify
+          post :reject
           post :archive
+          post :activate
         end
         resources :courts, only: %i[index create update destroy]
       end
