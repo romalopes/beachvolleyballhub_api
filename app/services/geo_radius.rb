@@ -19,15 +19,19 @@ module GeoRadius
   # globe; clamping keeps the box a valid BETWEEN range.
   MAX_LONGITUDE_DELTA = 180.0
 
-  # Great-circle distance predicate, in kilometres. The bind order is:
-  # latitude, latitude, longitude, radius_km.
-  HAVERSINE_DISTANCE_SQL = <<~SQL.squish.freeze
+  # Great-circle distance expression, in kilometres. The bind order is:
+  # latitude, latitude, longitude. Keeping the expression separate lets public
+  # catalogues return and sort by the same distance that event filters use.
+  HAVERSINE_SQL = <<~SQL.squish.freeze
     #{EARTH_RADIUS_KM} * 2 * asin(sqrt(
       power(sin(radians(locations.latitude - ?) / 2), 2) +
       cos(radians(?)) * cos(radians(locations.latitude)) *
       power(sin(radians(locations.longitude - ?) / 2), 2)
-    )) <= ?
+    ))
   SQL
+  # Great-circle distance predicate, in kilometres. The fourth bind is the
+  # maximum radius.
+  HAVERSINE_DISTANCE_SQL = "#{HAVERSINE_SQL} <= ?".freeze
 
   module_function
 
@@ -76,13 +80,14 @@ module GeoRadius
 
   def within?(value, minimum, maximum)
     number = Float(value)
-    number >= minimum && number <= maximum
+    number.finite? && number >= minimum && number <= maximum
   rescue ArgumentError, TypeError
     false
   end
 
   def positive?(value)
-    Float(value).positive?
+    number = Float(value)
+    number.finite? && number.positive?
   rescue ArgumentError, TypeError
     false
   end

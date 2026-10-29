@@ -15,8 +15,13 @@ module Api
       include ContentAuthorization
       include Pagination
 
-      before_action :require_authentication
-      before_action :require_training_manager!, except: %i[show index join leave add_created_profile_membership remove_created_profile_membership]
+      NEARBY_DEFAULT_RADIUS_KM = 25.0
+      NEARBY_MAX_RADIUS_KM = 100.0
+      NEARBY_DEFAULT_LIMIT = 20
+      NEARBY_MAX_LIMIT = 50
+
+      before_action :require_authentication, except: :nearby
+      before_action :require_training_manager!, except: %i[show index join leave add_created_profile_membership remove_created_profile_membership nearby]
       # Loaded before the authority checks, not after: every organisation rule below
       # needs the record it is judging, and a rule that silently passed because the
       # record was nil would be the worst kind of bug here.
@@ -40,6 +45,48 @@ module Api
       before_action :require_organisation_membership_manager!,
                     only: %i[member_candidates create_member update_member]
       # `leave` is self-service and must bypass the membership-manager gate.
+
+      # Public read-only discovery deliberately does not reuse the authenticated
+      # organisation index: that serializer includes permissions and internal
+      # hierarchy metadata which anonymous visitors must not receive.
+      def nearby
+        latitude = params[:latitude]
+        longitude = params[:longitude]
+        radius_input = params[:radius_km].presence || NEARBY_DEFAULT_RADIUS_KM
+        errors = GeoRadius.errors_for(latitude, longitude, radius_input)
+        errors << "radius_km must be no greater than #{NEARBY_MAX_RADIUS_KM.to_i}" if
+          errors.empty? && Float(radius_input) > NEARBY_MAX_RADIUS_KM
+
+        limit = nearby_limit(errors)
+        return render json: { errors: errors }, status: :unprocessable_entity if errors.any?
+
+        latitude, longitude, radius_km = GeoRadius.point(latitude, longitude, radius_input)
+        min_latitude, max_latitude, min_longitude, max_longitude =
+          GeoRadius.bounding_box(latitude, longitude, radius_km)
+        distance_sql = ActiveRecord::Base.sanitize_sql_array(
+          [ GeoRadius::HAVERSINE_SQL, latitude, latitude, longitude ]
+        )
+
+        organisations = Organisation
+                        .where(status: "active")
+                        .joins(:default_location)
+                        .merge(Location.selectable)
+                        .where.not(locations: { latitude: nil, longitude: nil })
+                        .where(
+                          "locations.latitude BETWEEN ? AND ? AND locations.longitude BETWEEN ? AND ?",
+                          min_latitude, max_latitude, min_longitude, max_longitude
+                        )
+                        .where(
+                          GeoRadius::HAVERSINE_DISTANCE_SQL,
+                          latitude, latitude, longitude, radius_km
+                        )
+                        .select("organisations.*", "#{distance_sql} AS distance_km")
+                        .includes(:default_location, :logo_attachment)
+                        .order(Arel.sql("distance_km ASC"), :id)
+                        .limit(limit)
+
+        render json: { organisations: organisations.map { |organisation| nearby_metadata(organisation) } }
+      end
 
       def index
         organisations = Organisation
@@ -542,6 +589,47 @@ module Api
       end
 
       private
+
+      def nearby_limit(errors)
+        return NEARBY_DEFAULT_LIMIT if params[:limit].blank?
+
+        limit = Integer(params[:limit], 10)
+        if limit <= 0
+          errors << "limit must be a positive integer"
+          return NEARBY_DEFAULT_LIMIT
+        end
+
+        [ limit, NEARBY_MAX_LIMIT ].min
+      rescue ArgumentError, TypeError
+        errors << "limit must be a positive integer"
+        NEARBY_DEFAULT_LIMIT
+      end
+
+      def nearby_metadata(organisation)
+        location = organisation.default_location
+        {
+          id: organisation.id,
+          name: organisation.name,
+          slug: organisation.slug,
+          acronym: organisation.acronym,
+          organisation_type: organisation.organisation_type,
+          logo_url: organisation.logo_url,
+          default_location: {
+            id: location.id,
+            name: location.name,
+            slug: location.slug,
+            location_type: location.location_type,
+            formatted_address: location.formatted_address,
+            locality: location.locality,
+            administrative_area: location.administrative_area,
+            country_code: location.country_code,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            map_url: location.map_url
+          },
+          distance_km: organisation.distance_km.to_f.round(1)
+        }
+      end
 
       # A `pending` invitation is visible only to the people who can act on it. An
       # ended membership is visible to anyone who can see the organisation, because

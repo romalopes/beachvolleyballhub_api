@@ -213,6 +213,11 @@ Rails.application.routes.draw do
       # retired; a hard delete is for a mistake — a club created twice, a
       # placeholder never used — and neither the tree below it nor the membership
       # history of a real club may be destroyed as a side effect of tidying up.
+      # Public nearby-organisations catalogue: read-only, no authentication,
+      # returns active organisations whose verified default_location is within
+      # radius. Distinct from the authenticated management index above.
+      get "organisations/nearby", to: "organisations#nearby"
+
       resources :organisations, only: %i[index show create update destroy] do
         resources :organisation_locations, path: :locations, only: %i[index create destroy]
         member do

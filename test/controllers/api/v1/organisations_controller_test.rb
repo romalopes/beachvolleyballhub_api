@@ -35,7 +35,115 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     patch path, params: payload.to_json, headers: { "Content-Type" => "application/json" }
   end
 
+  def create_nearby_organisation(name:, latitude:, longitude:, status: "active")
+    location = Location.create!(
+      name: "#{name} Beach",
+      location_type: "beach",
+      locality: "Sydney",
+      country_code: "AU",
+      latitude: latitude,
+      longitude: longitude,
+      status: "active",
+      verification_status: "verified",
+      geocoding_status: "manual",
+      coordinate_source: "manual",
+      source: "test",
+      verified_at: Time.current
+    )
+    organisation = Organisation.create!(
+      name: name,
+      organisation_type: "club",
+      status: status
+    )
+    OrganisationLocation.create!(organisation: organisation, location: location)
+    organisation.update!(default_location: location)
+    organisation
+  end
+
   # --- read ------------------------------------------------------------------
+
+  test "nearby is public and returns organisations ordered by distance" do
+    farther = create_nearby_organisation(
+      name: "Farther Sand Club", latitude: -33.95, longitude: 151.26
+    )
+    nearer = create_nearby_organisation(
+      name: "Nearer Sand Club", latitude: -33.921, longitude: 151.26
+    )
+
+    get "/api/v1/organisations/nearby",
+        params: { latitude: -33.92, longitude: 151.26, radius_km: 25 }
+
+    assert_response :success
+    rows = json.fetch("organisations")
+    assert_equal [ nearer.id, farther.id ], rows.map { |row| row["id"] }
+    assert rows.all? { |row| row["distance_km"].is_a?(Numeric) }
+    assert_equal "Nearer Sand Club Beach", rows.first.dig("default_location", "name")
+    assert_nil rows.first["can_edit"]
+  end
+
+  test "nearby filters inactive organisations and unusable default locations" do
+    visible = create_nearby_organisation(
+      name: "Visible Sand Club", latitude: -33.921, longitude: 151.26
+    )
+    archived = create_nearby_organisation(
+      name: "Archived Sand Club", latitude: -33.922, longitude: 151.26, status: "archived"
+    )
+    unverified = create_nearby_organisation(
+      name: "Unverified Sand Club", latitude: -33.923, longitude: 151.26
+    )
+    unverified.default_location.update_columns(verification_status: "proposed")
+
+    get "/api/v1/organisations/nearby",
+        params: { latitude: -33.92, longitude: 151.26, radius_km: 25 }
+
+    assert_response :success
+    ids = json.fetch("organisations").map { |row| row["id"] }
+    assert_includes ids, visible.id
+    assert_not_includes ids, archived.id
+    assert_not_includes ids, unverified.id
+  end
+
+  test "nearby applies radius and caps the requested result limit" do
+    create_nearby_organisation(name: "Close Sand Club", latitude: -33.921, longitude: 151.26)
+    create_nearby_organisation(name: "Distant Sand Club", latitude: -34.5, longitude: 151.26)
+    51.times do |index|
+      create_nearby_organisation(
+        name: "Limit Sand Club #{index}",
+        latitude: -33.92 + (index * 0.00001),
+        longitude: 151.26
+      )
+    end
+
+    get "/api/v1/organisations/nearby",
+        params: { latitude: -33.92, longitude: 151.26, radius_km: 25, limit: 100 }
+
+    assert_response :success
+    rows = json.fetch("organisations")
+    assert_equal 50, rows.length
+    assert_not rows.any? { |row| row["name"] == "Distant Sand Club" }
+  end
+
+  test "nearby validates coordinates radius and limit" do
+    invalid_params = [
+      { longitude: 151.26 },
+      { latitude: -33.92 },
+      { latitude: "invalid", longitude: 151.26 },
+      { latitude: 91, longitude: 151.26 },
+      { latitude: -33.92, longitude: 181 },
+      { latitude: "NaN", longitude: 151.26 },
+      { latitude: -33.92, longitude: "Infinity" },
+      { latitude: -33.92, longitude: 151.26, radius_km: 0 },
+      { latitude: -33.92, longitude: 151.26, radius_km: "Infinity" },
+      { latitude: -33.92, longitude: 151.26, radius_km: 101 },
+      { latitude: -33.92, longitude: 151.26, limit: "many" }
+    ]
+
+    invalid_params.each do |request_params|
+      get "/api/v1/organisations/nearby", params: request_params
+      assert_response :unprocessable_entity, request_params.inspect
+      assert json.fetch("errors").any?, request_params.inspect
+    end
+  end
 
   test "index requires authentication" do
     get "/api/v1/organisations"
