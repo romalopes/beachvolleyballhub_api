@@ -93,7 +93,7 @@ class TrainingSession < ApplicationRecord
   scope :starting_between, ->(from, to) {
     scope = all
     scope = scope.where(starts_at: from..) if from.present?
-    scope = scope.where(starts_at: ..to) if to.present?
+    scope = scope.where("starts_at < ?", to) if to.present?
     scope
   }
   # Calendar radius filter: sessions whose canonical venue sits within

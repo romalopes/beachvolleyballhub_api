@@ -130,23 +130,19 @@ module Api
       def filtered_training_sessions
         # mine=1 narrows the calendar to the current player's own sessions
         # ("my schedule"): sessions visible to them that they participate in.
-        scope =
-          if params[:mine] == "1"
-            profile = Current.user&.account&.player_profiles&.active&.order(:id)&.first
-            return TrainingSession.none unless profile
+        scope = TrainingSession.visible_to(Current.user)
+        if params[:mine] == "1"
+          profile = Current.user&.account&.player_profiles&.active&.order(:id)&.first
+          scope = profile ? scope.participated_by(profile) : TrainingSession.none
+        end
 
-            TrainingSession.visible_to(Current.user).participated_by(profile)
-          else
-            visible = TrainingSession
-                      .visible_to(Current.user)
-                      .starting_between(params[:starts_at_from], params[:starts_at_to])
-                      .includes(:created_by)
-            visible = visible.where(status: params[:status]) if params[:status].present?
-            if params[:training_series_id].present?
-              visible = visible.where(training_series_id: params[:training_series_id])
-            end
-            visible
-          end
+        scope = scope
+                .starting_between(params[:starts_at_from], params[:starts_at_to])
+                .includes(:created_by)
+        scope = scope.where(status: params[:status]) if params[:status].present?
+        if params[:training_series_id].present?
+          scope = scope.where(training_series_id: params[:training_series_id])
+        end
 
         # The radius filter ANDs with whatever else is active, and is applied
         # last so it narrows both the shared calendar and "my schedule".

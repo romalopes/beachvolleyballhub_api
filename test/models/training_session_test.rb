@@ -100,6 +100,18 @@ class TrainingSessionTest < ActiveSupport::TestCase
     assert_equal TrainingSession.count, TrainingSession.starting_between(nil, nil).count
   end
 
+  test "starting_between treats the upper date as an exclusive boundary" do
+    boundary = TrainingSession.create!(
+      valid_attributes(
+        title: "Next window",
+        starts_at: Time.zone.parse("2026-09-22 00:00"),
+        ends_at: Time.zone.parse("2026-09-22 01:00")
+      )
+    )
+
+    assert_not_includes TrainingSession.starting_between("2026-09-21", "2026-09-22"), boundary
+  end
+
   test "visible_to hides drafts from guests and players" do
     assert_not_includes TrainingSession.visible_to(nil), training_sessions(:two)
     assert_not_includes TrainingSession.visible_to(users(:five)), training_sessions(:two)

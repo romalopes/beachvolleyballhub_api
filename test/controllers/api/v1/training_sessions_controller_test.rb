@@ -165,6 +165,36 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes titles, training_sessions(:three).title
   end
 
+  test "index returns only the complete ISO weeks covering the selected month" do
+    after_range = TrainingSession.create!(
+      valid_payload(
+        title: "After October grid",
+        starts_at: "2026-11-02T00:00:00Z",
+        ends_at: "2026-11-02T01:00:00Z"
+      )
+    )
+
+    get "/api/v1/training_sessions",
+        params: { starts_at_from: "2026-09-28", starts_at_to: "2026-11-02" }
+
+    assert_response :success
+    titles = json.map { |session| session["title"] }
+    assert_includes titles, training_sessions(:three).title
+    assert_not_includes titles, training_sessions(:one).title
+    assert_not_includes titles, after_range.title
+  end
+
+  test "index combines mine with the selected date range" do
+    sign_in_as(users(:five))
+    get "/api/v1/training_sessions",
+        params: { mine: "1", starts_at_from: "2026-09-25", starts_at_to: "2026-09-26" }
+
+    assert_response :success
+    titles = json.map { |session| session["title"] }
+    assert_includes titles, training_sessions(:private_work).title
+    assert_not_includes titles, training_sessions(:one).title
+  end
+
   test "index rejects an invalid date filter" do
     get "/api/v1/training_sessions?starts_at_from=not-a-date"
 
