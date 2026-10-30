@@ -49,7 +49,7 @@ module Api
             ]
           ).find(params[:id])
 
-          render json: user_payload(user, include_account: true)
+          render json: user_payload(user, include_account: true, include_activation: true)
         end
 
         # POST /api/v1/admin/users/:id/roles  { role: "coach" }
@@ -126,7 +126,7 @@ module Api
 
         private
 
-        def user_payload(user, include_account: false)
+        def user_payload(user, include_account: false, include_activation: false)
           account = user.account
           payload = {
             id: user.id,
@@ -139,6 +139,13 @@ module Api
           }
 
           payload[:account] = account ? account_payload(account) : nil if include_account
+          if include_activation
+            payload[:email_verified] = user.email_verified?
+            payload[:invitation_accepted] = AccountInvitation.where(
+              used_by_id: user.id,
+              status: "used"
+            ).where.not(used_at: nil).exists?
+          end
           payload
         end
 

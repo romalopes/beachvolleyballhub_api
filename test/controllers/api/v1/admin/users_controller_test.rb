@@ -59,6 +59,39 @@ class Api::V1::Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_includes account["group_memberships"].map { |membership| membership["group"]["name"] }, "U19 squad"
   end
 
+  test "show includes email verification and invitation acceptance state" do
+    user = User.create!(
+      email_address: "pending-#{SecureRandom.hex(6)}@example.com",
+      password: "password123"
+    )
+
+    sign_in_as(@admin)
+    get "/api/v1/admin/users/#{user.id}"
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal false, body["email_verified"]
+    assert_equal false, body["invitation_accepted"]
+
+    user.update!(email_verified_at: Time.current)
+    AccountInvitation.create!(
+      token_digest: AccountInvitation.generate_token_digest,
+      invitee_email: user.email_address,
+      status: "used",
+      expires_at: 7.days.from_now,
+      invited_by: @admin,
+      used_by: user,
+      used_at: Time.current
+    )
+
+    get "/api/v1/admin/users/#{user.id}"
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal true, body["email_verified"]
+    assert_equal true, body["invitation_accepted"]
+  end
+
   test "admin can create a user with an account and player role" do
     sign_in_as(@admin)
     email = "created-#{SecureRandom.hex(6)}@example.com"
