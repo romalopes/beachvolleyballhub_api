@@ -67,14 +67,26 @@ class Api::V1::Admin::DrillsControllerTest < ActionDispatch::IntegrationTest
     assert_not Drill.exists?(drill.id)
   end
 
-  test "admin cannot delete a drill with skills" do
-    drill = drills(:one)
+  test "admin can delete a drill with skills" do
+    drill = Drill.create!(title: "Deletable Drill", training_stage: "beginning", difficulty_level: "beginner",
+                          min_players: 2, max_players: 8, ideal_num_players: 4)
+    DrillSkill.create!(drill: drill, skill: skills(:one))
+    sign_in_as(@admin)
+    delete "/api/v1/admin/drills/#{drill.id}"
+    assert_response :no_content
+    assert_not Drill.exists?(drill.id)
+  end
+
+  test "admin cannot delete a drill with training sessions" do
+    drill = Drill.create!(title: "Session Drill", training_stage: "beginning", difficulty_level: "beginner",
+                          min_players: 2, max_players: 8, ideal_num_players: 4)
+    TrainingSessionDrill.create!(drill: drill, training_session: training_sessions(:one))
     DrillSkill.create!(drill: drill, skill: skills(:one))
     sign_in_as(@admin)
     delete "/api/v1/admin/drills/#{drill.id}"
     assert_response :unprocessable_entity
     body = JSON.parse(response.body)
-    assert_match(/skill/, body["error"])
+    assert_match(/training session/, body["error"])
     assert Drill.exists?(drill.id)
   end
 

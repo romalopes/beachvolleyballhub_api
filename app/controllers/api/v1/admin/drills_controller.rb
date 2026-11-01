@@ -31,10 +31,6 @@ module Api
 
         def create
           skill_ids = Array(params[:drill][:skill_ids]).reject(&:blank?).map(&:to_i).uniq
-          if skill_ids.empty?
-            render json: { errors: [ "Skills must include at least one skill" ] }, status: :unprocessable_entity
-            return
-          end
 
           @drill = Drill.new(drill_params.except(:skill_ids).merge(created_by: Current.user))
 
@@ -49,13 +45,7 @@ module Api
         end
 
         def update
-          if params[:drill].key?(:skill_ids)
-            skill_ids = Array(params[:drill][:skill_ids]).reject(&:blank?).map(&:to_i).uniq
-            if skill_ids.empty?
-              render json: { errors: [ "Skills must include at least one skill" ] }, status: :unprocessable_entity
-              return
-            end
-          end
+          skill_ids = Array(params[:drill][:skill_ids]).reject(&:blank?).map(&:to_i).uniq if params[:drill].key?(:skill_ids)
 
           if @drill.update(drill_params.except(:skill_ids))
             assign_skills(@drill, params[:drill][:skill_ids]) if params[:drill].key?(:skill_ids)
@@ -71,7 +61,6 @@ module Api
           reasons = []
           reasons << "#{@drill.video_references.count} video reference(s)" if @drill.video_references.any?
           reasons << "#{@drill.training_sessions.count} training session(s)" if @drill.training_sessions.any?
-          reasons << "#{@drill.skills.count} skill(s)" if @drill.skills.any?
 
           if reasons.any?
             render json: {

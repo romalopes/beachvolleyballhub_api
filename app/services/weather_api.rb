@@ -9,7 +9,7 @@ class WeatherApi
   BASE_URL = "https://api.weatherapi.com/v1/forecast.json"
   FORECAST_DAYS = 3
   HOURLY_INTERVAL_HOURS = 3
-  HOURLY_FORECAST_COUNT = 8
+  HOURLY_FORECAST_COUNT = 24
   ATTRIBUTION = { name: "WeatherAPI.com", url: "https://www.weatherapi.com/" }.freeze
 
   def self.fetch_forecast(latitude, longitude, api_key: ENV["WEATHERAPI_API_KEY"], http_class: Net::HTTP, cache: Rails.cache)
