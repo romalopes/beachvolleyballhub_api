@@ -189,6 +189,9 @@ module Api
         membership.left_at = nil
 
         if membership.save
+          # A pending request is work for the approvers; an auto-active join
+          # (no approval required) needs no notification.
+          Notifications::WorkflowEvents.membership_requested(@organisation, membership, actor: account) if membership.pending?
           render json: { membership: membership.metadata }, status: :created
         else
           render json: { errors: membership.errors.full_messages },
@@ -213,6 +216,9 @@ module Api
         end
 
         membership.activate!
+        Notifications::WorkflowEvents.membership_decided(
+          @organisation, membership, actor: Current.user.account, decision: "approved"
+        )
         render json: { membership: membership.metadata }
       end
 
@@ -234,6 +240,13 @@ module Api
         end
 
         membership_id = membership.id
+        # Tell the requester only when an approver rejected them; a requester
+        # withdrawing their own request does not need to be notified.
+        if approver
+          Notifications::WorkflowEvents.membership_decided(
+            @organisation, membership, actor: Current.user.account, decision: "rejected"
+          )
+        end
         membership.destroy!
         render json: { removed: true, membership_id: membership_id }
       end

@@ -66,6 +66,9 @@ module Api
 
       def update
         authorize @training_session
+        # Snapshot the pre-update state so `persist` can classify the transition
+        # (cancelled / rescheduled / participants added) after the save.
+        @notification_snapshot = notification_snapshot(@training_session)
         @training_session.assign_attributes(training_session_params)
         record_series_overrides!
         persist
@@ -85,6 +88,13 @@ module Api
           # set_training_session are stale after save, so re-read them in
           # their stored order.
           @training_session.reload
+          # Notify participants after the domain change has committed. Creating a
+          # training has no prior state to compare against, so only updates emit.
+          if @notification_snapshot
+            Notifications::WorkflowEvents.training_changed(
+              @training_session, actor: Current.user.account, previous: @notification_snapshot
+            )
+          end
           render_session_payload status: action_name == "create" ? :created : :ok
         else
           render json: { errors: @training_session.errors.full_messages }, status: :unprocessable_entity
@@ -100,6 +110,20 @@ module Api
         # Database-level backstop; the model validations normally catch these.
         render json: { errors: [ "The training contains invalid focus or drill data" ] },
                status: :unprocessable_entity
+      end
+
+      # The pre-update facts the notification rules need: status, times, and the
+      # accounts of the current participants. Captured before `assign_attributes`
+      # so `training_changed` can tell a reschedule from an invitation.
+      def notification_snapshot(training)
+        {
+          "status" => training.status,
+          "starts_at" => training.starts_at,
+          "ends_at" => training.ends_at,
+          "participant_account_ids" => training.training_session_participants
+                                              .includes(player_profile: :account)
+                                              .filter_map { |participant| participant.player_profile.account_id }
+        }
       end
 
       # Builds the detail payload explicitly so each participant can carry the

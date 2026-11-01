@@ -33,6 +33,7 @@ and the current code before treating planned behavior as implemented.
 | [Assessment sessions](docs/IDENTITY_28_ASSESSMENT/ASSESSMENT_SESSIONS_PLAN.md) | Assessment session design. |
 | [Assessment integration](docs/IDENTITY_28_ASSESSMENT/ASSESSMENT_INTEGRATION_PLAN.md) | Integration work across assessment features. |
 | [Tournament calendar plan](docs/IDENTITY_76_TOURNAMENT/bvb-tournament-calendar-issue-76-plan.md) | Tournament and calendar design. |
+| [Notifications and bell plan](<docs/IDENTITY_249_Notifications & Bell Implementation Plan/BeachVolleyballHub_Notifications_Implementation_Plan.md>) | In-app notification system, bell, inbox and per-phase reports. |
 | [README documentation plan](<docs/Beach Volleyball Hub — README.md Documentation Plan.md>) | Broader documentation roadmap. |
 
 ## Private test-access gate

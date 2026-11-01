@@ -250,6 +250,131 @@ class Api::V1::HealthControllerTest < ActionDispatch::IntegrationTest
     assert_equal "test", body["effective_transport"]
   end
 
+  # --- send-test-notification guarded POST (IDENTITY-249) --------------------
+  #
+  # The diagnostic creates a REAL notification for the caller's own account so
+  # the header bell can be seen to update. These tests pin the guard, the
+  # recipient scoping, the per-click uniqueness (a fixed dedupe key would make
+  # the second click a silent no-op) and the preference check.
+
+  test "send_test_notification requires authentication" do
+    post "/api/v1/health/notifications/test", as: :json
+    assert_response :unauthorized
+  end
+
+  test "send_test_notification rejects a non-admin user" do
+    sign_in_as(@player)
+    persist_session_cookie!
+
+    assert_no_difference("Notification.count") do
+      post "/api/v1/health/notifications/test", as: :json
+    end
+    assert_response :forbidden
+  end
+
+  test "send_test_notification creates a notification for the caller's own account" do
+    admin_account = @admin.account
+    sign_in_as(@admin)
+    persist_session_cookie!
+
+    assert_difference("Notification.count", 1) do
+      post "/api/v1/health/notifications/test", as: :json
+    end
+
+    assert_response :created
+    body = JSON.parse(response.body)
+    assert_equal "created", body["status"]
+    assert_equal "system.test", body["event_type"]
+    assert_equal "/notifications", body["target_path"]
+    assert_equal 1, body["unread_count"]
+
+    notification = Notification.find(body["notification_id"])
+    assert_equal admin_account.id, notification.account_id
+    assert_equal "system.test", notification.event_type
+    assert_equal "api_health", notification.metadata["source"]
+    assert_not notification.read?
+  end
+
+  test "send_test_notification creates a new row on every click" do
+    # The publisher dedupes on (account_id, event_key); the endpoint must mint a
+    # fresh key each time or the bell would stop moving after the first click.
+    sign_in_as(@admin)
+    persist_session_cookie!
+
+    assert_difference("Notification.count", 2) do
+      post "/api/v1/health/notifications/test", as: :json
+      post "/api/v1/health/notifications/test", as: :json
+    end
+  end
+
+  test "send_test_notification echoes the caller's unread count" do
+    admin_account = @admin.account
+    admin_account.notifications.create!(
+      event_type: "training.cancelled", event_key: "training:1:cancelled-1",
+      title: "Existing", message: "Existing"
+    )
+    sign_in_as(@admin)
+    persist_session_cookie!
+
+    post "/api/v1/health/notifications/test", as: :json
+
+    assert_response :created
+    assert_equal 2, JSON.parse(response.body)["unread_count"]
+  end
+
+  test "send_test_notification uses the supplied title and message, else sensible defaults" do
+    sign_in_as(@admin)
+    persist_session_cookie!
+
+    post "/api/v1/health/notifications/test",
+         params: { title: "Deploy check", message: "Ping from ops" }, as: :json
+
+    assert_response :created
+    custom = Notification.find(JSON.parse(response.body)["notification_id"])
+    assert_equal "Deploy check", custom.title
+    assert_equal "Ping from ops", custom.message
+
+    post "/api/v1/health/notifications/test", as: :json
+
+    assert_response :created
+    default = Notification.find(JSON.parse(response.body)["notification_id"])
+    assert_equal "Test notification", default.title
+    assert_match(/API Health page/, default.message)
+  end
+
+  test "send_test_notification honours disabled in-app preferences" do
+    # Preferences are respected rather than bypassed: the point of the tool is to
+    # prove the real delivery path, so a muted account must see the reason.
+    @admin.account.create_notification_preference!(in_app_enabled: false)
+    sign_in_as(@admin)
+    persist_session_cookie!
+
+    assert_no_difference("Notification.count") do
+      post "/api/v1/health/notifications/test", as: :json
+    end
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "skipped", body["status"]
+    assert_equal 0, body["unread_count"]
+    assert_match(/disabled/, body["reason"])
+  end
+
+  test "send_test_notification rejects an admin without an account" do
+    adminless = User.create!(
+      email_address: "adminless@example.com", password: "password123",
+      email_verified_at: Time.current
+    )
+    adminless.add_role(:admin)
+    sign_in_as(adminless)
+    persist_session_cookie!
+
+    post "/api/v1/health/notifications/test", as: :json
+
+    assert_response :unprocessable_entity
+    assert_match(/account is not ready/, JSON.parse(response.body)["error"])
+  end
+
   private
 
   # Simulates a database outage without extra stubbing gems: temporarily

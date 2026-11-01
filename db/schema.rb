@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_31_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_01_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -591,6 +591,44 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_31_000002) do
     t.index ["request_id"], name: "index_logs_on_request_id"
     t.index ["user_id", "created_at"], name: "index_logs_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_logs_on_user_id"
+  end
+
+  create_table "notification_preferences", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.datetime "created_at", null: false
+    t.string "email_cadence", default: "immediate", null: false
+    t.boolean "email_enabled", default: false, null: false
+    t.boolean "in_app_enabled", default: true, null: false
+    t.jsonb "muted_event_types", default: [], null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_notification_preferences_on_account_id", unique: true
+    t.check_constraint "email_cadence::text = ANY (ARRAY['immediate'::character varying, 'daily'::character varying, 'weekly'::character varying, 'none'::character varying]::text[])", name: "notification_preferences_email_cadence"
+  end
+
+  create_table "notifications", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "actor_account_id"
+    t.datetime "created_at", null: false
+    t.text "email_error"
+    t.datetime "email_failed_at"
+    t.datetime "emailed_at"
+    t.string "event_key", null: false
+    t.string "event_type", null: false
+    t.text "message", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.bigint "notifiable_id"
+    t.string "notifiable_type"
+    t.datetime "read_at"
+    t.string "target_label"
+    t.string "target_path"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "event_key"], name: "index_notifications_on_account_id_and_event_key", unique: true
+    t.index ["account_id", "read_at", "created_at"], name: "index_notifications_inbox"
+    t.index ["account_id"], name: "index_notifications_on_account_id"
+    t.index ["actor_account_id"], name: "index_notifications_on_actor_account_id"
+    t.index ["event_type", "created_at"], name: "index_notifications_on_event_type_and_created_at"
+    t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable"
   end
 
   create_table "organisation_locations", force: :cascade do |t|
@@ -1240,6 +1278,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_31_000002) do
   add_foreign_key "locations", "accounts", column: "verified_by_account_id"
   add_foreign_key "locations", "locations", column: "merged_into_id"
   add_foreign_key "log_objects", "logs"
+  add_foreign_key "notification_preferences", "accounts", on_delete: :cascade
+  add_foreign_key "notifications", "accounts", column: "actor_account_id", on_delete: :nullify
+  add_foreign_key "notifications", "accounts", on_delete: :cascade
   add_foreign_key "organisation_locations", "locations"
   add_foreign_key "organisation_locations", "organisations"
   add_foreign_key "organisation_memberships", "accounts"

@@ -44,6 +44,21 @@ Rails.application.routes.draw do
       post "sessions", to: "sessions#create"
       delete "sessions", to: "sessions#destroy"
       get "me", to: "me#show"
+
+      # The signed-in account's notifications (IDENTITY-249). Scoped to the
+      # caller's account; the collection members are the badge count and the
+      # bulk read action, while a single row is marked read individually.
+      resources :notifications, only: [ :index ] do
+        collection do
+          get :unread_count
+          patch :mark_all_read
+        end
+        member do
+          patch :mark_read
+        end
+      end
+      resource :notification_preferences, only: %i[show update]
+
       get "health", to: "health#index"
       get "health/detailed", to: "health#detailed"
 
@@ -59,6 +74,10 @@ Rails.application.routes.draw do
       # subject/body embed the effectively used transport.
       get "health/email/transport", to: "health#email_transport"
       post "health/email/test", to: "health#send_test_email"
+
+      # Admin-only diagnostic: creates one real in-app notification for the
+      # caller so the header bell can be seen to update (IDENTITY-249).
+      post "health/notifications/test", to: "health#send_test_notification"
 
       # Private test-access gate (see TestAccessToken): password -> signed
       # token; token verification for the SPA on boot.

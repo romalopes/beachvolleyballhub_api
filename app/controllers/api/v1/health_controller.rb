@@ -12,9 +12,12 @@ module Api
     #                               delivery name (no auth).
     # POST /api/v1/health/email/test — admin-only one-off test email whose
     #                               subject/body embed the effective transport.
+    # POST /api/v1/health/notifications/test — admin-only one-off in-app
+    #                               notification for the caller, used to prove the
+    #                               header bell picks up a new row.
     class HealthController < ApplicationController
       allow_test_access only: [ :index, :email_transport ]
-      before_action :authorize_admin!, only: [ :detailed, :send_test_email ]
+      before_action :authorize_admin!, only: [ :detailed, :send_test_email, :send_test_notification ]
 
       def index
         if database_connected?
@@ -77,6 +80,60 @@ module Api
           message: "Test email delivered to 1 recipient(s) via the #{effective} transport.",
           recipients: [ to ]
         }
+      end
+
+      # POST /api/v1/health/notifications/test
+      #
+      # Creates one real in-app notification for the CALLER'S OWN account, so the
+      # header bell gains a row and its unread badge moves. It goes through the
+      # real Notifications::Publisher pipeline (preference check + dedupe) rather
+      # than writing a row directly: the point of the diagnostic is to prove the
+      # production path works end to end.
+      #
+      # The recipient is always the caller — no account id is accepted — so this
+      # endpoint can never be used to push a notification at somebody else.
+      def send_test_notification
+        account = Current.user&.account
+        if account.nil?
+          return render json: { error: "Your account is not ready." },
+                        status: :unprocessable_entity
+        end
+
+        results = Notifications::Publisher.publish(
+          recipients: [ account ],
+          event_type: "system.test",
+          # A unique key per click. The publisher dedupes on
+          # (account_id, event_key), so a fixed key would make every click after
+          # the first create nothing and the bell would look broken.
+          event_key: "health-test:#{SecureRandom.uuid}",
+          title: params[:title].to_s.strip.presence || "Test notification",
+          message: params[:message].to_s.strip.presence ||
+                   "Sent from the API Health page at #{Time.current.utc.iso8601}.",
+          target_path: "/notifications",
+          target_label: "Open notifications",
+          metadata: { source: "api_health" }
+        )
+
+        # Echoed so the page can show what the bell is about to display, and so
+        # the test is self-verifying without a second request.
+        unread = account.notifications.unread.count
+        created = results.first
+
+        if created&.created
+          render json: {
+            status: "created",
+            notification_id: created.notification.id,
+            event_type: "system.test",
+            unread_count: unread,
+            target_path: "/notifications"
+          }, status: :created
+        else
+          render json: {
+            status: "skipped",
+            unread_count: unread,
+            reason: "In-app notifications are disabled for your account, so nothing was created."
+          }, status: :ok
+        end
       end
 
       def detailed

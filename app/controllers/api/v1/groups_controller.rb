@@ -299,6 +299,7 @@ module Api
         membership.left_at = nil
 
         if membership.save
+          Notifications::WorkflowEvents.membership_requested(@group, membership, actor: account) if membership.pending?
           render json: { membership: membership_payload(membership) }, status: :created
         else
           render json: { errors: membership.errors.full_messages },
@@ -356,6 +357,9 @@ module Api
         end
 
         membership.activate!
+        Notifications::WorkflowEvents.membership_decided(
+          @group, membership, actor: Current.user.account, decision: "approved"
+        )
         render json: { membership: membership_payload(membership) }
       end
 
@@ -377,6 +381,13 @@ module Api
         end
 
         membership_id = membership.id
+        # Notify the requester only when an approver rejected them (a requester
+        # withdrawing their own request needs no message).
+        if approver
+          Notifications::WorkflowEvents.membership_decided(
+            @group, membership, actor: Current.user.account, decision: "rejected"
+          )
+        end
         membership.destroy!
         render json: { removed: true, membership_id: membership_id }
       end

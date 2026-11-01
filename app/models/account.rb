@@ -13,6 +13,11 @@ class Account < ApplicationRecord
   has_many :groups, through: :group_memberships
   has_many :tournament_follows, dependent: :destroy
 
+  # In-app notifications addressed to this account, and its channel switches.
+  # A preference row is optional: its absence means the column defaults.
+  has_many :notifications, dependent: :destroy
+  has_one :notification_preference, dependent: :destroy
+
   accepts_nested_attributes_for :account_address, reject_if: :all_blank
 
   %i[first_name last_name email phone date_of_birth].each do |field|
