@@ -111,6 +111,10 @@ module Api
           params.require(:drill).permit(
             :title, :setup_instructions, :training_stage, :difficulty_level,
             :min_players, :max_players, :ideal_num_players,
+            # Admin-only management surface: an admin may set publication state
+            # and visibility directly. The public/coach endpoints keep these
+            # behind the explicit rules in Api::V1::DrillsController.
+            :visibility, :status,
             skill_ids: [],
             # definition is a JSONB column validated against the v1 schema by the
             # model; permit it as an open hash since its structure is enforced

@@ -1,4 +1,8 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+#
+# Catalogue fixtures are published and shared so they behave like the public
+# drill library. A drill defaults to `draft`/`shared` in the app; tests that
+# need a hidden drill set those values explicitly.
 
 one:
   title: MyString
@@ -9,6 +13,8 @@ one:
   min_players: 2
   max_players: 8
   ideal_num_players: 4
+  status: published
+  visibility: shared
 
 two:
   title: MyString
@@ -19,3 +25,5 @@ two:
   min_players: 2
   max_players: 4
   ideal_num_players: 2
+  status: published
+  visibility: shared

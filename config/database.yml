@@ -91,6 +91,10 @@ production:
     # username: beachvolleyballproject_api
     # password: <%= ENV["BEACHVOLLEYBALLPROJECT_API_DATABASE_PASSWORD"] %>
     url: <%= ENV["DATABASE_URL"] %>
+    # Enforce TLS for all production database connections. Neon and other
+    # hosted providers require SSL; this makes the requirement explicit in
+    # Rails configuration rather than relying on provider defaults.
+    sslmode: require
   cache:
     <<: *primary_production
     url: <%= ENV["DATABASE_URL"] %>

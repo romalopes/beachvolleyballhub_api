@@ -188,6 +188,11 @@ drills_data.each do |drill_data|
     d.min_players = min_players
     d.max_players = max_players
     d.ideal_num_players = ideal
+    # Seed catalogue content is the public drill library: published and shared
+    # so the public endpoints return it. (Newly created drills default to
+    # `draft`/`shared` and stay out of public queries until published.)
+    d.status = :published
+    d.visibility = :shared
   end
 
   skill_titles.each do |skill_title|

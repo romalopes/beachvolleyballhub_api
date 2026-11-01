@@ -4,6 +4,7 @@ class HomeController < ApplicationController
   def index
     @categories = Category.all
     @skills = Skill.all
-    @drills = Drill.all
+    # Public home page: only published, shared drills.
+    @drills = Drill.published_and_shared
   end
 end

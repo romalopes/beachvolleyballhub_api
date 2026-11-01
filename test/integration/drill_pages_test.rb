@@ -8,7 +8,10 @@ class DrillPagesTest < ActionDispatch::IntegrationTest
     @drill = Drill.create!(
       title: "Metadata Free Drill",
       setup_instructions: "Pair up and rally.",
-      definition: {}
+      definition: {},
+      # Published + shared so the public HTML pages list and render it.
+      status: :published,
+      visibility: :shared
     )
   end
 

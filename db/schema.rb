@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_29_084236) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_31_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -436,6 +436,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_084236) do
   end
 
   create_table "drills", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.bigint "approved_by_id"
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.jsonb "definition", default: {}, null: false
@@ -443,14 +445,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_084236) do
     t.integer "ideal_num_players"
     t.integer "max_players"
     t.integer "min_players"
+    t.datetime "published_at"
     t.text "setup_instructions"
     t.string "slug"
+    t.string "status", default: "draft", null: false
     t.string "title"
     t.string "training_stage"
     t.datetime "updated_at", null: false
+    t.string "visibility", default: "shared", null: false
     t.index ["created_by_id"], name: "index_drills_on_created_by_id"
     t.index ["slug"], name: "index_drills_on_slug", unique: true
+    t.index ["status"], name: "index_drills_on_status"
     t.index ["training_stage"], name: "index_drills_on_training_stage"
+    t.index ["visibility"], name: "index_drills_on_visibility"
     t.check_constraint "difficulty_level IS NULL OR (difficulty_level::text = ANY (ARRAY['beginner'::character varying::text, 'intermediate'::character varying::text, 'advanced'::character varying::text]))", name: "drills_difficulty_level_check"
     t.check_constraint "ideal_num_players IS NULL OR min_players IS NULL OR max_players IS NULL OR ideal_num_players >= min_players AND ideal_num_players <= max_players", name: "drills_ideal_players_check"
     t.check_constraint "min_players IS NULL OR max_players IS NULL OR min_players <= max_players", name: "drills_player_range_check"
@@ -1211,6 +1218,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_084236) do
   add_foreign_key "criteria", "assessment_categories"
   add_foreign_key "drill_skills", "drills"
   add_foreign_key "drill_skills", "skills"
+  add_foreign_key "drills", "users", column: "approved_by_id"
   add_foreign_key "drills", "users", column: "created_by_id"
   add_foreign_key "group_memberships", "accounts"
   add_foreign_key "group_memberships", "groups"

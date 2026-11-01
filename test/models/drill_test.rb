@@ -115,4 +115,95 @@ class DrillTest < ActiveSupport::TestCase
     drill = Drill.create!(valid_attributes(title: "Param Test"))
     assert_equal "param-test", drill.to_param
   end
+
+  # ---------- visibility / status / approval ----------
+
+  test "defaults to draft status and shared visibility" do
+    drill = Drill.create!(valid_attributes(title: "Default State Drill"))
+    assert_equal "draft", drill.status
+    assert_equal "shared", drill.visibility
+    assert_nil drill.published_at
+  end
+
+  test "rejects an unknown visibility" do
+    # Rails enums raise ArgumentError on an unknown value rather than recording
+    # a validation error, so an invalid visibility can never be persisted.
+    assert_raises(ArgumentError) do
+      Drill.new(valid_attributes(visibility: "secret"))
+    end
+  end
+
+  test "rejects an unknown status" do
+    assert_raises(ArgumentError) do
+      Drill.new(valid_attributes(status: "live"))
+    end
+  end
+
+  test "published_and_shared? is true only for published shared drills" do
+    published_shared = Drill.create!(valid_attributes(
+      title: "Published Shared", status: :published, visibility: :shared
+    ))
+    assert published_shared.published_and_shared?
+
+    draft = Drill.create!(valid_attributes(
+      title: "Still Draft", status: :draft, visibility: :shared
+    ))
+    assert_not draft.published_and_shared?
+
+    private_published = Drill.create!(valid_attributes(
+      title: "Private Published", status: :published, visibility: :private
+    ))
+    assert_not private_published.published_and_shared?
+  end
+
+  test "published_and_shared scope excludes non-public drills" do
+    visible = Drill.create!(valid_attributes(
+      title: "Visible Drill", status: :published, visibility: :shared
+    ))
+    hidden_draft = Drill.create!(valid_attributes(
+      title: "Hidden Draft", status: :draft, visibility: :shared
+    ))
+    hidden_private = Drill.create!(valid_attributes(
+      title: "Hidden Private", status: :published, visibility: :private
+    ))
+    hidden_unlisted = Drill.create!(valid_attributes(
+      title: "Hidden Unlisted", status: :published, visibility: :unlisted
+    ))
+
+    ids = Drill.published_and_shared.pluck(:id)
+    assert_includes ids, visible.id
+    assert_not_includes ids, hidden_draft.id
+    assert_not_includes ids, hidden_private.id
+    assert_not_includes ids, hidden_unlisted.id
+  end
+
+  test "publish! stamps published_at and records the approver" do
+    approver = users(:two)
+    drill = Drill.create!(valid_attributes(title: "To Publish"))
+
+    drill.publish!(approver: approver)
+
+    assert_equal "published", drill.reload.status
+    assert_not_nil drill.published_at
+    assert_equal approver.id, drill.approved_by_id
+  end
+
+  test "reject! records the approval time and approver" do
+    approver = users(:two)
+    drill = Drill.create!(valid_attributes(title: "To Reject", status: :submitted))
+
+    drill.reject!(approver: approver)
+
+    assert_equal "rejected", drill.reload.status
+    assert_not_nil drill.approved_at
+    assert_equal approver.id, drill.approved_by_id
+  end
+
+  test "stamps published_at automatically when status becomes published" do
+    drill = Drill.create!(valid_attributes(title: "Auto Stamp", status: :draft))
+    assert_nil drill.published_at
+
+    drill.update!(status: :published)
+    assert_not_nil drill.reload.published_at
+  end
 end
