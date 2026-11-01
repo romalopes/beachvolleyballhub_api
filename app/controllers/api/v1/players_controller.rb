@@ -13,7 +13,6 @@ module Api
       include ProfileCreationMemberships
 
       before_action :require_authentication
-      before_action :require_player_profile_creator!, only: :create
       before_action :set_player, only: %i[show update merge destroy]
       before_action :validate_status_filter!, only: :index
 
@@ -26,9 +25,7 @@ module Api
       DETAIL_METHODS = PROFILE_METHODS + %i[training_session_count]
 
       def index
-        unless ProfilePolicy.new(actor: Current.user).can_view_collection?
-          return render json: { error: "Forbidden" }, status: :forbidden
-        end
+        authorize PlayerProfile, :index?
 
         # Archived players are hidden from the catalogue by default (they are no
         # longer schedulable) but stay reachable with `?status=archived`, which
@@ -38,7 +35,7 @@ module Api
         # hidden from the listing, but the training form's picker must still
         # see everyone (`?include_private=1`) because visibility never blocks
         # scheduling. `?mine=1` narrows to the players this user recorded.
-        players = ProfilePolicy.scope(profile_scope, actor: Current.user)
+        players = policy_scope(profile_scope)
                   .includes(account: :contact_detail)
                   .left_joins(account: :contact_detail)
                   .order(contact_details: { last_name: :asc, first_name: :asc }, player_profiles: { id: :asc })
@@ -71,9 +68,7 @@ module Api
       # them nor is a curator/admin (the same as not existing, so the catalogue
       # and the detail can never disagree).
       def show
-        unless ProfilePolicy.new(actor: Current.user, profile: @player).view?
-          return render json: { error: "Player not found" }, status: :not_found
-        end
+        authorize @player, :show?
 
         payload = @player.as_json(
           only: PROFILE_ONLY,
@@ -113,9 +108,11 @@ module Api
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Player not found" }, status: :not_found
       end
-        # Player-profile creation includes player, coach, curator, and admin
-        # roles. Account linking remains opt-in and is handled below.
+
+      # Player-profile creation includes player, coach, curator, and admin
+      # roles. Account linking remains opt-in and is handled below.
       def create
+        authorize PlayerProfile, :create?
         attributes = player_params
         membership_attributes = profile_membership_params
         link_to_account = ActiveModel::Type::Boolean.new.cast(params.dig(:player, :player_profile, :link_to_account))
@@ -128,7 +125,7 @@ module Api
             return render json: { errors: [ "Your account already has a player profile." ] }, status: :conflict
           end
           attributes = attributes.merge(account_id: account.id)
-        elsif ProfilePolicy.new(actor: Current.user).create_player?
+        elsif policy(PlayerProfile).create?
           # Authorized flow: create an unlinked player profile.
         else
           return render json: { errors: [ "Your account is not ready to create a player profile." ] }, status: :unprocessable_entity
@@ -161,27 +158,19 @@ module Api
       # player they cannot see (404, same as show), and the visibility switch
       # itself may be flipped only by the owner or an admin.
       def update
-        policy = ProfilePolicy.new(actor: Current.user, profile: @player)
-        unless policy.view?
-          return render json: { error: "Forbidden" }, status: :forbidden unless policy.manager?
-
-          return render json: { error: "Player not found" }, status: :not_found
-        end
-        unless policy.update?
-          return render json: { error: "Forbidden" }, status: :forbidden
-        end
+        authorize @player, :show?
+        authorize @player, :update?
 
         update_params = player_update_params
         requested_visibility = update_params[:visibility] || update_params["visibility"]
         if requested_visibility.present? && requested_visibility.to_s != @player.visibility.to_s &&
-           !@player.visibility_change_permitted?(Current.user)
-          @player.errors.add(:visibility, "can only be changed by the coach who recorded this player or an admin")
-          return render json: { errors: @player.errors.full_messages }, status: :forbidden
+           !policy(@player).change_visibility?
+          authorize @player, :change_visibility?
         end
 
         requested_status = update_params[:status] || update_params["status"]
-        if requested_status.present? && requested_status.to_s != @player.status.to_s && !policy.archive?
-          return render json: { error: "Forbidden" }, status: :forbidden
+        if requested_status.present? && requested_status.to_s != @player.status.to_s
+          authorize @player, :archive?
         end
 
         if @player.merged?
@@ -196,7 +185,7 @@ module Api
       end
 
       def merge
-        return render json: { error: "Forbidden" }, status: :forbidden unless ProfilePolicy.new(actor: Current.user, profile: @player).merge?
+        authorize @player, :merge?
 
         canonical = PlayerProfile.find(params.require(:canonical_profile_id))
         result = ProfileMergeService.merge!(source: @player, canonical: canonical,
@@ -211,6 +200,7 @@ module Api
       end
 
       def destroy
+        authorize @player, :destroy?
         ProfileDeletionBlocker.destroy!(profile: @player, user: Current.user)
         head :no_content
       rescue ProfileDeletionBlocker::Blocked => e

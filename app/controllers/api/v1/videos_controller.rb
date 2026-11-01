@@ -5,10 +5,9 @@ module Api
     # later\" — and is attached to drills/skills/trainings afterwards through
     # the library picker on the reference forms.
     class VideosController < ApplicationController
-      include ContentAuthorization
-
-      before_action :require_content_creator!, only: :create
       before_action :set_video, only: [:show, :update, :destroy]
+      after_action :verify_authorized, except: :index
+      after_action :verify_policy_scoped, only: :index
 
       VIDEO_ONLY = %i[id title description provider source_url thumbnail_url
                       duration_seconds created_by_id].freeze
@@ -22,17 +21,19 @@ module Api
       }.freeze
 
       def index
-        @videos = Video.includes(:video_references, :video_category, :video_tags)
-                       .left_joins(:video_category)
-                       .order(Arel.sql("video_categories.position ASC NULLS LAST"), :title)
+        @videos = policy_scope(Video).includes(:video_references, :video_category, :video_tags)
+                                     .left_joins(:video_category)
+                                     .order(Arel.sql("video_categories.position ASC NULLS LAST"), :title)
         render json: @videos, only: VIDEO_ONLY, methods: VIDEO_METHODS, include: VIDEO_INCLUDE
       end
 
       def show
+        authorize @video
         render json: @video, only: VIDEO_ONLY, methods: VIDEO_METHODS, include: VIDEO_INCLUDE
       end
 
       def create
+        authorize Video, :create?
         attrs = video_params.to_h
         @video = Video.find_or_create_from_url!(
           attrs["source_url"],
@@ -48,7 +49,7 @@ module Api
       end
 
       def update
-        authorize_content_owner!(@video.created_by)
+        authorize @video
         if @video.update(video_params)
           sync_tags
           render_video(status: :ok)
@@ -58,7 +59,7 @@ module Api
       end
 
       def destroy
-        authorize_content_owner!(@video.created_by)
+        authorize @video
         @video.destroy
         head :no_content
       end

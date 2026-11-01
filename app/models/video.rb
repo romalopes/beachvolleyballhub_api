@@ -11,6 +11,19 @@ class Video < ApplicationRecord
   has_many :drills, through: :video_references, source: :referenced, source_type: "Drill"
   has_many :skills, through: :video_references, source: :referenced, source_type: "Skill"
 
+  VISIBILITY_LEVELS = %w[shared private unlisted].freeze
+  STATUS_LEVELS = %w[draft published archived].freeze
+
+  enum :visibility, { shared: "shared", private: "private", unlisted: "unlisted" }, prefix: true
+  enum :status, { draft: "draft", published: "published", archived: "archived" }, prefix: true
+
+  # Public media library: only published, shared videos are listed publicly.
+  scope :published_and_shared, -> { where(status: :published, visibility: :shared) }
+
+  def published_and_shared?
+    status == "published" && visibility == "shared"
+  end
+
   # Detection must run before the other validations: it fills in `provider`,
   # `provider_video_id` and the normalized `source_url`/`thumbnail_url`.
   validate :assign_provider_metadata

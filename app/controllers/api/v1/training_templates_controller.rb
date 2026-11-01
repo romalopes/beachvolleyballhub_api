@@ -7,7 +7,6 @@ module Api
     # Templates are archived rather than destroyed; there is deliberately no
     # DELETE route so historical series/sessions cannot lose their definition.
     class TrainingTemplatesController < ApplicationController
-      include ContentAuthorization
       include Pagination
       include RecurringTrainingAuthorization
 
@@ -17,10 +16,11 @@ module Api
         created_by_id created_at updated_at
       ].freeze
 
-      before_action :require_training_manager!
       before_action :set_training_template, only: %i[show update archive restore clone]
+      after_action :verify_authorized
 
       def index
+        authorize TrainingTemplate, :index?
         return render json: { errors: [ "status is not included in the list" ] },
                       status: :unprocessable_entity if invalid_status?
 
@@ -33,10 +33,12 @@ module Api
       end
 
       def show
+        authorize @training_template
         render json: { training_template: template_payload(@training_template) }
       end
 
       def create
+        authorize TrainingTemplate, :create?
         template = TrainingTemplate.new(template_params.merge(created_by: Current.user))
 
         if template.save
@@ -48,6 +50,7 @@ module Api
       end
 
       def update
+        authorize @training_template
         if @training_template.update(template_params)
           log_action("update", "Updated training template \"#{@training_template.name}\"",
                      [ @training_template ])
@@ -59,6 +62,7 @@ module Api
       end
 
       def archive
+        authorize @training_template
         @training_template.update!(status: "archived")
         log_action("archive", "Archived training template \"#{@training_template.name}\"",
                    [ @training_template ])
@@ -68,6 +72,7 @@ module Api
       end
 
       def restore
+        authorize @training_template
         @training_template.update!(status: "active")
         log_action("restore", "Restored training template \"#{@training_template.name}\"",
                    [ @training_template ])
@@ -79,6 +84,7 @@ module Api
       # A copy is a new active template with the same defaults. Existing series
       # keep pointing at the original.
       def clone
+        authorize @training_template
         copy = @training_template.dup
         copy.name = "#{@training_template.name} (copy)"
         copy.status = "active"

@@ -8,7 +8,6 @@ module Api
     # Bulk operations, stopping, future edits and splitting are added in later
     # phases of the recurring-training rollout.
     class TrainingSeriesController < ApplicationController
-      include ContentAuthorization
       include Pagination
       include RecurringTrainingAuthorization
 
@@ -26,12 +25,13 @@ module Api
         cancellation_reason cancelled_at cancelled_by_id created_at updated_at
       ].freeze
 
-      before_action :require_training_manager!
+      before_action :authorize_training_series_access!
       before_action :validate_index_filters!, only: :index
       before_action :validate_session_filters!, only: :sessions
       before_action :set_training_series, only: %i[
         show sessions bulk_cancel bulk_delete stop cancel_future update_future split
       ]
+      after_action :verify_authorized
 
       # POST /api/v1/training_series/preview
       # Builds the same unsaved series that POST /training_series would save and
@@ -248,6 +248,11 @@ module Api
       end
 
       private
+
+      # Every recurring-training action is manager-gated via Pundit.
+      def authorize_training_series_access!
+        authorize TrainingSeries, :access?
+      end
 
       def series_scope
         scope = TrainingSeries

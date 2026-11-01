@@ -6,7 +6,10 @@
 module Api
   module V1
     class VideoTagsController < ApplicationController
+      after_action :verify_authorized
+
       def index
+        authorize VideoTag, :index?
         # left_joins/includes (not joins) so tags with zero videos are still
         # returned — the admin management page and the reference form's picker
         # both need to offer unused tags. video_count comes from the preloaded
@@ -23,6 +26,7 @@ module Api
         @tag ||= VideoTag.includes(:videos).find_by(name: params[:id].to_s.strip.downcase)
         return render json: { error: "Video tag not found" }, status: :not_found unless @tag
 
+        authorize @tag
         render json: @tag, methods: [:video_count]
       end
 

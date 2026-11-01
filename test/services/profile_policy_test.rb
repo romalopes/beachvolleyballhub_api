@@ -1,6 +1,16 @@
 require "test_helper"
 
 class ProfilePolicyTest < ActiveSupport::TestCase
+  test "Pundit constructors and scopes preserve profile authorization" do
+    profile = player_profiles(:john_player)
+    profile.update_columns(account_id: accounts(:one).id)
+
+    assert PlayerProfilePolicy.new(users(:five), profile).show?
+    assert PlayerProfilePolicy.new(users(:one), PlayerProfile).create?
+    assert_not CoachProfilePolicy.new(users(:one), CoachProfile).create?
+    assert_includes PlayerProfilePolicy::Scope.new(users(:five), PlayerProfile.all).resolve, profile
+  end
+
   test "a regular Account can view and scope to linked profiles" do
     profile = player_profiles(:john_player)
     profile.update_columns(account_id: accounts(:one).id)
@@ -66,7 +76,7 @@ class ProfilePolicyTest < ActiveSupport::TestCase
   end
 
   test "both profile kinds allow their creator without requiring a coach role" do
-    [PlayerProfile, CoachProfile].each do |klass|
+    [ PlayerProfile, CoachProfile ].each do |klass|
       own = klass.new(display_name: "Creator profile", visibility: "private")
       ProfileOwnership.stamp!(own, users(:one))
       own.save!
@@ -81,8 +91,8 @@ class ProfilePolicyTest < ActiveSupport::TestCase
   end
 
   test "creators and curators can delete unused profiles of either kind" do
-    [PlayerProfile, CoachProfile].each do |klass|
-      [users(:one), users(:four)].each do |actor|
+    [ PlayerProfile, CoachProfile ].each do |klass|
+      [ users(:one), users(:four) ].each do |actor|
         profile = klass.new(display_name: "Unused profile")
         ProfileOwnership.stamp!(profile, users(:one))
         profile.save!
@@ -93,9 +103,9 @@ class ProfilePolicyTest < ActiveSupport::TestCase
   end
 
   test "assessment history still blocks deletion for every permitted actor" do
-    [player_profiles(:pedro_player), coach_profiles(:maria_coach)].each do |profile|
+    [ player_profiles(:pedro_player), coach_profiles(:maria_coach) ].each do |profile|
       profile.update_columns(created_by_id: users(:one).id, created_by_account_id: accounts(:one).id)
-      [users(:one), users(:four), users(:two)].each do |actor|
+      [ users(:one), users(:four), users(:two) ].each do |actor|
         error = assert_raises(ProfileDeletionBlocker::Blocked) do
           ProfileDeletionBlocker.destroy!(profile: profile, user: actor)
         end

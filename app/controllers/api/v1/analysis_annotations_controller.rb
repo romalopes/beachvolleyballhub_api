@@ -38,7 +38,7 @@ module Api
       end
 
       def authorize_manage!
-        render_unauthorized_or_forbidden unless AnalysisPolicy.new(actor: Current.user, analysis: @video.analysis).manage?
+        authorize @video.analysis, :manage?
       end
 
       def set_annotation

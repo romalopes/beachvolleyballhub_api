@@ -17,8 +17,6 @@ module Api
     # `definition` — which contains the steps — and skills) is read from the
     # Drill record and never copied into the training.
     class TrainingSessionsController < ApplicationController
-      include ContentAuthorization
-
       CALENDAR_ATTRIBUTES = %i[id title starts_at ends_at location location_id court_id location_detail status visibility
                                created_by_id coach_profile_id training_series_id
                                training_template_id recurrence_key].freeze
@@ -42,8 +40,9 @@ module Api
       INLINE_PERSON_ATTRIBUTES = InlineParticipantResolver::PERSON_ATTRIBUTES
 
       before_action :set_training_session, only: %i[show update destroy]
-      before_action :require_training_manager!, only: %i[create update destroy]
       before_action :validate_index_filters!, only: :index
+      after_action :verify_authorized, except: :index
+      after_action :verify_policy_scoped, only: :index
 
       def index
         render json: filtered_training_sessions,
@@ -53,10 +52,12 @@ module Api
       end
 
       def show
+        authorize @training_session
         render_session_payload
       end
 
       def create
+        authorize TrainingSession, :create?
         attributes = training_session_params
         apply_location_default!(attributes)
         @training_session = TrainingSession.new(attributes.merge(created_by: Current.user))
@@ -64,12 +65,14 @@ module Api
       end
 
       def update
+        authorize @training_session
         @training_session.assign_attributes(training_session_params)
         record_series_overrides!
         persist
       end
 
       def destroy
+        authorize @training_session
         @training_session.destroy
         head :no_content
       end
@@ -130,7 +133,7 @@ module Api
       def filtered_training_sessions
         # mine=1 narrows the calendar to the current player's own sessions
         # ("my schedule"): sessions visible to them that they participate in.
-        scope = TrainingSession.visible_to(Current.user)
+        scope = policy_scope(TrainingSession)
         if params[:mine] == "1"
           profile = Current.user&.account&.player_profiles&.active&.order(:id)&.first
           scope = profile ? scope.participated_by(profile) : TrainingSession.none

@@ -3,13 +3,11 @@ module Api
     class AnalysesController < ApplicationController
       include Pagination
       before_action :require_authentication
-      before_action :require_manager!, only: :create
       before_action :set_analysis, except: %i[index create]
       before_action :authorize_view!, only: :show
-      before_action :authorize_manage!, only: %i[update publish archive link_assessment_session unlink_assessment_session destroy]
 
       def index
-        rows = AnalysisPolicy.scope(Current.user)
+        rows = policy_scope(Analysis)
                            .includes(:created_by, :assigned_coach_profile, :organisation, :group, :training_session, :tournament,
                                      analysis_participants: :player_profile)
                            .ordered
@@ -26,6 +24,7 @@ module Api
       end
 
       def create
+        authorize Analysis, :create?
         analysis = Analysis.new(analysis_params.except(:player_profile_ids))
         analysis.created_by = Current.user
         sync_participants(analysis, analysis_params[:player_profile_ids])
@@ -37,6 +36,7 @@ module Api
       end
 
       def update
+        authorize @analysis, :update?
         attrs = analysis_params
         sync_participants(@analysis, attrs.delete(:player_profile_ids)) if attrs.key?(:player_profile_ids)
         if @analysis.update(attrs)
@@ -47,63 +47,56 @@ module Api
       end
 
       def publish
+        authorize @analysis, :publish?
         if @analysis.analysis_videos.none? || @analysis.analysis_participants.none?
-          return render json: { errors: ["Add at least one video and one participant before publishing"] }, status: :unprocessable_entity
+          return render json: { errors: [ "Add at least one video and one participant before publishing" ] }, status: :unprocessable_entity
         end
         @analysis.publish!
         render json: { analysis: serialize(@analysis.reload, detail: true) }
       end
 
       def archive
+        authorize @analysis, :archive?
         @analysis.archive!
         render json: { analysis: serialize(@analysis.reload, detail: true) }
       end
 
       def destroy
-        unless AnalysisPolicy.new(actor: Current.user, analysis: @analysis).destroy?
-          return render_unauthorized_or_forbidden
-        end
+        authorize @analysis, :destroy?
         @analysis.destroy!
         head :no_content
       end
 
       def link_assessment_session
+        authorize @analysis, :link_assessment_session?
         session_record = AssessmentSession.find(params.require(:assessment_session_id))
-        unless assessment_session_manageable?(session_record)
-          return render json: { error: "Forbidden" }, status: :forbidden
-        end
+        authorize session_record, :link_to_analysis?
         @analysis.analysis_assessment_sessions.find_or_create_by!(assessment_session: session_record)
         render json: { analysis: serialize(@analysis.reload, detail: true) }
       end
 
       def unlink_assessment_session
+        authorize @analysis, :unlink_assessment_session?
         @analysis.analysis_assessment_sessions.where(assessment_session_id: params[:assessment_session_id]).destroy_all
         render json: { analysis: serialize(@analysis.reload, detail: true) }
       end
 
       private
 
-      def require_manager!
-        return if Current.user&.content_manager?
-        render_unauthorized_or_forbidden
-      end
-
       def set_analysis
         @analysis = Analysis.includes(:created_by, :assigned_coach_profile, :organisation, :group, :training_session, :tournament,
                                       analysis_participants: :player_profile,
-                                      analysis_videos: [:video, :file_attachment, { analysis_annotations: [:author, :player_profile] }],
-                                      analysis_comments: [:author, :parent], assessment_sessions: [:assessment_definition, :coach_profile])
+                                      analysis_videos: [ :video, :file_attachment, { analysis_annotations: [ :author, :player_profile ] } ],
+                                      analysis_comments: [ :author, :parent ], assessment_sessions: [ :assessment_definition, :coach_profile ])
                             .find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Analysis not found" }, status: :not_found
       end
 
+      # `show?` fails through the app-wide Pundit handler, which renders 404 for
+      # a hidden record so its existence is not disclosed.
       def authorize_view!
-        render json: { error: "Analysis not found" }, status: :not_found unless AnalysisPolicy.new(actor: Current.user, analysis: @analysis).view?
-      end
-
-      def authorize_manage!
-        render_unauthorized_or_forbidden unless AnalysisPolicy.new(actor: Current.user, analysis: @analysis).manage?
+        authorize @analysis
       end
 
       def analysis_params
@@ -115,16 +108,12 @@ module Api
         analysis.analysis_participants = PlayerProfile.active.where(id: Array(ids).map(&:to_i).uniq).map { |profile| AnalysisParticipant.new(player_profile: profile) }
       end
 
-      def assessment_session_manageable?(record)
-        user = Current.user
-        user&.admin? || user&.curator? || record.created_by_id == user&.id || record.coach_profile&.account_id == user&.account&.id
-      end
-
       def serialize(row, detail:)
-        policy = AnalysisPolicy.new(actor: Current.user, analysis: row)
+        policy = AnalysisPolicy.new(Current.user, row)
         payload = { id: row.id, title: row.title, summary: row.summary, status: row.status,
           published_at: row.published_at, archived_at: row.archived_at, created_at: row.created_at, updated_at: row.updated_at,
-          can_manage: policy.manage?, can_delete: policy.destroy?, can_comment: policy.comment?,
+          can_manage: policy.manage?, can_publish: policy.publish?, can_archive: policy.archive?,
+          can_delete: policy.destroy?, can_comment: policy.comment?,
           created_by: { id: row.created_by_id, name: row.created_by.name },
           assigned_coach_profile: row.assigned_coach_profile && { id: row.assigned_coach_profile_id, name: row.assigned_coach_profile.full_name },
           organisation: row.organisation && { id: row.organisation_id, name: row.organisation.name },
@@ -151,8 +140,9 @@ module Api
       end
 
       def serialize_comment(comment)
+        policy = AnalysisCommentPolicy.new(Current.user, comment)
         { id: comment.id, body: comment.body, parent_id: comment.parent_id, author: { id: comment.author_id, name: comment.author.name },
-          created_at: comment.created_at, can_delete: Current.user&.admin? || comment.author_id == Current.user&.id }
+          created_at: comment.created_at, can_delete: policy.destroy? }
       end
     end
   end

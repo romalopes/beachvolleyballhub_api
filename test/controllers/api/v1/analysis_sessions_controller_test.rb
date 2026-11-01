@@ -45,6 +45,8 @@ class Api::V1::AnalysesControllerTest < ActionDispatch::IntegrationTest
     assert_equal @analysis.id, json["analysis"]["id"]
     assert_equal @analysis.title, json["analysis"]["title"]
     assert json["analysis"]["can_manage"]
+    assert json["analysis"]["can_publish"]
+    assert json["analysis"]["can_archive"]
   end
 
   test "show returns 404 for unauthorized user" do
@@ -106,6 +108,14 @@ class Api::V1::AnalysesControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil json["analysis"]["published_at"]
   end
 
+  test "publish rejects a non-manager" do
+    sign_in_as(@player_user)
+    post_json "/api/v1/analyses/#{@analysis.id}/publish", {}
+
+    assert_response :forbidden
+    assert @analysis.reload.draft?
+  end
+
   test "publish fails without videos or participants" do
     sign_in_as(@coach_user)
     clean = Analysis.create!(title: "Clean Draft", summary: "No videos yet", created_by: @coach_user)
@@ -120,6 +130,14 @@ class Api::V1::AnalysesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal "archived", json["analysis"]["status"]
     assert_not_nil json["analysis"]["archived_at"]
+  end
+
+  test "archive rejects a non-manager" do
+    sign_in_as(@player_user)
+    post_json "/api/v1/analyses/#{@analysis.id}/archive", {}
+
+    assert_response :forbidden
+    assert @analysis.reload.draft?
   end
 
   test "destroy only allows draft deletion by creator" do
@@ -143,6 +161,13 @@ class Api::V1::AnalysesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert json["analysis"]["assessment_sessions"].any? { |s| s["id"] == assessment_sessions(:draft_squad).id }
+  end
+
+  test "link_assessment_session rejects a coach who manages neither record" do
+    sign_in_as(users(:three))
+    post_json "/api/v1/analyses/#{@analysis.id}/link_assessment_session", assessment_session_id: assessment_sessions(:draft_squad).id
+
+    assert_response :forbidden
   end
 
   test "unlink_assessment_session removes join record" do
@@ -171,5 +196,36 @@ class Api::V1::AnalysesControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(@player_user)
     get "/api/v1/analyses/#{@analysis.id}"
     assert_response :not_found
+  end
+
+
+  test "comment author can delete their own comment" do
+    sign_in_as(@coach_user)
+    comment = analysis_comments(:coach_led_comment_1)
+
+    assert_difference "AnalysisComment.count", -2 do
+      delete "/api/v1/analyses/#{@analysis.id}/comments/#{comment.id}"
+    end
+    assert_response :no_content
+  end
+
+  test "another user cannot delete an analysis comment" do
+    sign_in_as(@player_user)
+    comment = analysis_comments(:coach_led_comment_1)
+
+    assert_no_difference "AnalysisComment.count" do
+      delete "/api/v1/analyses/#{@analysis.id}/comments/#{comment.id}"
+    end
+    assert_response :forbidden
+  end
+
+  test "admin can delete another user's analysis comment" do
+    sign_in_as(users(:two))
+    comment = analysis_comments(:reply_to_coach_comment)
+
+    assert_difference "AnalysisComment.count", -1 do
+      delete "/api/v1/analyses/#{@analysis.id}/comments/#{comment.id}"
+    end
+    assert_response :no_content
   end
 end

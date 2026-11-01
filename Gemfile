@@ -44,6 +44,9 @@ gem "image_processing", "~> 1.2"
 
 gem "json_schemer", "~> 2.0"
 
+# Authorization: policy objects + policy_scope for every controller.
+gem "pundit", "~> 2.5"
+
 gem "aws-sdk-s3", require: false
 
 gem "dotenv-rails"

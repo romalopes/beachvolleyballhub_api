@@ -11,7 +11,7 @@ module Api
           @analysis.analysis_videos.new(source_type: "upload", title: params[:title], description: params[:description], position: params[:position], file: params[:file])
         else
           external = Video.find_or_create_from_url!(params[:source_url], title: params[:title], description: params[:description], created_by: Current.user)
-          return render json: { errors: ["Source URL is not a valid video link"] }, status: :unprocessable_entity if external.nil?
+          return render json: { errors: [ "Source URL is not a valid video link" ] }, status: :unprocessable_entity if external.nil?
           @analysis.analysis_videos.new(source_type: "external", video: external, title: params[:title], description: params[:description], position: params[:position])
         end
 
@@ -36,7 +36,7 @@ module Api
       end
 
       def authorize_manage!
-        render_unauthorized_or_forbidden unless AnalysisPolicy.new(actor: Current.user, analysis: @analysis).manage?
+        authorize @analysis, :manage?
       end
 
       def set_video

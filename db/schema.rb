@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_31_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_31_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -805,12 +805,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_31_000001) do
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.text "description"
+    t.datetime "published_at"
     t.string "slug"
+    t.string "status", default: "published", null: false
     t.string "title"
     t.datetime "updated_at", null: false
+    t.string "visibility", default: "shared", null: false
     t.index ["category_id"], name: "index_skills_on_category_id"
     t.index ["created_by_id"], name: "index_skills_on_created_by_id"
     t.index ["slug"], name: "index_skills_on_slug", unique: true
+    t.index ["status"], name: "index_skills_on_status"
+    t.index ["visibility"], name: "index_skills_on_visibility"
   end
 
   create_table "tournament_divisions", force: :cascade do |t|
@@ -1148,16 +1153,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_31_000001) do
     t.integer "duration_seconds"
     t.string "provider", null: false
     t.string "provider_video_id"
+    t.datetime "published_at"
     t.string "source_url"
+    t.string "status", default: "published", null: false
     t.string "storage_key"
     t.string "thumbnail_url"
     t.string "title"
     t.datetime "updated_at", null: false
     t.bigint "video_category_id"
+    t.string "visibility", default: "shared", null: false
     t.index ["created_by_id"], name: "index_videos_on_created_by_id"
     t.index ["provider", "provider_video_id"], name: "index_videos_on_provider_and_provider_video_id", unique: true, where: "(provider_video_id IS NOT NULL)"
     t.index ["provider"], name: "index_videos_on_provider"
     t.index ["provider_video_id"], name: "index_videos_on_provider_video_id"
+    t.index ["status"], name: "index_videos_on_status"
+    t.index ["visibility"], name: "index_videos_on_visibility"
   end
 
   add_foreign_key "account_addresses", "accounts"
