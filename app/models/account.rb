@@ -17,6 +17,7 @@ class Account < ApplicationRecord
   # A preference row is optional: its absence means the column defaults.
   has_many :notifications, dependent: :destroy
   has_one :notification_preference, dependent: :destroy
+  has_one :weather_advisor_preference, dependent: :destroy
 
   accepts_nested_attributes_for :account_address, reject_if: :all_blank
 

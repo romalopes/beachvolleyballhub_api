@@ -62,7 +62,75 @@ class Api::V1::WeatherControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :success
-    assert_equal JSON.parse(payload.to_json), JSON.parse(response.body)
+    body = JSON.parse(response.body)
+    expected = JSON.parse(payload.to_json)
+    expected["volleyball"] = JSON.parse(
+      Weather::VolleyballAdvisor.assess(
+        current: payload[:current],
+        rain_chance_percent: payload[:forecast].first[:rain_chance_percent]
+      ).to_json
+    )
+    assert_equal expected, body
+    assert_equal 78, payload.dig(:volleyball, :score), "the shared provider payload must not be mutated"
+  end
+
+  test "uses the signed-in account weights without changing independent warnings" do
+    payload = {
+      forecast: [{ rain_chance_percent: 10 }],
+      hourly: [],
+      current: {
+        wind_kph: 45.0,
+        wind_gust_kph: 50.0,
+        temperature_c: 24.0,
+        feels_like_c: 24.0,
+        humidity_percent: 50,
+        uv_index: 2.0,
+        precipitation_mm: 0.0
+      },
+      location: { latitude: 0, longitude: 0, timezone: "UTC" },
+      updated_at: "2026-11-02T00:00:00Z",
+      stale: false,
+      volleyball: nil,
+      attribution: { name: "WeatherAPI.com", url: "https://www.weatherapi.com/" }
+    }
+    accounts(:one).create_weather_advisor_preference!(
+      wind_weight: 0,
+      temperature_weight: 25,
+      rain_weight: 25,
+      uv_weight: 25,
+      humidity_weight: 25
+    )
+    sign_in_as(users(:five))
+
+    with_weather_response(payload) do
+      get "/api/v1/weather", params: { lat: 0, lon: 0 }
+    end
+
+    assert_response :success
+    assessment = JSON.parse(response.body).fetch("volleyball")
+    assert_equal 100, assessment.fetch("score")
+    assert_includes assessment.fetch("warnings"), "Dangerous gusts: postpone play and secure equipment."
+    assert assessment.fetch("safety_override")
+  end
+
+  test "guest weather continues to use default weights" do
+    payload = {
+      forecast: [{ rain_chance_percent: 10 }],
+      hourly: [],
+      current: { wind_kph: 45.0, temperature_c: 24.0 },
+      location: { latitude: 0, longitude: 0, timezone: "UTC" },
+      updated_at: "2026-11-02T00:00:00Z",
+      stale: false,
+      volleyball: nil,
+      attribution: { name: "WeatherAPI.com", url: "https://www.weatherapi.com/" }
+    }
+
+    with_weather_response(payload) do
+      get "/api/v1/weather", params: { lat: 0, lon: 0 }
+    end
+
+    assert_response :success
+    assert_equal 60, JSON.parse(response.body).dig("volleyball", "score")
   end
 
   test "rejects missing or out-of-range coordinates" do

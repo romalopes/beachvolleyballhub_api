@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_01_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_02_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1208,6 +1208,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_000001) do
     t.index ["visibility"], name: "index_videos_on_visibility"
   end
 
+  create_table "weather_advisor_preferences", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "humidity_weight", default: 10, null: false
+    t.integer "rain_weight", default: 25, null: false
+    t.integer "temperature_weight", default: 20, null: false
+    t.datetime "updated_at", null: false
+    t.integer "uv_weight", default: 5, null: false
+    t.integer "wind_weight", default: 40, null: false
+    t.index ["account_id"], name: "index_weather_advisor_preferences_on_account_id", unique: true
+    t.check_constraint "(wind_weight + temperature_weight + rain_weight + uv_weight + humidity_weight) = 100", name: "weather_advisor_preferences_weights_total"
+    t.check_constraint "humidity_weight >= 0 AND humidity_weight <= 100", name: "weather_advisor_preferences_humidity_weight_range"
+    t.check_constraint "rain_weight >= 0 AND rain_weight <= 100", name: "weather_advisor_preferences_rain_weight_range"
+    t.check_constraint "temperature_weight >= 0 AND temperature_weight <= 100", name: "weather_advisor_preferences_temperature_weight_range"
+    t.check_constraint "uv_weight >= 0 AND uv_weight <= 100", name: "weather_advisor_preferences_uv_weight_range"
+    t.check_constraint "wind_weight >= 0 AND wind_weight <= 100", name: "weather_advisor_preferences_wind_weight_range"
+  end
+
   add_foreign_key "account_addresses", "accounts"
   add_foreign_key "account_invitations", "users", column: "invited_by_id"
   add_foreign_key "account_invitations", "users", column: "used_by_id"
@@ -1354,4 +1372,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_000001) do
   add_foreign_key "video_taggings", "videos"
   add_foreign_key "videos", "users", column: "created_by_id"
   add_foreign_key "videos", "video_categories", on_delete: :nullify
+  add_foreign_key "weather_advisor_preferences", "accounts"
 end

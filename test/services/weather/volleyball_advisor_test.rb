@@ -1,8 +1,12 @@
 require "test_helper"
 
 class Weather::VolleyballAdvisorTest < ActiveSupport::TestCase
-  def assess(current = {}, rain_chance_percent: nil)
-    Weather::VolleyballAdvisor.assess(current: current, rain_chance_percent: rain_chance_percent)
+  def assess(current = {}, rain_chance_percent: nil, weights: nil)
+    Weather::VolleyballAdvisor.assess(
+      current: current,
+      rain_chance_percent: rain_chance_percent,
+      weights: weights
+    )
   end
 
   test "calm, mild conditions score excellent with no warnings" do
@@ -103,6 +107,52 @@ class Weather::VolleyballAdvisorTest < ActiveSupport::TestCase
       90 => "Excellent", 75 => "Good", 55 => "Fair", 35 => "Poor", 10 => "Unsuitable"
     }.each do |band_score, expected_label|
       assert_equal expected_label, Weather::VolleyballAdvisor.new(current: {}).send(:label_for, band_score)
+    end
+  end
+
+  test "custom weights change the score without changing warnings" do
+    current = { wind_kph: 45.0, temperature_c: 24.0, uv_index: 2.0, humidity_percent: 50 }
+    defaults = assess(current, rain_chance_percent: 10)
+    custom = assess(
+      current,
+      rain_chance_percent: 10,
+      weights: { wind: 0, temperature: 25, rain: 25, uv: 25, humidity: 25 }
+    )
+
+    assert_operator custom[:score], :>, defaults[:score]
+    assert_equal defaults[:warnings], custom[:warnings]
+    assert custom[:safety_override]
+  end
+
+  test "missing and zero-weight measurements are excluded" do
+    result = assess(
+      { wind_kph: 45.0, temperature_c: 24.0 },
+      weights: { wind: 0, temperature: 100, rain: 0, uv: 0, humidity: 0 }
+    )
+
+    assert_equal 100, result[:score]
+    assert_includes result[:warnings], "Dangerous gusts: postpone play and secure equipment."
+  end
+
+  test "returns unknown when no positive-weight measurement is available" do
+    result = assess(
+      { wind_kph: 10.0 },
+      weights: { wind: 0, temperature: 100, rain: 0, uv: 0, humidity: 0 }
+    )
+
+    assert_nil result[:score]
+    assert_equal "Unknown", result[:label]
+  end
+
+  test "rejects malformed custom weights" do
+    assert_raises(ArgumentError) do
+      assess({ wind_kph: 10.0 }, weights: { wind: 100 })
+    end
+    assert_raises(ArgumentError) do
+      assess(
+        { wind_kph: 10.0 },
+        weights: { wind: 20, temperature: 20, rain: 20, uv: 20, humidity: 10 }
+      )
     end
   end
 end

@@ -8,7 +8,9 @@ module Api
         longitude = parse_coordinate(:lon, -180..180)
         return if performed?
 
-        render json: WeatherApi.fetch_forecast(latitude, longitude)
+        forecast = WeatherApi.fetch_forecast(latitude, longitude).deep_dup
+        forecast[:volleyball] = personalized_assessment(forecast)
+        render json: forecast
       rescue WeatherApi::ConfigurationError => error
         render json: { error: error.message }, status: :service_unavailable
       rescue WeatherApi::ProviderError => error
@@ -17,6 +19,17 @@ module Api
       end
 
       private
+
+      def personalized_assessment(forecast)
+        preference = Current.user&.account&.weather_advisor_preference
+        Weather::VolleyballAdvisor.assess(
+          current: forecast[:current] || forecast["current"],
+          rain_chance_percent: Array(forecast[:forecast] || forecast["forecast"]).first&.then do |day|
+            day[:rain_chance_percent] || day["rain_chance_percent"]
+          end,
+          weights: preference&.weights
+        )
+      end
 
       def parse_coordinate(name, range)
         value = Float(params[name], exception: false)

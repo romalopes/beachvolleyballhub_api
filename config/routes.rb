@@ -59,6 +59,8 @@ Rails.application.routes.draw do
       end
       resource :notification_preferences, only: %i[show update]
 
+      resource :weather_advisor_preference, only: %i[show update destroy]
+
       get "health", to: "health#index"
       get "health/detailed", to: "health#detailed"
 

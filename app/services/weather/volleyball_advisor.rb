@@ -15,14 +15,15 @@ module Weather
     LABELS = [[85, "Excellent"], [70, "Good"], [50, "Fair"], [30, "Poor"], [0, "Unsuitable"]].freeze
 
     class << self
-      def assess(current:, rain_chance_percent: nil)
-        new(current: current, rain_chance_percent: rain_chance_percent).assess
+      def assess(current:, rain_chance_percent: nil, weights: nil)
+        new(current: current, rain_chance_percent: rain_chance_percent, weights: weights).assess
       end
     end
 
-    def initialize(current:, rain_chance_percent: nil)
+    def initialize(current:, rain_chance_percent: nil, weights: nil)
       @current = current.is_a?(Hash) ? current : {}
       @rain_chance = number(rain_chance_percent)
+      @weights = weights.nil? ? WEIGHTS : normalize_weights(weights)
     end
 
     def assess
@@ -39,14 +40,40 @@ module Weather
     private
 
     def score
-      factors = WEIGHTS.filter_map do |factor, weight|
-        value = send(:"#{factor}_score")
-        value ? [value * weight, weight] : nil
-      end
-      return nil if factors.empty?
+      factor_scores = {
+        wind: wind_score,
+        temperature: temperature_score,
+        rain: rain_score,
+        uv: uv_score,
+        humidity: humidity_score
+      }
+      available = factor_scores.filter { |factor, value| !value.nil? && @weights.fetch(factor).positive? }
+      measured_weight = available.keys.sum { |factor| @weights.fetch(factor) }
+      return nil unless measured_weight.positive?
 
-      (factors.sum { |(weighted, _)| weighted } / factors.sum { |(_, weight)| weight }).round
+      (available.sum { |factor, value| value * @weights.fetch(factor) } / measured_weight).round
     end
+
+    def normalize_weights(weights)
+      unless weights.is_a?(Hash)
+        raise ArgumentError, "weights must be a hash"
+      end
+
+      normalized = weights.to_h.transform_keys(&:to_sym)
+      unless normalized.keys.sort == WEIGHTS.keys.sort
+        raise ArgumentError, "weights must contain exactly: #{WEIGHTS.keys.join(', ')}"
+      end
+
+      normalized.each do |factor, value|
+        unless value.is_a?(Numeric) && value.finite? && value.between?(0, 100)
+          raise ArgumentError, "invalid weight for #{factor}"
+        end
+      end
+      raise ArgumentError, "weights must sum to 100" unless normalized.values.sum == 100
+
+      normalized.transform_values { |value| value / 100.0 }.freeze
+    end
+
 
     def label_for(rating)
       return "Unknown" if rating.nil?
