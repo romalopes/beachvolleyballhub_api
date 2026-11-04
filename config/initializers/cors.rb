@@ -17,6 +17,12 @@ allowed_origins << "https://beachvolleyballhub.com"
 allowed_origins << "https://www.beachvolleyballhub.com"
 allowed_origins << "https://beachvolleyballhub.romalopes.workers.dev"
 allowed_origins << "http://localhost:5174"
+allowed_origins << "http://localhost:3001"
+allowed_origins << "http://192.168.1.25:5174"
+allowed_origins << "http://192.168.1.105:5174"
+allowed_origins << "http://192.168.1.6:5174"
+allowed_origins << "http://192.168.1.103:5174"
+allowed_origins << "http://192.168.1.105:5174"
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do

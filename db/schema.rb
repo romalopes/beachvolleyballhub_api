@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_03_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -186,6 +186,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_000001) do
     t.index ["video_id"], name: "index_analysis_videos_on_video_id"
     t.check_constraint "source_type::text = 'external'::text AND video_id IS NOT NULL OR source_type::text = 'upload'::text AND video_id IS NULL", name: "analysis_videos_source"
     t.check_constraint "source_type::text = ANY (ARRAY['external'::character varying, 'upload'::character varying]::text[])", name: "analysis_videos_source_type"
+  end
+
+  create_table "api_idempotency_keys", force: :cascade do |t|
+    t.string "actor_scope", null: false
+    t.string "content_type", default: "application/json", null: false
+    t.datetime "created_at", null: false
+    t.string "request_digest", null: false
+    t.string "request_key", null: false
+    t.string "request_method", null: false
+    t.string "request_path", null: false
+    t.text "response_body", null: false
+    t.integer "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actor_scope", "request_key"], name: "index_api_idempotency_keys_on_actor_and_key", unique: true
+    t.index ["created_at"], name: "index_api_idempotency_keys_on_created_at"
   end
 
   create_table "app_settings", force: :cascade do |t|
