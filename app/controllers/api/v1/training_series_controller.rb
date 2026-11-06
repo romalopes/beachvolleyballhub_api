@@ -20,7 +20,7 @@ module Api
       ].freeze
 
       SESSION_ATTRIBUTES = %i[
-        id title starts_at ends_at location location_detail status visibility
+        id title starts_at ends_at location location_id location_detail status visibility
         capacity level training_series_id training_template_id organisation_id
         group_id coach_profile_id recurrence_key original_starts_at override_fields
         cancellation_reason cancelled_at cancelled_by_id created_at updated_at
@@ -70,6 +70,22 @@ module Api
         if template.archived?
           return render json: { errors: [ "Archived templates cannot be scheduled" ] },
                         status: :unprocessable_entity
+        end
+
+        # A series schedules on an organisation's behalf, so it is an officer
+        # act: an active owner/administrator seat of the template's
+        # organisation, or site oversight.
+        unless organisation_officer?(template.organisation)
+          return render json: { errors: [ "Only an owner or administrator of the organisation may schedule its series" ] },
+                         status: :forbidden
+        end
+
+        # The organisation is chosen first and the template follows it; a
+        # series may not be re-pointed at another organisation.
+        if series_params[:organisation_id].present? &&
+           series_params[:organisation_id].to_i != template.organisation_id
+          return render json: { errors: [ "A series is scheduled for its template's organisation" ] },
+                         status: :unprocessable_entity
         end
 
         result = TrainingSeriesCreator.call(
@@ -317,6 +333,18 @@ module Api
         render json: { errors: [ "Training template is required" ] },
                status: :unprocessable_entity
         nil
+      end
+
+      # Whether the caller may schedule a series on the organisation's behalf:
+      # site oversight, or an active owner/administrator membership.
+      def organisation_officer?(organisation)
+        return true if Current.user.admin? || Current.user.curator?
+
+        account = Current.user.account
+        organisation && account && OrganisationMembership.active.manageable
+                                                  .for_account(account)
+                                                  .where(organisation_id: organisation.id)
+                                                  .exists?
       end
 
       def set_training_series

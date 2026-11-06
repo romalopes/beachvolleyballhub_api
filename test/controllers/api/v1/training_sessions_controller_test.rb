@@ -23,6 +23,16 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
 
     @session = training_sessions(:one)  # scheduled, created_by the coach
     @draft = training_sessions(:two)    # draft, created_by the coach
+
+    # A coach's own seat at the club: an individual session is scheduled on
+    # behalf of an organisation its creator holds an owner/administrator/coach
+    # seat in, and this is that seat for @coach. Created per-suite so the
+    # roster fixtures elsewhere keep their exact counts.
+    @seat = OrganisationMembership.create!(
+      organisation: organisations(:sydney_club), account: accounts(:three),
+      memberable: accounts(:three), role: "coach", status: "active",
+      joined_at: Time.current
+    )
   end
 
   # --- helpers -------------------------------------------------------------
@@ -62,7 +72,8 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
       location: "Coogee Beach",
       status: "scheduled",
       starts_at: "2026-10-01T09:00:00Z",
-      ends_at: "2026-10-01T11:00:00Z"
+      ends_at: "2026-10-01T11:00:00Z",
+      organisation_id: organisations(:sydney_club).id
     }.merge(overrides)
   end
 
@@ -458,6 +469,44 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a session is scheduled on behalf of an organisation" do
+    sign_in_as(@coach)
+
+    assert_no_difference -> { TrainingSession.count } do
+      post_json "/api/v1/training_sessions", training_session: valid_payload(organisation_id: nil)
+    end
+
+    assert_response :unprocessable_entity
+    assert_includes json["errors"], "An organisation is required"
+  end
+
+  test "a manager without a seat in the organisation may not schedule its sessions" do
+    sign_in_as(@coach) # seated at the Sydney club only
+
+    assert_no_difference -> { TrainingSession.count } do
+      post_json "/api/v1/training_sessions",
+                training_session: valid_payload(organisation_id: organisations(:northern_club).id)
+    end
+
+    assert_response :forbidden
+    assert_includes json["errors"], "Only an owner, administrator or coach of the organisation may schedule its sessions"
+  end
+
+  test "a chosen series must belong to the session's organisation" do
+    sign_in_as(@admin) # oversight may schedule for any organisation
+
+    assert_no_difference -> { TrainingSession.count } do
+      post_json "/api/v1/training_sessions",
+                training_session: valid_payload(
+                  organisation_id: organisations(:northern_club).id,
+                  training_series_id: training_series(:monday_series).id
+                )
+    end
+
+    assert_response :unprocessable_entity
+    assert_includes json["errors"], "Training series does not belong to the selected organisation"
+  end
+
   test "created_by comes from the authenticated user, never the payload" do
     sign_in_as(@coach)
     post_json "/api/v1/training_sessions",
@@ -512,7 +561,7 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
   test "create requires start and end times" do
     sign_in_as(@coach)
     post_json "/api/v1/training_sessions",
-         training_session: { title: "No dates" }
+         training_session: valid_payload(starts_at: nil, ends_at: nil)
 
     assert_response :unprocessable_entity
     assert_includes json["errors"], "Starts at can't be blank"

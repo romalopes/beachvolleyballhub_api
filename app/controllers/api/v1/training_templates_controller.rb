@@ -12,7 +12,7 @@ module Api
 
       TEMPLATE_ATTRIBUTES = %i[
         id name description organisation_id group_id coach_profile_id location
-        location_detail level capacity duration_minutes visibility status
+        location_id location_detail level capacity duration_minutes visibility status
         created_by_id created_at updated_at
       ].freeze
 
@@ -142,7 +142,7 @@ module Api
       def template_params
         params.require(:training_template).permit(
           :name, :description, :organisation_id, :group_id, :coach_profile_id,
-          :location, :location_detail, :level, :capacity, :duration_minutes,
+          :location, :location_id, :location_detail, :level, :capacity, :duration_minutes,
           :visibility, :status
         )
       end

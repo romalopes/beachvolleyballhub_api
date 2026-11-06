@@ -181,6 +181,49 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Sydney Beach Volleyball Club", @club.reload.name
   end
 
+  test "mine narrows to the requested seats" do
+    other = Organisation.create!(name: "Other Club", slug: "other-club")
+    OrganisationMembership.create!(
+      organisation: other, account: accounts(:one), memberable: accounts(:one),
+      role: "owner", status: "active", joined_at: Time.current
+    )
+    sign_in_as(users(:five))
+
+    get "/api/v1/organisations", params: { mine: "1", status: "active" }
+    ids = json["data"].map { |row| row["id"] }
+    assert_includes ids, @club.id
+    assert_includes ids, other.id
+
+    get "/api/v1/organisations", params: { mine: "1", status: "active", roles: "owner,administrator" }
+    ids = json["data"].map { |row| row["id"] }
+    assert_equal [ other.id ], ids
+
+    get "/api/v1/organisations", params: { mine: "1", status: "active", roles: "coach" }
+    assert_empty json["data"]
+  end
+
+  test "the coach list returns the organisation's active coach members" do
+    sign_in_as(@coach)
+
+    get "/api/v1/organisations/#{@club.id}/coaches"
+
+    assert_response :success
+    ids = json["coaches"].map { |row| row["id"] }
+    assert_includes ids, coach_profiles(:maria_coach).id
+    assert_includes ids, coach_profiles(:unclaimed_roster_coach).id
+    # An account seat contributes its coach profiles rather than a second row.
+    assert_equal 2, ids.uniq.size
+  end
+
+  test "the coach list is limited to training managers" do
+    get "/api/v1/organisations/#{@club.id}/coaches"
+    assert_response :unauthorized
+
+    sign_in_as(@player_user)
+    get "/api/v1/organisations/#{@club.id}/coaches"
+    assert_response :forbidden
+  end
+
   test "index is readable by a training manager, as the other catalogues are" do
     # The same gate as groups and players: a coach can look up a club without being
     # able to rename it or re-parent it.

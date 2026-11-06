@@ -252,6 +252,9 @@ Rails.application.routes.draw do
           # account id is in the URL because one account may belong to many
           # organisations, so an account's memberships are never a single record.
           get :members
+          # The organisation's coach members, for the training forms' cascading
+          # coach pickers.
+          get :coaches
           # `action:` is required, not decorative: `post :members` would otherwise
           # route to the same `members` action as the GET above and silently
           # answer every write with a 200 and a roster.

@@ -6,9 +6,9 @@ class Api::V1::HealthControllerTest < ActionDispatch::IntegrationTest
     @player = users(:one)   # player role only
   end
 
-  # Application version contract: the single source of truth must be 0.0.21.
-  test "application version is 0.0.21" do
-    assert_equal "0.0.21", APP_VERSION
+  # Application version contract: the single source of truth must be 0.0.22.
+  test "application version is 0.0.22" do
+    assert_equal "0.0.22", APP_VERSION
     assert_equal APP_VERSION, Rails.application.config.health_version
   end
 
@@ -17,7 +17,7 @@ class Api::V1::HealthControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal "ok", body["status"]
-    assert_equal "0.0.21", body["version"]
+    assert_equal "0.0.22", body["version"]
     assert_equal APP_VERSION, body["version"]
   end
 
@@ -68,7 +68,7 @@ class Api::V1::HealthControllerTest < ActionDispatch::IntegrationTest
     assert_equal "bvb-api", body["service"]
     assert_equal "ok", body["database"]
     assert_equal Rails.env, body["environment"]
-    assert_equal "0.0.21", body["version"]
+    assert_equal "0.0.22", body["version"]
     assert_equal APP_VERSION, body["version"]
     assert_equal Rails.application.config.health_version, body["version"]
     assert body["timestamp"].present?

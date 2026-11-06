@@ -32,7 +32,7 @@ module Api
       # record was nil would be the worst kind of bug here.
       before_action :set_organisation,
                     only: %i[show update archive restore logo destroy
-                              members member_candidates create_member update_member end_member join leave
+                              members coaches member_candidates create_member update_member end_member join leave
                               add_created_profile_membership remove_created_profile_membership
                              approve_member reject_member]
       # Creating a node and moving one are claims made *to other clubs* about the
@@ -104,10 +104,13 @@ module Api
         # you start a new group for a club you have left. A caller with no Person
         # is a non-member rather than an error, so they simply get none.
         if params[:mine].present?
-          mine_ids = OrganisationMembership
-                     .active
-                     .for_user_subjects(Current.user)
-                     .select(:organisation_id)
+          mine_scope = OrganisationMembership
+                       .active
+                       .for_user_subjects(Current.user)
+          # `roles` narrows "mine" to particular seats, e.g. the
+          # owner/administrator organisations a form's user may schedule for.
+          mine_scope = mine_scope.with_roles(params[:roles]) if params[:roles].present?
+          mine_ids = mine_scope.select(:organisation_id)
           organisations = organisations.where(id: mine_ids)
         end
 
@@ -414,6 +417,21 @@ module Api
           organisation: { id: @organisation.id, name: @organisation.name, slug: @organisation.slug },
           data: visible_memberships.map(&:metadata)
         }
+      end
+
+      # The coaches who may run sessions for this organisation: its active
+      # coach members. Feeds the coach pickers on the training forms, which
+      # scope to the selected organisation.
+      def coaches
+        memberships = @organisation.organisation_memberships.active
+        profile_ids = memberships.where(memberable_type: "CoachProfile").pluck(:memberable_id)
+        account_ids = memberships.where(memberable_type: "Account").pluck(:memberable_id)
+        account_profile_ids = CoachProfile.where(account_id: account_ids).pluck(:id)
+
+        coaches = CoachProfile.where(id: (profile_ids + account_profile_ids).uniq)
+                              .where(status: "active")
+                              .order(:display_name, :id)
+        render json: { coaches: coaches.map { |coach| coach_option(coach) } }
       end
 
       # Search subjects that can be added to this organisation's roster. The
@@ -847,6 +865,17 @@ module Api
       # grouped query keeps the list at a fixed cost. Omitted arguments (a single
       # `show`) simply fall back to the per-record queries, which are correct and
       # cheap at that size.
+      # The coach picker needs identity only: the profile id it submits and a
+      # display name, with the account's name as the canonical spelling.
+      def coach_option(coach)
+        {
+          id: coach.id,
+          display_name: coach.display_name,
+          full_name: coach.full_name,
+          account: coach.account && { id: coach.account.id, full_name: coach.account.full_name }
+        }
+      end
+
       def serialize(organisation, child_counts: nil, membership_counts: nil)
         # An anonymous caller of the public index holds no authority over any
         # node: every permission flag is false so the SPA renders no controls the

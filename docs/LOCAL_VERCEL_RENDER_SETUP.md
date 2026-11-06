@@ -123,18 +123,18 @@ The frontend runs on both Vercel and Cloudflare Workers. Cloudflare deployment: 
 
 Import the frontend repository. If importing a combined repository instead, set Root Directory to `beachvolleyballproject`; for the standalone frontend repository, use its root.
 
-| Setting | Value |
-|---|---|
-| Framework preset | Vite |
-| Node.js | 24.x |
-| Install command | `npm ci` |
-| Build command | `npm run build` |
-| Output directory | `dist` |
+| Setting          | Value           |
+| ---------------- | --------------- |
+| Framework preset | Vite            |
+| Node.js          | 24.x            |
+| Install command  | `npm ci`        |
+| Build command    | `npm run build` |
+| Output directory | `dist`          |
 
 Set this in Project Settings → Environment Variables:
 
-| Variable | Local | Vercel Production | Vercel Preview |
-|---|---|---|---|
+| Variable            | Local     | Vercel Production                                                   | Vercel Preview                              |
+| ------------------- | --------- | ------------------------------------------------------------------- | ------------------------------------------- |
 | `VITE_API_BASE_URL` | `/api/v1` | `https://<production-api>.onrender.com/api/v1` or custom API domain | URL of the staging API, including `/api/v1` |
 
 This is the only application-defined frontend environment variable currently read by the source. Vite's `import.meta.env.DEV` is automatic. Do not set database, mail, Rails or storage secrets on the frontend. Redeploy after changing the API URL: Vite embeds it during the build. The local dev proxy is not deployed to Vercel. See [Vercel's Vite guide](https://vercel.com/docs/frameworks/frontend/vite).
@@ -169,11 +169,11 @@ If restricting Rails CORS or authentication origin allowlists, include `https://
 
 Create a **Ruby Web Service** from the API repository. Use the repository root, or `beachvolleyballproject_api` for a combined repository. Ruby is pinned by `.ruby-version`.
 
-| Setting | Value |
-|---|---|
-| Build command | `bash bin/render-build.sh` |
-| Start command | `bundle exec puma -C /dev/null -b tcp://0.0.0.0:$PORT -e production -w ${WEB_CONCURRENCY:-0} -t 0:${RAILS_MAX_THREADS:-5} config.ru` |
-| Health check path | `/api/v1/health` |
+| Setting           | Value                                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Build command     | `bash bin/render-build.sh`                                                                                                           |
+| Start command     | `bundle exec puma -C /dev/null -b tcp://0.0.0.0:$PORT -e production -w ${WEB_CONCURRENCY:-0} -t 0:${RAILS_MAX_THREADS:-5} config.ru` |
+| Health check path | `/api/v1/health`                                                                                                                     |
 
 The explicit start command skips `config/puma.rb`, whose unconditional local SSL bind would otherwise require local certificates and fail to expose the correct Render interface. Render terminates public HTTPS; the process binds HTTP on `0.0.0.0:$PORT`. This command also explicitly applies worker/thread settings because it skips the Puma configuration. See [Render's port-binding requirements](https://render.com/docs/web-services#port-binding).
 
@@ -231,56 +231,56 @@ All variables here belong on the API/worker, never in the Vercel or Cloudflare b
 
 ### Core and runtime
 
-| Variable | Local configuration | Render configuration / meaning |
-|---|---|---|
-| `DATABASE_URL` | Required development PostgreSQL URL | Required hosted PostgreSQL URL; contains credentials. Also used for primary/cache/queue/cable. |
-| `RAILS_ENV` | Unset or `development` | `production` on web service and worker. |
-| `RAILS_MASTER_KEY` | Existing `config/master.key`, or matching environment key if encrypted credentials are used | Secret matching the deployed credentials; do not generate an unrelated key. |
-| `SECRET_KEY_BASE` | Rails can generate a development secret | Stable secret from `bin/rails secret`, or configured encrypted credentials. Changing it invalidates signed credentials/tokens. |
-| `FRONTEND_URL` | `http://localhost:5174` | Public frontend origin, including `https://`, without `/api/v1`; used for email links. Production fallback is `https://beachvolleyballproject.vercel.app`. |
-| `APP_HOST` | Development mailer currently hardcodes localhost:3001 | API hostname only, no protocol/path; production mailer URL host, default `example.com`. |
-| `ALLOWED_HOSTS` | Usually unnecessary locally | Comma-separated hostnames accepted by Rails Host Authorization. Include the Render default hostname for Render health checks and the custom API hostname when configured. |
-| `APP_VERSION` | Optional; default `0.0.21` | API health/version value; keep aligned with frontend `src/constants/versions.ts`. |
-| `WEB_CONCURRENCY` | Default `0` | Start at `0` for a single process; increase according to memory/CPU. Repository Puma default is `2` in production, but the documented Render command defaults to `0`. |
-| `RAILS_MAX_THREADS` | Default database pool limit `5` | `5` initially; also controls threads in the documented Render command. Repository Puma does not directly read it for threads. Account for worker and multiple-database connections when sizing PostgreSQL. |
-| `JOB_CONCURRENCY` | Usually unnecessary locally | Worker process count; default `1`; each configured queue worker has 3 threads. |
-| `RAILS_LOG_LEVEL` | Development uses Rails default | Default `info`. Production currently overrides its stdout logger with `log/production.log`; setting this variable does not restore stdout logging. |
-| `PORT` | Local Puma hardcodes 3001 | Render-provided; consumed by the documented start command. |
-| `PIDFILE` | Optional; Puma default `tmp/pids/server.pid` | Not consumed when using the documented `-C /dev/null` command. |
-| `SECRET_KEY_BASE_DUMMY` | Not needed | Build script temporarily sets `1` for asset compilation; do not set as a runtime substitute for the real secret. |
-| `OBJC_DISABLE_INITIALIZE_FORK_SAFETY` | Puma sets `YES` on macOS | Not needed on Render Linux. |
-| `CI` | Only relevant to tests | Presence enables eager loading in test; not a production setting. |
-| `BUNDLE_GEMFILE` | Automatically set by Rails boot | Normally leave unset; internal Bundler file selection. |
+| Variable                              | Local configuration                                                                         | Render configuration / meaning                                                                                                                                                                             |
+| ------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                        | Required development PostgreSQL URL                                                         | Required hosted PostgreSQL URL; contains credentials. Also used for primary/cache/queue/cable.                                                                                                             |
+| `RAILS_ENV`                           | Unset or `development`                                                                      | `production` on web service and worker.                                                                                                                                                                    |
+| `RAILS_MASTER_KEY`                    | Existing `config/master.key`, or matching environment key if encrypted credentials are used | Secret matching the deployed credentials; do not generate an unrelated key.                                                                                                                                |
+| `SECRET_KEY_BASE`                     | Rails can generate a development secret                                                     | Stable secret from `bin/rails secret`, or configured encrypted credentials. Changing it invalidates signed credentials/tokens.                                                                             |
+| `FRONTEND_URL`                        | `http://localhost:5174`                                                                     | Public frontend origin, including `https://`, without `/api/v1`; used for email links. Production fallback is `https://beachvolleyballproject.vercel.app`.                                                 |
+| `APP_HOST`                            | Development mailer currently hardcodes localhost:3001                                       | API hostname only, no protocol/path; production mailer URL host, default `example.com`.                                                                                                                    |
+| `ALLOWED_HOSTS`                       | Usually unnecessary locally                                                                 | Comma-separated hostnames accepted by Rails Host Authorization. Include the Render default hostname for Render health checks and the custom API hostname when configured.                                  |
+| `APP_VERSION`                         | Optional; default `0.0.22`                                                                  | API health/version value; keep aligned with frontend `src/constants/versions.ts`.                                                                                                                          |
+| `WEB_CONCURRENCY`                     | Default `0`                                                                                 | Start at `0` for a single process; increase according to memory/CPU. Repository Puma default is `2` in production, but the documented Render command defaults to `0`.                                      |
+| `RAILS_MAX_THREADS`                   | Default database pool limit `5`                                                             | `5` initially; also controls threads in the documented Render command. Repository Puma does not directly read it for threads. Account for worker and multiple-database connections when sizing PostgreSQL. |
+| `JOB_CONCURRENCY`                     | Usually unnecessary locally                                                                 | Worker process count; default `1`; each configured queue worker has 3 threads.                                                                                                                             |
+| `RAILS_LOG_LEVEL`                     | Development uses Rails default                                                              | Default `info`. Production currently overrides its stdout logger with `log/production.log`; setting this variable does not restore stdout logging.                                                         |
+| `PORT`                                | Local Puma hardcodes 3001                                                                   | Render-provided; consumed by the documented start command.                                                                                                                                                 |
+| `PIDFILE`                             | Optional; Puma default `tmp/pids/server.pid`                                                | Not consumed when using the documented `-C /dev/null` command.                                                                                                                                             |
+| `SECRET_KEY_BASE_DUMMY`               | Not needed                                                                                  | Build script temporarily sets `1` for asset compilation; do not set as a runtime substitute for the real secret.                                                                                           |
+| `OBJC_DISABLE_INITIALIZE_FORK_SAFETY` | Puma sets `YES` on macOS                                                                    | Not needed on Render Linux.                                                                                                                                                                                |
+| `CI`                                  | Only relevant to tests                                                                      | Presence enables eager loading in test; not a production setting.                                                                                                                                          |
+| `BUNDLE_GEMFILE`                      | Automatically set by Rails boot                                                             | Normally leave unset; internal Bundler file selection.                                                                                                                                                     |
 
 `RAILS_MASTER_KEY` decrypts credentials; it is not interchangeable with `SECRET_KEY_BASE`.
 
 ### Access and email feature flags
 
-| Variable | Default | Configuration |
-|---|---|---|
-| `TEST_ACCESS_PASSWORD` | Blank: private testing gate disabled | Leave blank locally; set a backend-only secret on Render to enable the gate. Separate from user passwords. |
-| `TEST_ACCESS_TOKEN_EXPIRATION` | `7.days` | Positive duration, e.g. `12.hours`, `3600` seconds or `P7D`. Password rotation does not immediately invalidate already-issued tokens. |
-| `REQUIRE_EMAIL_VERIFICATION` | `false` | `true` requires new users to verify their email. |
-| `EMAIL_VERIFICATION_EXPIRATION_HOURS` | `24` | Positive numeric lifetime in hours. |
-| `EMAIL_VERIFICATION_AUTO_SEND_ON_SIGNUP` | `true` | `false` requires users to request verification delivery manually; relevant when verification is enabled. |
-| `CLAIM_INVITATION_EMAIL_ENABLED` | `false` | `true` sends claim-invitation emails; otherwise share generated links manually. |
+| Variable                                 | Default                              | Configuration                                                                                                                         |
+| ---------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `TEST_ACCESS_PASSWORD`                   | Blank: private testing gate disabled | Leave blank locally; set a backend-only secret on Render to enable the gate. Separate from user passwords.                            |
+| `TEST_ACCESS_TOKEN_EXPIRATION`           | `7.days`                             | Positive duration, e.g. `12.hours`, `3600` seconds or `P7D`. Password rotation does not immediately invalidate already-issued tokens. |
+| `REQUIRE_EMAIL_VERIFICATION`             | `false`                              | `true` requires new users to verify their email.                                                                                      |
+| `EMAIL_VERIFICATION_EXPIRATION_HOURS`    | `24`                                 | Positive numeric lifetime in hours.                                                                                                   |
+| `EMAIL_VERIFICATION_AUTO_SEND_ON_SIGNUP` | `true`                               | `false` requires users to request verification delivery manually; relevant when verification is enabled.                              |
+| `CLAIM_INVITATION_EMAIL_ENABLED`         | `false`                              | `true` sends claim-invitation emails; otherwise share generated links manually.                                                       |
 
 ### Email transport
 
-| Variable | Local | Render |
-|---|---|---|
-| `MAIL_TRANSPORT` | `file` writes to `tmp/mails` | Explicit `resend`, `brevo` or `smtp`; `auto`/unset selects Brevo → Resend → SMTP → file according to configured credentials. |
-| `MAIL_FROM` | Example sender for file delivery | Sender address/name authenticated with the provider. Unset uses the legacy sender in `lib/mail_sender.rb`. |
-| `MAIL_REPLY_TO` | Example reply address | Real receiving mailbox; unset uses the legacy reply address. |
-| `BREVO_API_KEY` | Only for Brevo testing | Secret required for `brevo`; omit for other providers. |
-| `RESEND_API_KEY` | Only for Resend testing | Secret required for `resend`; omit for other providers. |
-| `SMTP_ADDRESS` | Optional SMTP hostname | Required for `smtp`; omit for HTTP providers. |
-| `SMTP_PORT` | Default `587` | Provider port. Ensure outbound SMTP is supported by the service. |
-| `SMTP_DOMAIN` | Default `localhost` | Provider-required SMTP HELO domain. |
-| `SMTP_USERNAME` | Optional | Provider login, if required. |
-| `SMTP_PASSWORD` | Optional secret | Provider password/API credential, if required. |
-| `SMTP_AUTHENTICATION` | Default `plain` | Provider-supported authentication method. |
-| `SMTP_ENABLE_STARTTLS` | Default `true` | Only literal `true` enables automatic STARTTLS. |
+| Variable               | Local                            | Render                                                                                                                       |
+| ---------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `MAIL_TRANSPORT`       | `file` writes to `tmp/mails`     | Explicit `resend`, `brevo` or `smtp`; `auto`/unset selects Brevo → Resend → SMTP → file according to configured credentials. |
+| `MAIL_FROM`            | Example sender for file delivery | Sender address/name authenticated with the provider. Unset uses the legacy sender in `lib/mail_sender.rb`.                   |
+| `MAIL_REPLY_TO`        | Example reply address            | Real receiving mailbox; unset uses the legacy reply address.                                                                 |
+| `BREVO_API_KEY`        | Only for Brevo testing           | Secret required for `brevo`; omit for other providers.                                                                       |
+| `RESEND_API_KEY`       | Only for Resend testing          | Secret required for `resend`; omit for other providers.                                                                      |
+| `SMTP_ADDRESS`         | Optional SMTP hostname           | Required for `smtp`; omit for HTTP providers.                                                                                |
+| `SMTP_PORT`            | Default `587`                    | Provider port. Ensure outbound SMTP is supported by the service.                                                             |
+| `SMTP_DOMAIN`          | Default `localhost`              | Provider-required SMTP HELO domain.                                                                                          |
+| `SMTP_USERNAME`        | Optional                         | Provider login, if required.                                                                                                 |
+| `SMTP_PASSWORD`        | Optional secret                  | Provider password/API credential, if required.                                                                               |
+| `SMTP_AUTHENTICATION`  | Default `plain`                  | Provider-supported authentication method.                                                                                    |
+| `SMTP_ENABLE_STARTTLS` | Default `true`                   | Only literal `true` enables automatic STARTTLS.                                                                              |
 
 Missing credentials for an explicitly chosen transport cause fallback, not necessarily a boot failure. Successful application boot does not prove outbound delivery; check the effective transport and delivery. File delivery on Render is not external email and is not durable storage.
 
@@ -288,23 +288,23 @@ Missing credentials for an explicitly chosen transport cause fallback, not neces
 
 Storage selection is hardcoded in environment Ruby files; there is no `ACTIVE_STORAGE_SERVICE` environment switch. Development is R2, production is Supabase, tests use temporary disk. Set credentials for the selected service only.
 
-| Variable | Required when | Value |
-|---|---|---|
-| `CLOUD_FLARE_R2_ACCESS_KEY_ID` | R2 | Bucket-authorized S3 access key ID. |
-| `CLOUD_FLARE_R2_ACCESS_KEY` | R2 | Secret access key; spelling is intentional (no `_SECRET_`). |
-| `CLOUD_FLARE_R2_BUCKET` | R2 | Existing bucket name. |
-| `CLOUD_FLARE_R2_ENDPOINT` | R2, unless using `REF` | Full S3 API endpoint, e.g. `https://<account-id>.r2.cloudflarestorage.com`; not a public asset URL. |
-| `CLOUD_FLARE_R2_REF` | R2 when endpoint omitted | Account ID used to construct the endpoint. Omit `ENDPOINT` entirely when using this fallback; an empty string overrides it. Region is hardcoded `auto`. |
-| `SUPABASE_S3_ACCESS_KEY_ID` | Supabase / current production | S3 access key ID, not an anon key. |
-| `SUPABASE_S3_SECRET_ACCESS_KEY` | Supabase / current production | S3 secret access key. |
-| `SUPABASE_S3_REGION` | Supabase / current production | Region reported by the project's S3 connection settings. |
-| `SUPABASE_S3_BUCKET_NAME` | Supabase / current production | Existing bucket name. |
-| `SUPABASE_PROJECT_REF` | Supabase / current production | Project reference; endpoint becomes `https://<ref>.supabase.co/storage/v1/s3`. |
-| `NEON_S3_ACCESS_KEY_ID` | Inactive `neon` storage entry only | S3 access key ID. |
-| `NEON_S3_SECRET_ACCESS_KEY` | Inactive `neon` entry only | S3 secret. |
-| `NEON_S3_REGION` | Inactive `neon` entry only | Region. |
-| `NEON_S3_BUCKET_NAME` | Inactive `neon` entry only | Bucket. |
-| `NEON_PROJECT_ID` | Inactive `neon` entry only | Project ID. This entry still contains literal `<region>` in its endpoint and is not ready to use without a code change and provider verification. |
+| Variable                        | Required when                      | Value                                                                                                                                                   |
+| ------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CLOUD_FLARE_R2_ACCESS_KEY_ID`  | R2                                 | Bucket-authorized S3 access key ID.                                                                                                                     |
+| `CLOUD_FLARE_R2_ACCESS_KEY`     | R2                                 | Secret access key; spelling is intentional (no `_SECRET_`).                                                                                             |
+| `CLOUD_FLARE_R2_BUCKET`         | R2                                 | Existing bucket name.                                                                                                                                   |
+| `CLOUD_FLARE_R2_ENDPOINT`       | R2, unless using `REF`             | Full S3 API endpoint, e.g. `https://<account-id>.r2.cloudflarestorage.com`; not a public asset URL.                                                     |
+| `CLOUD_FLARE_R2_REF`            | R2 when endpoint omitted           | Account ID used to construct the endpoint. Omit `ENDPOINT` entirely when using this fallback; an empty string overrides it. Region is hardcoded `auto`. |
+| `SUPABASE_S3_ACCESS_KEY_ID`     | Supabase / current production      | S3 access key ID, not an anon key.                                                                                                                      |
+| `SUPABASE_S3_SECRET_ACCESS_KEY` | Supabase / current production      | S3 secret access key.                                                                                                                                   |
+| `SUPABASE_S3_REGION`            | Supabase / current production      | Region reported by the project's S3 connection settings.                                                                                                |
+| `SUPABASE_S3_BUCKET_NAME`       | Supabase / current production      | Existing bucket name.                                                                                                                                   |
+| `SUPABASE_PROJECT_REF`          | Supabase / current production      | Project reference; endpoint becomes `https://<ref>.supabase.co/storage/v1/s3`.                                                                          |
+| `NEON_S3_ACCESS_KEY_ID`         | Inactive `neon` storage entry only | S3 access key ID.                                                                                                                                       |
+| `NEON_S3_SECRET_ACCESS_KEY`     | Inactive `neon` entry only         | S3 secret.                                                                                                                                              |
+| `NEON_S3_REGION`                | Inactive `neon` entry only         | Region.                                                                                                                                                 |
+| `NEON_S3_BUCKET_NAME`           | Inactive `neon` entry only         | Bucket.                                                                                                                                                 |
+| `NEON_PROJECT_ID`               | Inactive `neon` entry only         | Project ID. This entry still contains literal `<region>` in its endpoint and is not ready to use without a code change and provider verification.       |
 
 Using Neon for PostgreSQL does not require any `NEON_S3_*` variables. To use R2 on Render, change the production storage service to `:cloudflare_r2` and provide its credentials instead of Supabase's. Changing providers does not migrate existing uploaded objects.
 

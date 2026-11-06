@@ -18,6 +18,7 @@ monday_series:
 
 private_series:
   training_template: private_lesson
+  organisation: sydney_club
   created_by: three
   frequency: weekly
   interval: 1

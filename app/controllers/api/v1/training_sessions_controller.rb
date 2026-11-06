@@ -50,6 +50,12 @@ module Api
       INLINE_PERSON_ATTRIBUTES = InlineParticipantResolver::PERSON_ATTRIBUTES
 
       before_action :set_training_session, only: %i[show update destroy]
+      # A session is scheduled on an organisation's behalf: creating one, or
+      # re-pointing it at another organisation, requires a seat (owner,
+      # administrator or coach) in that organisation, or site oversight.
+      # Editing an existing session's other fields keeps the shared-schedule
+      # rule and stays open to training managers as before.
+      before_action :require_organisation_seat!, only: %i[create update]
       before_action :validate_index_filters!, only: :index
       after_action :verify_authorized, except: :index
       after_action :verify_policy_scoped, only: :index
@@ -134,6 +140,38 @@ module Api
                                               .includes(player_profile: :account)
                                               .filter_map { |participant| participant.player_profile.account_id }
         }
+      end
+
+      # The seat rule for scheduling a session on an organisation's behalf:
+      # site oversight, or an active owner/administrator/coach membership of
+      # the requested organisation. On update an untouched or unchanged
+      # organisation is not re-checked, so the shared-schedule edit rule holds.
+      def require_organisation_seat!
+        # Guests never get past the Pundit gate below; the seat rule is about
+        # which organisations a signed-in scheduler may act for.
+        return if Current.user.nil?
+
+        requested = training_session_params[:organisation_id]
+        return if action_name == "update" && requested.blank?
+
+        organisation = Organisation.find_by(id: requested)
+        if organisation.nil?
+          return render json: { errors: [ "An organisation is required" ] },
+                        status: :unprocessable_entity
+        end
+        return if action_name == "update" && requested.to_i == @training_session.organisation_id
+        return if Current.user.admin? || Current.user.curator?
+
+        account = Current.user.account
+        seat = account && OrganisationMembership.active
+                                        .with_roles(%w[owner administrator coach])
+                                        .for_account(account)
+                                        .where(organisation_id: organisation.id)
+                                        .exists?
+        return if seat
+
+        render json: { errors: [ "Only an owner, administrator or coach of the organisation may schedule its sessions" ] },
+               status: :forbidden
       end
 
       # Builds the detail payload. The complete payload is for signed-in
@@ -405,7 +443,7 @@ module Api
         permitted = params.require(:training_session).permit(
           :title, :description, :starts_at, :ends_at, :location, :location_id, :court_id, :location_detail,
           :capacity, :level, :organisation_id, :group_id, :coach_profile_id,
-          :status,
+          :training_series_id, :status,
           training_focuses_attributes: %i[id skill_id custom_focus description position _destroy],
           training_session_drills_attributes: %i[id drill_id position duration_minutes notes _destroy],
           training_session_participants_attributes: [

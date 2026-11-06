@@ -7,7 +7,7 @@
 class TrainingSeriesCreator
   OVERRIDABLE_DEFAULTS = %i[
     title description organisation_id group_id coach_profile_id location
-    location_detail level capacity visibility
+    location_id location_detail level capacity visibility
   ].freeze
 
   Result = Struct.new(:series, :generator_result, :errors, keyword_init: true) do

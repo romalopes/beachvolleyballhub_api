@@ -12,6 +12,10 @@ module Api
 
       def index
         rows = @organisation.organisation_locations.includes(:location).order("locations.name")
+        # A proposal is the organisation's working set: its members (and site
+        # oversight) see it here while it awaits verification; the public venue
+        # list stops at verified records.
+        rows = rows.merge(Location.selectable) unless member_or_oversight?
         render json: {
           locations: rows.map do |row|
             location_summary(row.location).merge(
@@ -66,6 +70,18 @@ module Api
         return if OrganisationAccess.can_edit?(@organisation, Current.user)
 
         render json: { error: "Forbidden" }, status: :forbidden
+      end
+
+      # Whether the caller holds any active membership in this organisation —
+      # the visibility line for its unverified venue proposals.
+      def member_or_oversight?
+        return true if Current.user&.admin? || Current.user&.curator?
+
+        account = Current.user&.account
+        account && OrganisationMembership.active
+                                        .for_account(account)
+                                        .where(organisation_id: @organisation.id)
+                                        .exists?
       end
 
       def association_params

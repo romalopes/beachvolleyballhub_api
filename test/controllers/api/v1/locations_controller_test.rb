@@ -82,6 +82,60 @@ class Api::V1::LocationsControllerTest < ActionDispatch::IntegrationTest
     assert_nil location.latitude
   end
 
+  test "an officer's proposal is linked to the organisation and listed for its members" do
+    club = organisations(:sydney_club)
+    sign_in_as(users(:six)) # owner of the Sydney club, without site oversight
+
+    post api_v1_locations_path, params: {
+      location: { name: "Club's New Beach", location_type: "beach", organisation_id: club.id }
+    }
+
+    assert_response :created
+    location = Location.find(response.parsed_body.dig("location", "id"))
+    assert_equal "proposed", location.verification_status
+    assert_includes club.organisation_locations.map(&:location_id), location.id
+
+    # A fellow member sees and opens the venue while it awaits verification...
+    sign_in_as(users(:five))
+    get api_v1_locations_path
+    ids = response.parsed_body.fetch("locations").map { |row| row.fetch("id") }
+    assert_includes ids, location.id
+
+    get api_v1_location_path(location)
+    assert_response :success
+
+    # ...an outsider does not.
+    sign_in_as(users(:one))
+    get api_v1_locations_path
+    ids = response.parsed_body.fetch("locations").map { |row| row.fetch("id") }
+    assert_not_includes ids, location.id
+  end
+
+  test "a member can show a proposal another officer made for their organisation" do
+    club = organisations(:sydney_club)
+    proposal = Location.create!(name: "Officer's Beach", verification_status: "proposed",
+                                proposed_by_account: accounts(:two))
+    club.organisation_locations.build(location: proposal).save(validate: false)
+
+    sign_in_as(users(:five))
+
+    get api_v1_location_path(proposal)
+
+    assert_response :success
+  end
+
+  test "only an owner or administrator may propose a venue for an organisation" do
+    club = organisations(:sydney_club)
+    sign_in_as(users(:five)) # a plain member, not an officer
+
+    post api_v1_locations_path, params: {
+      location: { name: "Nope Beach", location_type: "beach", organisation_id: club.id }
+    }
+
+    assert_response :forbidden
+    assert_not Location.exists?(name: "Nope Beach")
+  end
+
   test "address proposals are marked pending and enqueue geocoding" do
     sign_in_as(@player)
 

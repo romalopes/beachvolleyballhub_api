@@ -36,9 +36,10 @@ class TrainingSession < ApplicationRecord
   # every session created before this feature) have no series or template.
   belongs_to :training_series, optional: true, inverse_of: :training_sessions
   belongs_to :training_template, optional: true
-  # Schedule metadata copied from the series defaults. These are not an
-  # authorization boundary — training management stays role-based.
-  belongs_to :organisation, optional: true
+  # Schedule metadata copied from the series defaults. The organisation is
+  # mandatory: a session is scheduled on an organisation's behalf, and the
+  # forms pick it from the caller's own seats.
+  belongs_to :organisation, optional: false
   belongs_to :group, optional: true
   belongs_to :canonical_location, class_name: "Location", foreign_key: :location_id,
              optional: true, inverse_of: :training_sessions
@@ -86,6 +87,10 @@ class TrainingSession < ApplicationRecord
   validate :ends_at_after_starts_at
   validate :series_template_is_consistent
   validate :location_is_selectable_for_new_assignment
+  # The series is picked from the selected organisation's own series, so a
+  # mismatched pair is refused rather than saved.
+  validate :series_belongs_to_the_organisation,
+           if: -> { training_series_id.present? && organisation_id.present? }
   validate :court_matches_location
 
   scope :ordered, -> { order(:starts_at, :id) }
@@ -249,6 +254,14 @@ class TrainingSession < ApplicationRecord
     return if location_id.blank? || !will_save_change_to_location_id? || canonical_location&.usable_by?(created_by&.account)
 
     errors.add(:location, "must be verified or your own active proposal")
+  end
+
+  # The series is picked from the selected organisation's own series, so a
+  # mismatched pair is refused rather than saved.
+  def series_belongs_to_the_organisation
+    return if training_series&.organisation_id == organisation_id
+
+    errors.add(:training_series, "does not belong to the selected organisation")
   end
 
   def court_matches_location

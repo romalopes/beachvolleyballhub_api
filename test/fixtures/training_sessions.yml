@@ -12,6 +12,7 @@ one:
   location: Coogee Beach
   status: scheduled
   visibility: shared
+  organisation: sydney_club
   created_by: three
 
 two:
@@ -22,6 +23,7 @@ two:
   location: Manly Beach
   status: draft
   visibility: shared
+  organisation: sydney_club
   created_by: three
 
 three:
@@ -32,6 +34,7 @@ three:
   location: Bondi Beach
   status: scheduled
   visibility: shared
+  organisation: sydney_club
   created_by: four
 
 # A private session created for a specific player. Only that player (and any
@@ -44,6 +47,7 @@ private_work:
   location: Coogee Beach
   status: scheduled
   visibility: private
+  organisation: sydney_club
   created_by: two
 
 # A private draft — must stay hidden from everyone except the creating manager
@@ -56,4 +60,5 @@ private_draft:
   location: Manly Beach
   status: draft
   visibility: private
+  organisation: sydney_club
   created_by: two

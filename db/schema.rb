@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_03_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1065,7 +1065,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_000001) do
     t.string "location"
     t.string "location_detail"
     t.bigint "location_id"
-    t.bigint "organisation_id"
+    t.bigint "organisation_id", null: false
     t.datetime "original_starts_at"
     t.jsonb "override_fields", default: {}, null: false
     t.string "recurrence_key"
@@ -1107,14 +1107,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_000001) do
     t.string "level"
     t.string "location"
     t.string "location_detail"
+    t.bigint "location_id"
     t.string "name", null: false
-    t.bigint "organisation_id"
+    t.bigint "organisation_id", null: false
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
     t.string "visibility", default: "shared", null: false
     t.index ["coach_profile_id"], name: "index_training_templates_on_coach_profile_id"
     t.index ["created_by_id"], name: "index_training_templates_on_created_by_id"
     t.index ["group_id"], name: "index_training_templates_on_group_id"
+    t.index ["location_id"], name: "index_training_templates_on_location_id"
     t.index ["name"], name: "index_training_templates_on_name"
     t.index ["organisation_id"], name: "index_training_templates_on_organisation_id"
     t.index ["status"], name: "index_training_templates_on_status"
@@ -1377,6 +1379,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_000001) do
   add_foreign_key "training_sessions", "users", column: "created_by_id"
   add_foreign_key "training_templates", "coach_profiles", on_delete: :nullify
   add_foreign_key "training_templates", "groups", on_delete: :nullify
+  add_foreign_key "training_templates", "locations"
   add_foreign_key "training_templates", "organisations", on_delete: :nullify
   add_foreign_key "training_templates", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "user_roles", "roles"
