@@ -189,17 +189,26 @@ class Api::V1::TrainingSeriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "a player cannot use the series endpoints" do
+  test "the series list is readable by players and guests for the public training filter" do
+    get "/api/v1/training_series"
+    assert_response :success
+    assert_equal 3, json["meta"]["total"]
+
     sign_in_as(@player)
     get "/api/v1/training_series"
-    assert_response :forbidden
+    assert_response :success
+    assert_equal 3, json["meta"]["total"]
+  end
+
+  test "a player cannot use the manager series endpoints" do
+    sign_in_as(@player)
 
     post_json "/api/v1/training_series/preview", training_series: payload
     assert_response :forbidden
   end
 
-  test "a guest is unauthorized" do
-    get "/api/v1/training_series"
+  test "a guest cannot use the manager series endpoints" do
+    post_json "/api/v1/training_series/preview", training_series: payload
     assert_response :unauthorized
   end
 

@@ -7,10 +7,11 @@ module Api
     # unbounded, so nothing here may assume how many tiers exist and no code may
     # branch on `organisation_type` to decide behaviour.
     #
-    # Read is gated the same way as the other people-facing catalogues (groups,
-    # players, coaches): a training manager, not any signed-in account. Opening
-    # the tree to player accounts would make this the only roster in the app they
-    # can read, which is not what "shared context" should mean here.
+    # Reading the tree is public: `index` answers signed-out visitors with every
+    # permission flag false (read-only discovery), and `nearby` serves the map.
+    # Everything else stays gated — `show` and `members` to organisation readers,
+    # and the mutating actions to their respective authorities (create is
+    # admin-only).
     class OrganisationsController < ApplicationController
       include ContentAuthorization
       include Pagination
@@ -20,8 +21,12 @@ module Api
       NEARBY_DEFAULT_LIMIT = 20
       NEARBY_MAX_LIMIT = 50
 
-      before_action :require_authentication, except: :nearby
-      before_action :require_training_manager!, except: %i[show index join leave add_created_profile_membership remove_created_profile_membership nearby]
+      # `index`, `show`, `members` and `nearby` are read-only discovery and answer
+      # anyone — `visible_memberships` narrows the roster down for callers without
+      # authority. Every other action needs a signed-in account before its own
+      # authority applies.
+      before_action :require_authentication, except: %i[index show members nearby]
+      before_action :require_training_manager!, except: %i[show index members join leave add_created_profile_membership remove_created_profile_membership nearby]
       # Loaded before the authority checks, not after: every organisation rule below
       # needs the record it is judging, and a rule that silently passed because the
       # record was nil would be the worst kind of bug here.
@@ -30,8 +35,6 @@ module Api
                               members member_candidates create_member update_member end_member join leave
                               add_created_profile_membership remove_created_profile_membership
                              approve_member reject_member]
-      before_action :require_organisation_reader!, only: :show
-      before_action :require_organisation_reader!, only: :members
       # Creating a node and moving one are claims made *to other clubs* about the
       # tree, so they stay admin-only.
       before_action :require_organisation_admin!, only: %i[create]
@@ -845,6 +848,26 @@ module Api
       # `show`) simply fall back to the per-record queries, which are correct and
       # cheap at that size.
       def serialize(organisation, child_counts: nil, membership_counts: nil)
+        # An anonymous caller of the public index holds no authority over any
+        # node: every permission flag is false so the SPA renders no controls the
+        # server would refuse. The `metadata` call keeps the same shape — counts
+        # are passed through so the list stays a fixed number of queries.
+        if Current.user.nil?
+          return organisation.metadata(
+            editable_ids: Set.new,
+            editable_all: false,
+            manage_members_ids: Set.new,
+            manage_members_all: false,
+            child_counts: child_counts,
+            membership_counts: membership_counts
+          ).merge(
+            can_edit: false,
+            can_delete: false,
+            can_manage_members: false,
+            can_approve_members: false
+          )
+        end
+
         organisation.metadata(
           editable_ids: editable_organisation_ids,
           editable_all: editable_all?,
@@ -922,14 +945,6 @@ module Api
                           .find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Organisation not found" }, status: :not_found
-      end
-
-      # A member may read the organisation they belong to from their Identity
-      # dashboard. Catalogue and management access remain training-manager only.
-      def require_organisation_reader!
-        return if OrganisationAccess.can_read?(@organisation, Current.user)
-
-        render json: { error: "Forbidden" }, status: :forbidden
       end
 
       # `status` is writable so a client can archive or restore in one call, but

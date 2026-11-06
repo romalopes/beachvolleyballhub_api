@@ -3,9 +3,11 @@ module Api
     class OrganisationLocationsController < ApplicationController
       include LocationPayloads
 
-      before_action :require_authentication
+      # Listing venues is public read-only discovery — the public detail page
+      # shows them to signed-out visitors — while attaching or changing them
+      # stays editor-gated.
+      before_action :require_authentication, except: :index
       before_action :set_organisation
-      before_action :require_reader!, only: :index
       before_action :require_editor!, except: :index
 
       def index
@@ -58,12 +60,6 @@ module Api
         @organisation = Organisation.find(params[:organisation_id])
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Organisation not found" }, status: :not_found
-      end
-
-      def require_reader!
-        return if OrganisationAccess.can_read?(@organisation, Current.user)
-
-        render json: { error: "Forbidden" }, status: :forbidden
       end
 
       def require_editor!

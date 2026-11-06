@@ -23,6 +23,7 @@ allowed_origins << "http://192.168.1.105:5174"
 allowed_origins << "http://192.168.1.6:5174"
 allowed_origins << "http://192.168.1.103:5174"
 allowed_origins << "http://192.168.1.105:5174"
+allowed_origins << "http://192.168.1.104:5174"
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do

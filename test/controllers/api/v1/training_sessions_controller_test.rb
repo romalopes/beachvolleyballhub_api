@@ -220,6 +220,18 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_includes titles, "Private Drill Design"
   end
 
+  test "index filters trainings by organisation name" do
+    @session.update!(organisation: organisations(:sydney_club))
+    training_sessions(:three).update!(organisation: organisations(:fivb))
+
+    get "/api/v1/training_sessions", params: { organisation: "beach" }
+
+    assert_response :success
+    titles = json.map { |session| session["title"] }
+    assert_includes titles, @session.title
+    assert_not_includes titles, training_sessions(:three).title
+  end
+
   test "index keeps only sessions within the requested radius" do
     near = verified_location!("Coogee Beach", latitude: -33.9205, longitude: 151.2580)
     # Inside the 25 km bounding box (0.2203° of latitude, 0.2665° of longitude)
@@ -292,7 +304,11 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
 
   # --- show ----------------------------------------------------------------
 
-  test "show returns the complete training payload" do
+  test "show returns the complete training payload to a signed-in viewer" do
+    # A signed-in viewer keeps the complete payload; the signed-out slice is
+    # pinned by "show returns the public schedule to a signed-out visitor".
+    sign_in_as(@player)
+
     get "/api/v1/training_sessions/#{@session.id}"
 
     assert_response :success
@@ -316,7 +332,31 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Transition communication", custom_focus["label"]
   end
 
+  test "show returns the public schedule to a signed-out visitor without the working data" do
+    # A signed-out visitor sees the schedule — what, when, where and the session
+    # plan — while the roster, attendance, in-session assessments and per-drill
+    # notes stay with the people running the session.
+    @session.update!(organisation: Organisation.create!(name: "Public Club", slug: "public-club"))
+
+    get "/api/v1/training_sessions/#{@session.id}"
+
+    assert_response :success
+    assert_equal @session.title, json["title"]
+    assert_equal "Public Club", json.dig("organisation", "name")
+    assert_equal @coach.id, json["created_by_id"]
+    assert json["training_focuses"].any?
+    assert json["training_session_drills"].all? { |entry| entry.key?("drill") && !entry.key?("notes") }
+    assert_not json.key?("training_session_participants")
+    assert_not json.key?("coach_profile")
+    assert_not json.key?("group")
+    assert_not json.key?("training_series")
+    assert_not json.key?("video_references")
+    assert_not json.key?("cancellation_reason")
+  end
+
   test "show exposes session-specific drill data without touching the drill" do
+    sign_in_as(@player)
+
     get "/api/v1/training_sessions/#{@session.id}"
 
     entries = json["training_session_drills"]
@@ -334,6 +374,8 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "show exposes the drill visual definition and steps" do
+    sign_in_as(@player)
+
     drill = Drill.create!(title: "Visual Drill", slug: "visual-drill-test",
                           definition: minimal_definition)
     @session.training_session_drills.create!(drill: drill, position: 9, duration_minutes: 25)

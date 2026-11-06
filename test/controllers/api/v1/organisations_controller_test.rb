@@ -145,9 +145,40 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "index requires authentication" do
+  test "index is readable by a signed-out visitor" do
+    # Public, read-only discovery: the tree is shared context, so a visitor may
+    # see it — but holds no authority over any node, and every permission flag
+    # says so rather than hinting at controls the server would refuse.
     get "/api/v1/organisations"
+
+    assert_response :success
+    assert json["data"].any? { |row| row["name"] == "Sydney Beach Volleyball Club" }
+    json["data"].each do |row|
+      assert_equal false, row["can_edit"]
+      assert_equal false, row["can_delete"]
+      assert_equal false, row["can_manage_members"]
+      assert_equal false, row["can_approve_members"]
+    end
+  end
+
+  test "show is readable by a signed-out visitor with no permission flags" do
+    get "/api/v1/organisations/#{@club.id}"
+
+    assert_response :success
+    assert_equal "Sydney Beach Volleyball Club", json["name"]
+    assert_equal false, json["can_edit"]
+    assert_equal false, json["can_delete"]
+    assert_equal false, json["can_manage_members"]
+    assert_equal false, json["can_approve_members"]
+  end
+
+  test "mutating an organisation still requires authentication" do
+    post_json "/api/v1/organisations", organisation: { name: "Ghost Club", organisation_type: "club" }
     assert_response :unauthorized
+
+    patch_json "/api/v1/organisations/#{@club.id}", organisation: { name: "Renamed" }
+    assert_response :unauthorized
+    assert_equal "Sydney Beach Volleyball Club", @club.reload.name
   end
 
   test "index is readable by a training manager, as the other catalogues are" do
@@ -1160,14 +1191,29 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     assert_empty json["data"].reject { |row| row["status"] == "ended" }
   end
 
-  test "a player who is not a training manager may not read the roster at all" do
-    # John Smith is an ordinary member of the club. Being on the roster is not what
-    # opens the organisation to you.
+  test "a player who is not a training manager sees the roster through the visibility ladder" do
+    # John Smith is an ordinary member of the club. The ladder in
+    # `visible_memberships` lets an active member see who they serve alongside —
+    # the active rows — and nothing more: invitations and history belong to the
+    # people who run the roster.
     sign_in_as(users(:five))
 
     get "/api/v1/organisations/#{@club.id}/members"
 
-    assert_response :forbidden
+    assert_response :success
+    assert json["data"].any?
+    assert_empty json["data"].reject { |row| row["status"] == "active" }
+  end
+
+  test "a signed-out visitor sees only historical roster rows" do
+    # Hiding ended memberships from the public would erase the record this
+    # feature exists to keep; the active roster and pending invitations stay
+    # with the people who can act on them.
+    get "/api/v1/organisations/#{organisations(:northern_club).id}/members"
+
+    assert_response :success
+    assert json["data"].any?
+    assert_empty json["data"].reject { |row| row["status"] == "ended" }
   end
 
   test "the owner sees the whole roster" do
@@ -1355,11 +1401,6 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     delete "/api/v1/organisations/#{@club.id}/members/0"
 
     assert_response :not_found
-  end
-
-  test "a guest may not read the roster" do
-    get "/api/v1/organisations/#{@club.id}/members"
-    assert_response :unauthorized
   end
 
   # --- authorization ---------------------------------------------------------

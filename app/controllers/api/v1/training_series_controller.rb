@@ -1,9 +1,10 @@
 module Api
   module V1
     # Recurring training series: preview, creation, browsing and occurrence
-    # listing. All actions require a training manager, matching the existing
-    # training rule; organisation/group ids are schedule metadata, not an
-    # authorization scope.
+    # listing. Every action except the series list requires a training manager,
+    # matching the existing training rule; the list is read-only discovery for
+    # the Training directory's series filter. Organisation/group ids are
+    # schedule metadata, not an authorization scope.
     #
     # Bulk operations, stopping, future edits and splitting are added in later
     # phases of the recurring-training rollout.
@@ -249,8 +250,12 @@ module Api
 
       private
 
-      # Every recurring-training action is manager-gated via Pundit.
+      # Every recurring-training action is manager-gated via Pundit, except the
+      # series list: it feeds the Training directory's series filter, so index
+      # is read-only discovery open to anyone browsing the shared schedule.
       def authorize_training_series_access!
+        return authorize(TrainingSeries, :index?) if action_name == "index"
+
         authorize TrainingSeries, :access?
       end
 

@@ -31,6 +31,16 @@ class Api::V1::OrganisationLocationsControllerTest < ActionDispatch::Integration
     assert_equal false, rows.first.fetch("default")
   end
 
+  test "a signed-out visitor lists the venues attached to an organisation" do
+    # The detail page is public read-only discovery, so its venue list is too.
+    OrganisationLocation.create!(organisation: @organisation, location: @verified)
+    get api_v1_organisation_organisation_locations_path(@organisation)
+
+    assert_response :success
+    rows = response.parsed_body.fetch("locations")
+    assert_equal [ @verified.id ], rows.map { |row| row.fetch("id") }
+  end
+
   test "an owner attaches a verified venue" do
     sign_in_as(@owner)
 
