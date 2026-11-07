@@ -86,7 +86,7 @@ jobs:
 
     steps:
       - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips chromium
 
       - name: Checkout code
         uses: actions/checkout@v6
@@ -125,7 +125,7 @@ jobs:
 
     steps:
       - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips chromium
 
       - name: Checkout code
         uses: actions/checkout@v6
@@ -149,4 +149,14 @@ jobs:
         with:
           name: screenshots
           path: ${{ github.workspace }}/tmp/screenshots
+          if-no-files-found: ignore
+
+      - name: Keep system-test HTML and image artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: system-test-artifacts
+          path: |
+            ${{ github.workspace }}/tmp/screenshots
+            ${{ github.workspace }}/tmp/capybara
           if-no-files-found: ignore
