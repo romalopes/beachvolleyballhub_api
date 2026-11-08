@@ -1,6 +1,6 @@
 # BVB Project — Tournament calendar and multiple divisions
 
-Implementation plan adapting [API issue #76](https://github.com/romalopes/beachvolleyballproject_api/issues/76) to the current repositories.
+Implementation plan adapting [API issue #76](https://github.com/romalopes/beachvolleyballhub_api/issues/76) to the current repositories.
 
 Reviewed: 7 October 2026. This is a proposed implementation plan, not an implemented feature or a verification of production deployments.
 
@@ -10,11 +10,11 @@ Reuse the existing `Organisation`, `User`, `Account`, authentication, role check
 
 Separate three concepts:
 
-| Concept | Field/model | Example |
-| --- | --- | --- |
-| Who organises the event? | `Tournament.organisation_id` → existing `Organisation` | Volleyball NSW |
-| What geographical/competitive scope is it? | `Tournament.scope` | State |
-| Which playing divisions does it offer? | Multiple `TournamentDivision` records | B, BB, BBB, A, AA, AAA, AAAA; or Division 1, 2, 3 |
+| Concept                                    | Field/model                                            | Example                                           |
+| ------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------- |
+| Who organises the event?                   | `Tournament.organisation_id` → existing `Organisation` | Volleyball NSW                                    |
+| What geographical/competitive scope is it? | `Tournament.scope`                                     | State                                             |
+| Which playing divisions does it offer?     | Multiple `TournamentDivision` records                  | B, BB, BBB, A, AA, AAA, AAAA; or Division 1, 2, 3 |
 
 **A tournament does not have one playing-level enum.** It has many divisions. The tournament scope is independent of these divisions and independent of `Organisation.organisation_type`.
 
@@ -26,58 +26,58 @@ Letter strength from lowest to highest is **B < BB < BBB < A < AA < AAA < AAAA**
 
 The default `main` branches were inspected directly, including schema, models, controllers, routes, API client, navigation and calendar code.
 
-| Repository | Reviewed commit |
-| --- | --- |
-| [API](https://github.com/romalopes/beachvolleyballproject_api) | `ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38` |
-| [React frontend](https://github.com/romalopes/beachvolleyballproject) | `054fba328750f1f447f4846cfa0121848e19fae7` |
+| Repository                                                        | Reviewed commit                            |
+| ----------------------------------------------------------------- | ------------------------------------------ |
+| [API](https://github.com/romalopes/beachvolleyballhub_api)        | `ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38` |
+| [React frontend](https://github.com/romalopes/beachvolleyballhub) | `054fba328750f1f447f4846cfa0121848e19fae7` |
 
 These commits are evidence anchors. Before implementing, compare them with the developer's current checkout and refresh the audit if code has changed.
 
-| Area | Verified state | Adaptation |
-| --- | --- | --- |
-| Tournament feature | No tournament tables, models, API routes or React pages in the inspected application code. References in comments/deletion warnings are future placeholders. | Build the tournament feature; do not invent an existing tournament migration/backfill. |
-| Backend | Rails 8.1, PostgreSQL, Rails controllers and Minitest | Follow these conventions; do not introduce a second API framework or RSpec suite. |
-| Organisation | `Organisation`, `organisations`, `/api/v1/organisations`; hierarchy, acronym, slug, logo, active/archived state and case-insensitive unique name already exist | Reuse British spelling and existing hierarchy. Do not create `Organization` or `organizations`. |
-| Organisation fields | `website_url` and `country` are absent from the reviewed organisation table | Add optional columns only if needed; extend existing forms and serialization without rewriting the entity. |
-| Organisation permissions | Catalogue is staff-gated; show is available to content managers or active members. Create/re-parent/delete are admin-only; some edits are delegated. | Do not make the existing organisation catalogue or roster public just to display an organiser. |
-| Identity | `User has_one Account`; Account owns `ContactDetail`, multiple player/coach profiles and memberships | Resolve self-service tournament identity through `Current.user.account`. No new Person dependency. |
-| Legacy identity | Person-related code and compatibility records remain in parts of the application | Do not make tournament work depend on removing all legacy Person code. |
-| Roles | Runtime predicates are `admin?`, `curator?`, `coach?`, `player?`; assignments remain on User | Use actual roles. The issue's generic “Super User” maps to the existing `admin` authority; no verified `super_user` role. |
-| Auth | Session cookie or API bearer token; `Current.user` is effective user, `Current.real_user` is authenticating user | Preserve session handling and impersonation semantics. |
-| API base | `Api::V1::ApplicationController`, including the private TestAccess gate | New controllers inherit the namespace base and preserve the gate. |
-| Serialization | Explicit Rails JSON/metadata methods; shared `Pagination` concern | Follow current response style; no separate serializer library required. |
-| Pagination | `{ data, meta: { page, per_page, total, total_pages } }`; default 20, maximum 100 | Reuse for tournament lists and implement complete calendar-page loading. |
-| Frontend | React 19, TypeScript, Vite, React Router, Vitest/Testing Library | Extend current application rather than generating another frontend. |
-| API client | `src/api.ts`, auth/error handling, private gate token, `normalizePaginatedResponse` | Add tournament methods using those helpers. |
-| Calendar | `/calendar` → `src/pages/TrainingCalendar.tsx`; month/week, custom grid, `src/utils/calendar.ts` | Preserve training calendar. Add tournament month/list views using reusable grid utilities. No calendar dependency needed initially. |
-| Navigation | Grouped `src/components/Sidebar.tsx` and routes in `src/App.tsx` | Add a tournament destination outside staff-only Community links. |
-| Media | `Video`/polymorphic `VideoReference` exists for reusable instructional/session video | Watch links have distinct live-stream/provider semantics; keep `TournamentWatchLink` rather than modifying shared Video behaviour. |
-| Player level | PlayerProfile currently has a string `level` | Do not replace or synchronize player-level fields as part of this feature. |
+| Area                     | Verified state                                                                                                                                                 | Adaptation                                                                                                                          |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Tournament feature       | No tournament tables, models, API routes or React pages in the inspected application code. References in comments/deletion warnings are future placeholders.   | Build the tournament feature; do not invent an existing tournament migration/backfill.                                              |
+| Backend                  | Rails 8.1, PostgreSQL, Rails controllers and Minitest                                                                                                          | Follow these conventions; do not introduce a second API framework or RSpec suite.                                                   |
+| Organisation             | `Organisation`, `organisations`, `/api/v1/organisations`; hierarchy, acronym, slug, logo, active/archived state and case-insensitive unique name already exist | Reuse British spelling and existing hierarchy. Do not create `Organization` or `organizations`.                                     |
+| Organisation fields      | `website_url` and `country` are absent from the reviewed organisation table                                                                                    | Add optional columns only if needed; extend existing forms and serialization without rewriting the entity.                          |
+| Organisation permissions | Catalogue is staff-gated; show is available to content managers or active members. Create/re-parent/delete are admin-only; some edits are delegated.           | Do not make the existing organisation catalogue or roster public just to display an organiser.                                      |
+| Identity                 | `User has_one Account`; Account owns `ContactDetail`, multiple player/coach profiles and memberships                                                           | Resolve self-service tournament identity through `Current.user.account`. No new Person dependency.                                  |
+| Legacy identity          | Person-related code and compatibility records remain in parts of the application                                                                               | Do not make tournament work depend on removing all legacy Person code.                                                              |
+| Roles                    | Runtime predicates are `admin?`, `curator?`, `coach?`, `player?`; assignments remain on User                                                                   | Use actual roles. The issue's generic “Super User” maps to the existing `admin` authority; no verified `super_user` role.           |
+| Auth                     | Session cookie or API bearer token; `Current.user` is effective user, `Current.real_user` is authenticating user                                               | Preserve session handling and impersonation semantics.                                                                              |
+| API base                 | `Api::V1::ApplicationController`, including the private TestAccess gate                                                                                        | New controllers inherit the namespace base and preserve the gate.                                                                   |
+| Serialization            | Explicit Rails JSON/metadata methods; shared `Pagination` concern                                                                                              | Follow current response style; no separate serializer library required.                                                             |
+| Pagination               | `{ data, meta: { page, per_page, total, total_pages } }`; default 20, maximum 100                                                                              | Reuse for tournament lists and implement complete calendar-page loading.                                                            |
+| Frontend                 | React 19, TypeScript, Vite, React Router, Vitest/Testing Library                                                                                               | Extend current application rather than generating another frontend.                                                                 |
+| API client               | `src/api.ts`, auth/error handling, private gate token, `normalizePaginatedResponse`                                                                            | Add tournament methods using those helpers.                                                                                         |
+| Calendar                 | `/calendar` → `src/pages/TrainingCalendar.tsx`; month/week, custom grid, `src/utils/calendar.ts`                                                               | Preserve training calendar. Add tournament month/list views using reusable grid utilities. No calendar dependency needed initially. |
+| Navigation               | Grouped `src/components/Sidebar.tsx` and routes in `src/App.tsx`                                                                                               | Add a tournament destination outside staff-only Community links.                                                                    |
+| Media                    | `Video`/polymorphic `VideoReference` exists for reusable instructional/session video                                                                           | Watch links have distinct live-stream/provider semantics; keep `TournamentWatchLink` rather than modifying shared Video behaviour.  |
+| Player level             | PlayerProfile currently has a string `level`                                                                                                                   | Do not replace or synchronize player-level fields as part of this feature.                                                          |
 
 Primary source examples:
 
-- [Organisation model](https://github.com/romalopes/beachvolleyballproject_api/blob/ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38/app/models/organisation.rb)
-- [Account model](https://github.com/romalopes/beachvolleyballproject_api/blob/ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38/app/models/account.rb)
-- [User model](https://github.com/romalopes/beachvolleyballproject_api/blob/ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38/app/models/user.rb)
-- [Organisation controller](https://github.com/romalopes/beachvolleyballproject_api/blob/ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38/app/controllers/api/v1/organisations_controller.rb)
-- [Schema](https://github.com/romalopes/beachvolleyballproject_api/blob/ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38/db/schema.rb)
-- [Training calendar](https://github.com/romalopes/beachvolleyballproject/blob/054fba328750f1f447f4846cfa0121848e19fae7/src/pages/TrainingCalendar.tsx)
-- [API client](https://github.com/romalopes/beachvolleyballproject/blob/054fba328750f1f447f4846cfa0121848e19fae7/src/api.ts)
+- [Organisation model](https://github.com/romalopes/beachvolleyballhub_api/blob/ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38/app/models/organisation.rb)
+- [Account model](https://github.com/romalopes/beachvolleyballhub_api/blob/ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38/app/models/account.rb)
+- [User model](https://github.com/romalopes/beachvolleyballhub_api/blob/ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38/app/models/user.rb)
+- [Organisation controller](https://github.com/romalopes/beachvolleyballhub_api/blob/ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38/app/controllers/api/v1/organisations_controller.rb)
+- [Schema](https://github.com/romalopes/beachvolleyballhub_api/blob/ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38/db/schema.rb)
+- [Training calendar](https://github.com/romalopes/beachvolleyballhub/blob/054fba328750f1f447f4846cfa0121848e19fae7/src/pages/TrainingCalendar.tsx)
+- [API client](https://github.com/romalopes/beachvolleyballhub/blob/054fba328750f1f447f4846cfa0121848e19fae7/src/api.ts)
 
 ## 3. Changes to the original issue plan
 
-| Original issue direction | Revised direction |
-| --- | --- |
-| Create an Organization model | Reuse existing Organisation and its management pages. |
-| Tournament `level = club/state/national/international/other` | Rename that concept to `scope`, reserving division/playing level for competition strength. |
-| Divisions deferred | Divisions are now a required first-release feature. |
-| User-linked participation | Use an Account-owned tournament association reached through the authenticated User, consistent with the implemented domain identity. |
-| One relationship per tournament | One relationship per Account/tournament plus zero or more selected divisions. |
-| Admin/Super User | Existing admin role, without inventing a new role. |
-| Generic calendar component | Reuse current custom grid utilities and UI patterns; preserve `/calendar`. |
-| Public organisation read | Expose a small organiser summary in public tournament responses; preserve existing organisation permissions. |
-| Starts-within-range filtering | Query all tournaments overlapping the visible range, including those starting before it. |
-| Computed status only | Keep computed temporal status; add separate persisted cancellation/archive state for real organiser changes. |
+| Original issue direction                                     | Revised direction                                                                                                                    |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Create an Organization model                                 | Reuse existing Organisation and its management pages.                                                                                |
+| Tournament `level = club/state/national/international/other` | Rename that concept to `scope`, reserving division/playing level for competition strength.                                           |
+| Divisions deferred                                           | Divisions are now a required first-release feature.                                                                                  |
+| User-linked participation                                    | Use an Account-owned tournament association reached through the authenticated User, consistent with the implemented domain identity. |
+| One relationship per tournament                              | One relationship per Account/tournament plus zero or more selected divisions.                                                        |
+| Admin/Super User                                             | Existing admin role, without inventing a new role.                                                                                   |
+| Generic calendar component                                   | Reuse current custom grid utilities and UI patterns; preserve `/calendar`.                                                           |
+| Public organisation read                                     | Expose a small organiser summary in public tournament responses; preserve existing organisation permissions.                         |
+| Starts-within-range filtering                                | Query all tournaments overlapping the visible range, including those starting before it.                                             |
+| Computed status only                                         | Keep computed temporal status; add separate persisted cancellation/archive state for real organiser changes.                         |
 
 ## 4. Scope and decisions
 
@@ -128,21 +128,21 @@ The User/Account cardinality describes the intended identity model. Handle legac
 
 ### Tournament
 
-| Column | Proposed type/rule |
-| --- | --- |
-| `name` | Required string; trimmed, bounded to 200 characters |
-| `organisation_id` | Required FK to existing organisations; restrict organiser deletion |
-| `scope` | Required string: club, state, national, international, other |
-| `division_scheme` | Required string: letter or numbered |
-| `starts_at`, `ends_at` | Required datetime instants; `ends_at > starts_at` |
-| `timezone` | Required valid IANA zone, e.g. Australia/Sydney |
-| `all_day` | Boolean, default false; explicit date-only display mode |
-| `description` | Optional text; display safely using existing conventions |
+| Column                                      | Proposed type/rule                                                         |
+| ------------------------------------------- | -------------------------------------------------------------------------- |
+| `name`                                      | Required string; trimmed, bounded to 200 characters                        |
+| `organisation_id`                           | Required FK to existing organisations; restrict organiser deletion         |
+| `scope`                                     | Required string: club, state, national, international, other               |
+| `division_scheme`                           | Required string: letter or numbered                                        |
+| `starts_at`, `ends_at`                      | Required datetime instants; `ends_at > starts_at`                          |
+| `timezone`                                  | Required valid IANA zone, e.g. Australia/Sydney                            |
+| `all_day`                                   | Boolean, default false; explicit date-only display mode                    |
+| `description`                               | Optional text; display safely using existing conventions                   |
 | `location_name`, `city`, `state`, `country` | Optional bounded strings; `state` means location state, unrelated to scope |
-| `website_url` | Optional validated HTTP/HTTPS URL |
-| `publication_state` | Required active/cancelled/archived, default active |
-| `created_by_account_id` | Required server-assigned Account FK for new records |
-| timestamps | Standard created_at/updated_at |
+| `website_url`                               | Optional validated HTTP/HTTPS URL                                          |
+| `publication_state`                         | Required active/cancelled/archived, default active                         |
+| `created_by_account_id`                     | Required server-assigned Account FK for new records                        |
+| timestamps                                  | Standard created_at/updated_at                                             |
 
 Use `ends_at`, matching existing TrainingSession naming, instead of introducing a second finish-time convention. The stricter positive-duration rule deliberately replaces the original issue's equality allowance.
 
@@ -152,13 +152,13 @@ Require at least one active division before making a newly created tournament av
 
 ### TournamentDivision
 
-| Column | Proposed type/rule |
-| --- | --- |
-| `tournament_id` | Required FK |
-| `letter_level` | Nullable string, constrained to B/BB/BBB/A/AA/AAA/AAAA |
+| Column            | Proposed type/rule                                            |
+| ----------------- | ------------------------------------------------------------- |
+| `tournament_id`   | Required FK                                                   |
+| `letter_level`    | Nullable string, constrained to B/BB/BBB/A/AA/AAA/AAAA        |
 | `division_number` | Nullable positive integer, no fixed maximum competition count |
-| `active` | Required boolean, default true |
-| timestamps | Standard |
+| `active`          | Required boolean, default true                                |
+| timestamps        | Standard                                                      |
 
 Exactly one of `letter_level` and `division_number` must be present. Enforce XOR in model and DB CHECK, including positive number/valid letter constraints. Parent scheme must match its children; validate in the mutation service under a tournament lock. Do not pretend a CHECK can reference another table.
 
@@ -171,14 +171,14 @@ Derived API fields:
 - Order by strength_order ascending, then ID. It is not a global player rating.
 
 | Letter | Strength order |
-| --- | --- |
-| AAAA | 1 |
-| AAA | 2 |
-| AA | 3 |
-| A | 4 |
-| BBB | 5 |
-| BB | 6 |
-| B | 7 |
+| ------ | -------------- |
+| AAAA   | 1              |
+| AAA    | 2              |
+| AA     | 3              |
+| A      | 4              |
+| BBB    | 5              |
+| BB     | 6              |
+| B      | 7              |
 
 Examples: an event offering B, BBB and A returns A, BBB, B; an event offering Division 1, 3 and 5 returns 1, 3, 5. Gaps are allowed. Admin can select any subset of letter levels and any set of positive division numbers.
 
@@ -186,12 +186,12 @@ Changing a scheme is allowed only when no participation exists, using an atomic 
 
 ### TournamentParticipation
 
-| Column | Proposed type/rule |
-| --- | --- |
-| `account_id` | Required FK to Account |
-| `tournament_id` | Required FK to Tournament |
-| `role` | Required string: participant, coach, spectator, volunteer, other |
-| timestamps | Standard |
+| Column          | Proposed type/rule                                               |
+| --------------- | ---------------------------------------------------------------- |
+| `account_id`    | Required FK to Account                                           |
+| `tournament_id` | Required FK to Tournament                                        |
+| `role`          | Required string: participant, coach, spectator, volunteer, other |
+| timestamps      | Standard                                                         |
 
 Unique database index `(account_id, tournament_id)`. This is an Account's self-declared relationship, not a team roster. One Account can be linked even if it has zero profiles; multiple profiles do not generate multiple participation rows.
 
@@ -251,15 +251,15 @@ Index organiser, scope, publication_state, starts_at and ends_at; add `(organisa
 
 ## 7. Permissions and API contract
 
-| Action | Guest | Signed-in Account owner | Coach/Curator | Admin |
-| --- | --- | --- | --- | --- |
-| Read non-archived tournament directory/details/divisions/watch links | Yes, subject to private gate | Yes | Yes | Yes |
-| Read own link/division selections | No | Yes | Own only | Own, plus explicit administrative use |
-| Link/update/unlink self | Sign-in action | Yes under lifecycle rules | Own only | Own only on self endpoint |
-| Create/edit tournament, divisions, watch links | No | No | No by default | Yes |
-| Cancel/archive/restore tournament | No | No | No by default | Yes |
-| Hard-delete unused tournament | No | No | No | Yes |
-| Manage organisation/roster | Existing rules | Existing rules | Existing rules | Existing rules |
+| Action                                                               | Guest                        | Signed-in Account owner   | Coach/Curator  | Admin                                 |
+| -------------------------------------------------------------------- | ---------------------------- | ------------------------- | -------------- | ------------------------------------- |
+| Read non-archived tournament directory/details/divisions/watch links | Yes, subject to private gate | Yes                       | Yes            | Yes                                   |
+| Read own link/division selections                                    | No                           | Yes                       | Own only       | Own, plus explicit administrative use |
+| Link/update/unlink self                                              | Sign-in action               | Yes under lifecycle rules | Own only       | Own only on self endpoint             |
+| Create/edit tournament, divisions, watch links                       | No                           | No                        | No by default  | Yes                                   |
+| Cancel/archive/restore tournament                                    | No                           | No                        | No by default  | Yes                                   |
+| Hard-delete unused tournament                                        | No                           | No                        | No             | Yes                                   |
+| Manage organisation/roster                                           | Existing rules               | Existing rules            | Existing rules | Existing rules                        |
 
 Use existing admin authorization behaviour based on Current.real_user for official management, and Current.user.account for self-service participation. During impersonation, admin-management acts with real administrative authority; self-linking acts for the effective Account. Record attribution and audit consistently with the actual app convention; where logging is added include both actor identities. Tests must pin these behaviours. Do not reuse content_manager? for tournament administration: it grants coaches and curators wider access than requested.
 
@@ -267,19 +267,19 @@ Future granular permission identifiers can be documented as `tournaments.manage`
 
 Proposed endpoints:
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/api/v1/tournaments` | Paginated search/window/filter/mine listing |
-| GET | `/api/v1/tournaments/options` | Scopes, schemes, ordered levels and participation roles |
-| GET | `/api/v1/tournaments/:id` | Detail, organiser summary, divisions, watch links, caller's link |
-| POST/PATCH/DELETE | `/api/v1/tournaments[/:id]` | Admin management; unused-record delete only |
-| POST | `/api/v1/tournaments/:id/cancel` | Cancel without destroying data |
-| POST | `/api/v1/tournaments/:id/archive` | Hide public record, retain history |
-| POST | `/api/v1/tournaments/:id/restore` | Admin restoration; revalidate active-divisions invariant |
-| POST/PATCH/DELETE | `/api/v1/tournaments/:id/divisions[/:division_id]` | Admin division management/deactivation |
-| POST/PATCH/DELETE | `/api/v1/tournaments/:id/watch_links[/:watch_link_id]` | Admin watch-link management |
-| POST/PATCH | `/api/v1/tournaments/:id/participation` | Idempotent self-link/update role and full selected-division set |
-| DELETE | `/api/v1/tournaments/:id/participation` | Idempotent self-unlink |
+| Method            | Path                                                   | Purpose                                                          |
+| ----------------- | ------------------------------------------------------ | ---------------------------------------------------------------- |
+| GET               | `/api/v1/tournaments`                                  | Paginated search/window/filter/mine listing                      |
+| GET               | `/api/v1/tournaments/options`                          | Scopes, schemes, ordered levels and participation roles          |
+| GET               | `/api/v1/tournaments/:id`                              | Detail, organiser summary, divisions, watch links, caller's link |
+| POST/PATCH/DELETE | `/api/v1/tournaments[/:id]`                            | Admin management; unused-record delete only                      |
+| POST              | `/api/v1/tournaments/:id/cancel`                       | Cancel without destroying data                                   |
+| POST              | `/api/v1/tournaments/:id/archive`                      | Hide public record, retain history                               |
+| POST              | `/api/v1/tournaments/:id/restore`                      | Admin restoration; revalidate active-divisions invariant         |
+| POST/PATCH/DELETE | `/api/v1/tournaments/:id/divisions[/:division_id]`     | Admin division management/deactivation                           |
+| POST/PATCH/DELETE | `/api/v1/tournaments/:id/watch_links[/:watch_link_id]` | Admin watch-link management                                      |
+| POST/PATCH        | `/api/v1/tournaments/:id/participation`                | Idempotent self-link/update role and full selected-division set  |
+| DELETE            | `/api/v1/tournaments/:id/participation`                | Idempotent self-unlink                                           |
 
 Route collection `options` before ID matching. Admin can request archived data through an admin-authorized filter or a dedicated internal query path; public callers cannot opt into it. `mine=1` requires authentication rather than returning an ambiguous guest list.
 
@@ -314,13 +314,44 @@ Illustrative detail response (all dates are examples, not a real event):
   "all_day": false,
   "publication_state": "active",
   "temporal_status": "upcoming",
-  "organisation": { "id": 4, "name": "Example Organiser", "acronym": "EO", "website_url": null },
+  "organisation": {
+    "id": 4,
+    "name": "Example Organiser",
+    "acronym": "EO",
+    "website_url": null
+  },
   "divisions": [
-    { "id": 31, "letter_level": "AAAA", "division_number": null, "label": "AAAA", "strength_order": 1, "active": true },
-    { "id": 32, "letter_level": "A", "division_number": null, "label": "A", "strength_order": 4, "active": true }
+    {
+      "id": 31,
+      "letter_level": "AAAA",
+      "division_number": null,
+      "label": "AAAA",
+      "strength_order": 1,
+      "active": true
+    },
+    {
+      "id": 32,
+      "letter_level": "A",
+      "division_number": null,
+      "label": "A",
+      "strength_order": 4,
+      "active": true
+    }
   ],
-  "watch_links": [{ "id": 8, "name": "Main court", "provider": "Official website", "url": "https://example.org/watch", "position": 0 }],
-  "my_participation": { "id": 20, "role": "participant", "tournament_division_ids": [31, 32] },
+  "watch_links": [
+    {
+      "id": 8,
+      "name": "Main court",
+      "provider": "Official website",
+      "url": "https://example.org/watch",
+      "position": 0
+    }
+  ],
+  "my_participation": {
+    "id": 20,
+    "role": "participant",
+    "tournament_division_ids": [31, 32]
+  },
   "can_manage": false,
   "can_link": true
 }
@@ -367,7 +398,7 @@ Run phases sequentially. Each prompt assumes the two existing local repositories
 Deliverable: current implementation map and resolved naming/auth decisions. No application changes yet.
 
 ```text
-Read applicable AGENTS.md files and inspect both beachvolleyballproject_api and beachvolleyballproject at their current branches. Use issue #76 and this plan as requirements. Compare with the reviewed commits ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38 and 054fba328750f1f447f4846cfa0121848e19fae7; adapt to subsequent changes.
+Read applicable AGENTS.md files and inspect both beachvolleyballhub_api and beachvolleyballhub at their current branches. Use issue #76 and this plan as requirements. Compare with the reviewed commits ce5aa1ea2711ad89f9a8652ae923b9a49c2c8f38 and 054fba328750f1f447f4846cfa0121848e19fae7; adapt to subsequent changes.
 
 Inspect schema, Organisation, Account/ContactDetail, User/roles, Current/impersonation, Api::V1::ApplicationController, Authentication, TestAccess, ContentAuthorization, Pagination, existing tests/fixtures, TrainingCalendar, calendar utilities, api.ts, App.tsx and Sidebar. Determine whether any tournament or granular-permission implementation has arrived. Read relevant existing docs as design context but treat executable code/schema as implementation evidence.
 
@@ -536,43 +567,43 @@ Acceptance: review package describes final scope accurately, rollout dependencie
 
 ## 10. Required scenarios and acceptance matrix
 
-| Scenario | Expected outcome |
-| --- | --- |
-| State event offers B, BB, BBB, A, AA, AAA, AAAA | One Tournament, seven Division rows; AAAA strongest |
-| Club event offers only B, BBB, A | Valid subset; display A, BBB, B |
-| Numbered event offers Division 1, 2, 4 | Valid; 1 strongest; no fabricated Division 3 |
-| Tournament A uses letters, Tournament B uses numbers | Independent schemes; no implied conversion |
-| Admin provides one playing level on tournament instead of child rows | API validates required division structure; no scalar playing-level field |
-| Invalid letter AAAAB or division 0/-1 | 422 with meaningful error; DB constraints reject direct invalid insert |
-| Child supplies both letter and number | XOR validation/DB rejection |
-| Duplicate division within one event | Rejected, including inactive duplicate; existing row can be reactivated |
-| Scheme changes before any link | Atomic valid replacement permitted |
-| Scheme changes after linking starts | Rejected without removing existing links |
-| Account selects two event divisions | One participation, two selection rows |
-| Account has multiple player and coach profiles | No duplicates and no automatic profile assignment |
-| Account has no volleyball profile | Self-link still works |
-| User has missing legacy Account | Clear 422; no hidden identity creation |
-| Foreign tournament division submitted | Reject all changes; no partial save; composite FK is backstop |
-| Division becomes inactive | Existing label retained; new assignment refused |
-| Final active division removed | Rejected under parent lock |
-| User chooses attendance role coach | No application Coach role granted |
-| Repeated/concurrent self-link | One Account/tournament row; no unexpected 500 |
-| User supplies another account_id | Cannot change owner or mutate another association |
-| Normal coach edits official tournament | Forbidden by default |
-| Admin impersonates player and links self | Effective Account receives link; admin-management authority remains tied to real admin |
-| Guest opens event | Safe tournament and organiser summary; no participant/roster/contact data |
-| TestAccess enabled | Guest discovery still requires test-access token |
-| Organiser archive | Existing event reference preserved; organiser not available for new assignment |
-| Delete organiser with tournament | Blocked in server and UI flags, including bulk listing |
-| Cancel future event | Notice displayed; new links blocked; existing owners can unlink |
-| Archive event | Hidden publicly; retained for admin; no link/history cascade |
-| Tournament covers entire visible month | Returned by overlap query and displayed on occupied days |
-| Window contains >100 events | All pages loaded; no silent event loss |
-| Timed event ends at midnight | No event on the exclusive final day |
-| All-day event crosses Sydney DST | Correct local date span; no 24-hour assumption |
-| Browser is in another/extreme timezone | All-day named dates preserved; timed display and timezone labels correct |
-| Search/filter finds several matching divisions | One event row; correct pagination total |
-| New feature enabled | Existing training /calendar, memberships, profile claims and auth continue working |
+| Scenario                                                             | Expected outcome                                                                       |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| State event offers B, BB, BBB, A, AA, AAA, AAAA                      | One Tournament, seven Division rows; AAAA strongest                                    |
+| Club event offers only B, BBB, A                                     | Valid subset; display A, BBB, B                                                        |
+| Numbered event offers Division 1, 2, 4                               | Valid; 1 strongest; no fabricated Division 3                                           |
+| Tournament A uses letters, Tournament B uses numbers                 | Independent schemes; no implied conversion                                             |
+| Admin provides one playing level on tournament instead of child rows | API validates required division structure; no scalar playing-level field               |
+| Invalid letter AAAAB or division 0/-1                                | 422 with meaningful error; DB constraints reject direct invalid insert                 |
+| Child supplies both letter and number                                | XOR validation/DB rejection                                                            |
+| Duplicate division within one event                                  | Rejected, including inactive duplicate; existing row can be reactivated                |
+| Scheme changes before any link                                       | Atomic valid replacement permitted                                                     |
+| Scheme changes after linking starts                                  | Rejected without removing existing links                                               |
+| Account selects two event divisions                                  | One participation, two selection rows                                                  |
+| Account has multiple player and coach profiles                       | No duplicates and no automatic profile assignment                                      |
+| Account has no volleyball profile                                    | Self-link still works                                                                  |
+| User has missing legacy Account                                      | Clear 422; no hidden identity creation                                                 |
+| Foreign tournament division submitted                                | Reject all changes; no partial save; composite FK is backstop                          |
+| Division becomes inactive                                            | Existing label retained; new assignment refused                                        |
+| Final active division removed                                        | Rejected under parent lock                                                             |
+| User chooses attendance role coach                                   | No application Coach role granted                                                      |
+| Repeated/concurrent self-link                                        | One Account/tournament row; no unexpected 500                                          |
+| User supplies another account_id                                     | Cannot change owner or mutate another association                                      |
+| Normal coach edits official tournament                               | Forbidden by default                                                                   |
+| Admin impersonates player and links self                             | Effective Account receives link; admin-management authority remains tied to real admin |
+| Guest opens event                                                    | Safe tournament and organiser summary; no participant/roster/contact data              |
+| TestAccess enabled                                                   | Guest discovery still requires test-access token                                       |
+| Organiser archive                                                    | Existing event reference preserved; organiser not available for new assignment         |
+| Delete organiser with tournament                                     | Blocked in server and UI flags, including bulk listing                                 |
+| Cancel future event                                                  | Notice displayed; new links blocked; existing owners can unlink                        |
+| Archive event                                                        | Hidden publicly; retained for admin; no link/history cascade                           |
+| Tournament covers entire visible month                               | Returned by overlap query and displayed on occupied days                               |
+| Window contains >100 events                                          | All pages loaded; no silent event loss                                                 |
+| Timed event ends at midnight                                         | No event on the exclusive final day                                                    |
+| All-day event crosses Sydney DST                                     | Correct local date span; no 24-hour assumption                                         |
+| Browser is in another/extreme timezone                               | All-day named dates preserved; timed display and timezone labels correct               |
+| Search/filter finds several matching divisions                       | One event row; correct pagination total                                                |
+| New feature enabled                                                  | Existing training /calendar, memberships, profile claims and auth continue working     |
 
 ## 11. Execution guidance
 

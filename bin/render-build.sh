@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o errexit
 
-# Render build script for beachvolleyballproject_api
+# Render build script for beachvolleyballhub_api
 # Installs dependencies, precompiles assets, and runs migrations for all databases.
 
 bundle install

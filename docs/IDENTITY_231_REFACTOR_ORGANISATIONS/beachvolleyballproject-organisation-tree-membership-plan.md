@@ -14,11 +14,11 @@ This is an implementation plan, not an implemented change. Proposed endpoints, f
 
 ## 2. Repository baseline inspected
 
-| Repository | Inspected revision | Relevant sources |
-| --- | --- | --- |
-| [Frontend](https://github.com/romalopes/beachvolleyballproject) | `16c5438` | `src/pages/Organisations.tsx`, `OrganisationDetail.tsx`, `Identity.tsx`, `PlayerDetail.tsx`, `CoachDetail.tsx`, `AccountDetail.tsx`, `src/api.ts`, `src/App.tsx` |
-| [Rails API](https://github.com/romalopes/beachvolleyballproject_api) | `78bb45b` | Organisation and membership models/controller, `ClaimSubject`, claim/invitation services, profile ownership and candidate services, `db/schema.rb` |
-| [Visual reference](https://github.com/romalopes/wine_words_front_end/blob/main/src/components/Regions.tsx) | Read from main during the previous planning pass | Separate expansion buttons, recursive indentation, linked names, compact metadata |
+| Repository                                                                                                 | Inspected revision                               | Relevant sources                                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Frontend](https://github.com/romalopes/beachvolleyballhub)                                                | `16c5438`                                        | `src/pages/Organisations.tsx`, `OrganisationDetail.tsx`, `Identity.tsx`, `PlayerDetail.tsx`, `CoachDetail.tsx`, `AccountDetail.tsx`, `src/api.ts`, `src/App.tsx` |
+| [Rails API](https://github.com/romalopes/beachvolleyballhub_api)                                           | `78bb45b`                                        | Organisation and membership models/controller, `ClaimSubject`, claim/invitation services, profile ownership and candidate services, `db/schema.rb`               |
+| [Visual reference](https://github.com/romalopes/wine_words_front_end/blob/main/src/components/Regions.tsx) | Read from main during the previous planning pass | Separate expansion buttons, recursive indentation, linked names, compact metadata                                                                                |
 
 Recheck the repositories before implementation; these are snapshots rather than a claim about future main branches.
 
@@ -49,13 +49,13 @@ Do not replace a hypothetical `person_id` reference without inspecting the actua
 
 ### Canonical member resolution
 
-| Selected subject | Membership stored against |
-| --- | --- |
-| Account | That Account |
-| PlayerProfile with no linked Account | That PlayerProfile |
-| CoachProfile with no linked Account | That CoachProfile |
-| PlayerProfile already linked to Account | Its linked Account |
-| CoachProfile already linked to Account | Its linked Account |
+| Selected subject                        | Membership stored against |
+| --------------------------------------- | ------------------------- |
+| Account                                 | That Account              |
+| PlayerProfile with no linked Account    | That PlayerProfile        |
+| CoachProfile with no linked Account     | That CoachProfile         |
+| PlayerProfile already linked to Account | Its linked Account        |
+| CoachProfile already linked to Account  | Its linked Account        |
 
 The server resolves the canonical member. Do not trust the frontend to normalize linked profiles. Recheck ownership under a lock when saving: a profile can be claimed between search and selection.
 
@@ -99,14 +99,14 @@ t.references :member, polymorphic: true, null: false
 
 For the existing database, add nullable columns, backfill, then constrain them in later migrations. Do not add `null: false` to populated rows before backfilling.
 
-| Field | Purpose |
-| --- | --- |
-| `organisation_id` | Existing organisation foreign key |
-| `member_type`, `member_id` | Canonical polymorphic member |
-| `role`, `status` | Existing organisation role and lifecycle |
-| `joined_at`, `left_at` | Existing dates; transfer must preserve them |
-| `superseded_by_id` | Nullable self-FK identifying a consolidated membership |
-| `created_by_account_id` | Optional actor attribution for new writes, if not already available |
+| Field                      | Purpose                                                             |
+| -------------------------- | ------------------------------------------------------------------- |
+| `organisation_id`          | Existing organisation foreign key                                   |
+| `member_type`, `member_id` | Canonical polymorphic member                                        |
+| `role`, `status`           | Existing organisation role and lifecycle                            |
+| `joined_at`, `left_at`     | Existing dates; transfer must preserve them                         |
+| `superseded_by_id`         | Nullable self-FK identifying a consolidated membership              |
+| `created_by_account_id`    | Optional actor attribution for new writes, if not already available |
 
 Add:
 
@@ -178,19 +178,19 @@ Concurrent inserts must be guarded by unique indexes and bounded retry/re-read l
 
 ### Duplicate and conflict rules
 
-| Situation | Recommended result |
-| --- | --- |
+| Situation                                                                    | Recommended result                                                                     |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | No Account membership for that organisation; source is ordinary member/coach | Repoint source to Account, retain role/status/dates, record original profile in ledger |
-| Compatible Account membership already exists | Keep the Account membership canonical; mark source superseded; preserve both histories |
-| Account active; source pending or ended | Keep Account active without overwriting its dates; retain source history |
-| Account active; source active with same ordinary role | Consolidate without creating another member; retain source interval in ledger |
-| Account pending/ended; source active | Flag for review; do not silently approve/reactivate Account membership |
-| Account suspended; source active | Flag for review; never bypass suspension |
-| Different roles or conflicting dates/status | Flag for review; keep Account's current effective record |
-| Unexpected source owner/administrator role | Flag for review; never transfer management privileges automatically |
-| Only historical source membership exists | Transfer as ended; it grants no current access |
-| Same profile linked again to the same Account | Idempotent no-op or completion of an unfinished transfer |
-| Profile linked to another Account | Reject through existing ownership rules; no transfer |
+| Compatible Account membership already exists                                 | Keep the Account membership canonical; mark source superseded; preserve both histories |
+| Account active; source pending or ended                                      | Keep Account active without overwriting its dates; retain source history               |
+| Account active; source active with same ordinary role                        | Consolidate without creating another member; retain source interval in ledger          |
+| Account pending/ended; source active                                         | Flag for review; do not silently approve/reactivate Account membership                 |
+| Account suspended; source active                                             | Flag for review; never bypass suspension                                               |
+| Different roles or conflicting dates/status                                  | Flag for review; keep Account's current effective record                               |
+| Unexpected source owner/administrator role                                   | Flag for review; never transfer management privileges automatically                    |
+| Only historical source membership exists                                     | Transfer as ended; it grants no current access                                         |
+| Same profile linked again to the same Account                                | Idempotent no-op or completion of an unfinished transfer                               |
+| Profile linked to another Account                                            | Reject through existing ownership rules; no transfer                                   |
 
 Do not use “highest role wins” or a universal status ranking. Do not invent a continuous membership interval by combining the earliest join date and latest leave date across gaps. Preserve the original episodes in audit/history even if the canonical record remains one row.
 
@@ -259,13 +259,13 @@ Rename the existing `OrganisationDetail.tsx` and update imports; preserve the ro
 
 Header: logo/acronym, name, type/status, parent or accessible breadcrumb, Back to organisations, and the appropriate Joined / Request pending / Join / Request membership action. For users without catalogue access, provide Back to Identity instead.
 
-| Tab | Content |
-| --- | --- |
-| Overview | Existing description, acronym, type, status, parent, permitted summary counts, join policy |
-| Members | Mixed subject roster, type badges, links, role/status filters, general member search and permitted management |
-| Sub-organisations | Immediate children and their detail links, with access-aware loading |
-| Requests | Pending join requests and membership-transfer conflicts for authorised reviewers |
-| Management | Existing edit/logo/archive/restore/delete controls and authorised join-policy editing |
+| Tab               | Content                                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| Overview          | Existing description, acronym, type, status, parent, permitted summary counts, join policy                    |
+| Members           | Mixed subject roster, type badges, links, role/status filters, general member search and permitted management |
+| Sub-organisations | Immediate children and their detail links, with access-aware loading                                          |
+| Requests          | Pending join requests and membership-transfer conflicts for authorised reviewers                              |
+| Management        | Existing edit/logo/archive/restore/delete controls and authorised join-policy editing                         |
 
 Persist selected tab as `?tab=members`. Validate tab values and avoid exposing restricted tab contents through query manipulation.
 
@@ -306,25 +306,25 @@ Do not make the full management catalogue public simply to implement self-servic
 
 Preserve existing organisation routes where practical. Proposed additions/changes:
 
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /organisations?tree=1` | Existing manager catalogue, with explicit status-filter semantics |
-| `GET /organisations/discover` | Minimal authenticated organisation discovery for self-service |
-| `GET /organisations/:id` | Existing detail, extended capabilities and caller's membership/request summary |
-| `GET /organisations/:id/children` | Scoped, paginated immediate children |
-| `GET /organisations/:id/members` | Polymorphic roster, scoped and preferably paginated |
-| `GET /organisations/:id/member_candidates` | General member search for permitted roster managers |
-| `POST /organisations/:id/members` | Create/canonicalize selected subject under staff permission |
-| `PATCH /organisations/:id/members/:membership_id` | Update permitted role/status |
-| `DELETE /organisations/:id/members/:membership_id` | Existing end/withdraw semantics, not blanket hard deletion |
-| `POST /organisations/:id/join` | Open-policy self join as ordinary member |
-| `POST /organisations/:id/membership_requests` | Approval-required self request |
-| `GET /me/organisation_membership_requests` | Current Account's request history |
-| `POST /organisation_membership_requests/:id/cancel` | Requester's pending-request cancellation |
-| `GET /organisations/:id/membership_requests` | Authorised review queue |
-| `POST /organisation_membership_requests/:id/approve` | Authorised approval and membership creation/reactivation |
-| `POST /organisation_membership_requests/:id/reject` | Authorised rejection with reason |
-| `POST /organisation_membership_transfers/:id/resolve` | Authorised conflict resolution with recorded decision |
+| Endpoint                                              | Purpose                                                                        |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `GET /organisations?tree=1`                           | Existing manager catalogue, with explicit status-filter semantics              |
+| `GET /organisations/discover`                         | Minimal authenticated organisation discovery for self-service                  |
+| `GET /organisations/:id`                              | Existing detail, extended capabilities and caller's membership/request summary |
+| `GET /organisations/:id/children`                     | Scoped, paginated immediate children                                           |
+| `GET /organisations/:id/members`                      | Polymorphic roster, scoped and preferably paginated                            |
+| `GET /organisations/:id/member_candidates`            | General member search for permitted roster managers                            |
+| `POST /organisations/:id/members`                     | Create/canonicalize selected subject under staff permission                    |
+| `PATCH /organisations/:id/members/:membership_id`     | Update permitted role/status                                                   |
+| `DELETE /organisations/:id/members/:membership_id`    | Existing end/withdraw semantics, not blanket hard deletion                     |
+| `POST /organisations/:id/join`                        | Open-policy self join as ordinary member                                       |
+| `POST /organisations/:id/membership_requests`         | Approval-required self request                                                 |
+| `GET /me/organisation_membership_requests`            | Current Account's request history                                              |
+| `POST /organisation_membership_requests/:id/cancel`   | Requester's pending-request cancellation                                       |
+| `GET /organisations/:id/membership_requests`          | Authorised review queue                                                        |
+| `POST /organisation_membership_requests/:id/approve`  | Authorised approval and membership creation/reactivation                       |
+| `POST /organisation_membership_requests/:id/reject`   | Authorised rejection with reason                                               |
+| `POST /organisation_membership_transfers/:id/resolve` | Authorised conflict resolution with recorded decision                          |
 
 All paths are under `/api/v1`. Final naming should follow project conventions. Define collection routes before ID routes where needed. Existing member routes use account identifiers; introduce distinct versioned/explicit routes or a coordinated migration. Never reinterpret an old account ID path silently as a membership ID.
 
@@ -384,7 +384,7 @@ Run phases in order. Each prompt assumes the previous phase has passed its relev
 ### Phase 0 — Audit and agree contracts
 
 ```text
-Inspect romalopes/beachvolleyballproject and beachvolleyballproject_api.
+Inspect romalopes/beachvolleyballhub and beachvolleyballhub_api.
 Read current organisation models/controllers/routes/schema, frontend API types,
 Organisations, OrganisationDetail, Identity, Player/Coach/Account pages,
 ClaimSubject, PlayerClaimService, ClaimInvitationService, and profile merge paths.
@@ -530,25 +530,25 @@ remove compatibility columns/routes until discrepancy reports and callers permit
 
 ## 13. Acceptance scenarios
 
-| Scenario | Expected result |
-| --- | --- |
-| Manager expands a federation | Its children appear; name click navigates independently |
-| Active child has archived parent hidden by filter | Child remains visible with available parent context |
-| Manager adds unclaimed player or coach | Profile appears as a provisional member with its type |
-| Manager selects a linked profile | Backend stores Account membership and explains normalization |
-| Account claims player in Club A and coach in Club B | Both organisation memberships belong to Account; both profiles remain |
-| Two claimed profiles belong to the same organisation | One effective Account member; source history survives |
-| Target Account is suspended in organisation | Claim does not unsuspend it; transfer requires review |
-| Profile only has ended membership | History transfers; no active membership is granted |
-| Transfer write fails | Claim/linking and all membership writes roll back together |
-| Business transfer conflict is recorded | Claim may finish; unresolved profile membership grants no access |
-| Retry or simultaneous linking/addition | No duplicate effective membership or audit operation |
-| Identity user joins open organisation | Own Account becomes ordinary member subject to existing-state rules |
-| Identity user requests approval-required organisation | Pending request; no active membership until authorised approval |
-| Ordinary user views own organisation | Overview available when allowed; restricted roster explained clearly |
+| Scenario                                               | Expected result                                                          |
+| ------------------------------------------------------ | ------------------------------------------------------------------------ |
+| Manager expands a federation                           | Its children appear; name click navigates independently                  |
+| Active child has archived parent hidden by filter      | Child remains visible with available parent context                      |
+| Manager adds unclaimed player or coach                 | Profile appears as a provisional member with its type                    |
+| Manager selects a linked profile                       | Backend stores Account membership and explains normalization             |
+| Account claims player in Club A and coach in Club B    | Both organisation memberships belong to Account; both profiles remain    |
+| Two claimed profiles belong to the same organisation   | One effective Account member; source history survives                    |
+| Target Account is suspended in organisation            | Claim does not unsuspend it; transfer requires review                    |
+| Profile only has ended membership                      | History transfers; no active membership is granted                       |
+| Transfer write fails                                   | Claim/linking and all membership writes roll back together               |
+| Business transfer conflict is recorded                 | Claim may finish; unresolved profile membership grants no access         |
+| Retry or simultaneous linking/addition                 | No duplicate effective membership or audit operation                     |
+| Identity user joins open organisation                  | Own Account becomes ordinary member subject to existing-state rules      |
+| Identity user requests approval-required organisation  | Pending request; no active membership until authorised approval          |
+| Ordinary user views own organisation                   | Overview available when allowed; restricted roster explained clearly     |
 | User searches another person's private profile/account | Scoped search and direct-write authorization prevent disclosure/addition |
-| Player/Coach/Account detail opens | Permitted organisation links show direct/effective origin and status |
-| Source profile is merged or archived | Membership provenance and conflicts remain resolvable |
+| Player/Coach/Account detail opens                      | Permitted organisation links show direct/effective origin and status     |
+| Source profile is merged or archived                   | Membership provenance and conflicts remain resolvable                    |
 
 ## 14. Completion criteria
 

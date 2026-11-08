@@ -8,13 +8,13 @@ The frontend also runs on Cloudflare Workers alongside Vercel: [Cloudflare front
 
 ## 1. Proposed architecture
 
-| Public hostname | Responsibility | Service |
-|---|---|---|
-| `beachvolleyballhub.com` | Main React website | Vercel |
-| `beachvolleyballhub.romalopes.workers.dev` | Existing React frontend | Cloudflare Workers |
-| `www.beachvolleyballhub.com` | Redirect to main website | Vercel |
-| `api.beachvolleyballhub.com` | Rails JSON API | Render |
-| `mail.beachvolleyballhub.com` (optional) | Dedicated email sending subdomain | Resend **or** Brevo |
+| Public hostname                            | Responsibility                               | Service                     |
+| ------------------------------------------ | -------------------------------------------- | --------------------------- |
+| `beachvolleyballhub.com`                   | Main React website                           | Vercel                      |
+| `beachvolleyballhub.romalopes.workers.dev` | Existing React frontend                      | Cloudflare Workers          |
+| `www.beachvolleyballhub.com`               | Redirect to main website                     | Vercel                      |
+| `api.beachvolleyballhub.com`               | Rails JSON API                               | Render                      |
+| `mail.beachvolleyballhub.com` (optional)   | Dedicated email sending subdomain            | Resend **or** Brevo         |
 | `assets.beachvolleyballhub.com` (optional) | Public assets, only if explicitly configured | Cloudflare R2 custom domain |
 
 Cloudflare manages the DNS records; it does **not** have to host the React frontend or Rails API. R2 is storage and should not be confused with the PostgreSQL database (Neon or Supabase).
@@ -31,29 +31,29 @@ Cloudflare Registrar/DNS → authoritative DNS for all hostnames
 
 ## 2. Useful links
 
-| Purpose | Link |
-|---|---|
-| Cloudflare dashboard | https://dash.cloudflare.com/ |
-| Cloudflare Registrar | https://www.cloudflare.com/products/registrar/ |
-| Cloudflare DNS documentation | https://developers.cloudflare.com/dns/ |
-| Cloudflare R2 | https://dash.cloudflare.com/ (select account → R2) |
-| Vercel dashboard | https://vercel.com/dashboard |
-| Vercel custom domains | https://vercel.com/docs/domains/set-up-custom-domain |
-| Render dashboard | https://dashboard.render.com/ |
-| Render custom domains | https://render.com/docs/custom-domains |
-| Render Cloudflare DNS | https://render.com/docs/configure-cloudflare-dns |
-| Resend dashboard | https://resend.com/overview |
-| Resend domains | https://resend.com/domains |
-| Resend domain documentation | https://resend.com/docs/dashboard/domains/introduction |
-| Resend Rails integration | https://resend.com/docs/send-with-rails |
-| Resend email API | https://resend.com/docs/api-reference/emails/send-email |
-| Brevo dashboard | https://app.brevo.com/ |
-| Brevo domain authentication | https://help.brevo.com/hc/en-us/articles/12163873383186-Authenticate-your-domain-with-Brevo-Brevo-code-DKIM-DMARC |
-| Brevo API docs | https://developers.brevo.com/docs/send-a-transactional-email |
-| Brevo domain setup | https://help.brevo.com/hc/en-us/articles/35337929909778-Set-up-your-domain-in-Brevo |
-| BVP frontend repository | https://github.com/romalopes/beachvolleyballproject |
-| BVP Rails API repository | https://github.com/romalopes/beachvolleyballproject_api |
-| Existing BVP dev API | https://beachvolleyballproject-dev.onrender.com |
+| Purpose                      | Link                                                                                                              |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Cloudflare dashboard         | https://dash.cloudflare.com/                                                                                      |
+| Cloudflare Registrar         | https://www.cloudflare.com/products/registrar/                                                                    |
+| Cloudflare DNS documentation | https://developers.cloudflare.com/dns/                                                                            |
+| Cloudflare R2                | https://dash.cloudflare.com/ (select account → R2)                                                                |
+| Vercel dashboard             | https://vercel.com/dashboard                                                                                      |
+| Vercel custom domains        | https://vercel.com/docs/domains/set-up-custom-domain                                                              |
+| Render dashboard             | https://dashboard.render.com/                                                                                     |
+| Render custom domains        | https://render.com/docs/custom-domains                                                                            |
+| Render Cloudflare DNS        | https://render.com/docs/configure-cloudflare-dns                                                                  |
+| Resend dashboard             | https://resend.com/overview                                                                                       |
+| Resend domains               | https://resend.com/domains                                                                                        |
+| Resend domain documentation  | https://resend.com/docs/dashboard/domains/introduction                                                            |
+| Resend Rails integration     | https://resend.com/docs/send-with-rails                                                                           |
+| Resend email API             | https://resend.com/docs/api-reference/emails/send-email                                                           |
+| Brevo dashboard              | https://app.brevo.com/                                                                                            |
+| Brevo domain authentication  | https://help.brevo.com/hc/en-us/articles/12163873383186-Authenticate-your-domain-with-Brevo-Brevo-code-DKIM-DMARC |
+| Brevo API docs               | https://developers.brevo.com/docs/send-a-transactional-email                                                      |
+| Brevo domain setup           | https://help.brevo.com/hc/en-us/articles/35337929909778-Set-up-your-domain-in-Brevo                               |
+| BVP frontend repository      | https://github.com/romalopes/beachvolleyballhub                                                                   |
+| BVP Rails API repository     | https://github.com/romalopes/beachvolleyballhub_api                                                               |
+| Existing BVP dev API         | https://beachvolleyballhub-dev.onrender.com                                                                       |
 
 ## 3. Phase 1 — Register domain with Cloudflare
 
@@ -72,10 +72,10 @@ Cloudflare Registrar/DNS → authoritative DNS for all hostnames
 
 Example only (Vercel may show project-specific values):
 
-| Type | Name | Target | Proxy |
-|---|---|---|---|
-| A | `@` | `76.76.21.21` (only if Vercel confirms) | DNS only initially |
-| CNAME | `www` | Vercel-supplied CNAME | DNS only initially |
+| Type  | Name  | Target                                  | Proxy              |
+| ----- | ----- | --------------------------------------- | ------------------ |
+| A     | `@`   | `76.76.21.21` (only if Vercel confirms) | DNS only initially |
+| CNAME | `www` | Vercel-supplied CNAME                   | DNS only initially |
 
 Wait for Vercel to confirm DNS verification and issue its HTTPS certificate. Keep the old `*.vercel.app` deployment for troubleshooting.
 
@@ -85,12 +85,12 @@ Wait for Vercel to confirm DNS verification and issue its HTTPS certificate. Kee
 2. Under **Settings → Custom Domains**, add `api.beachvolleyballhub.com`.
 3. Add the DNS record in Cloudflare:
 
-| Type | Name | Target | Proxy |
-|---|---|---|---|
+| Type  | Name  | Target                                        | Proxy                                             |
+| ----- | ----- | --------------------------------------------- | ------------------------------------------------- |
 | CNAME | `api` | **Your production** `*.onrender.com` hostname | **DNS only** until Render verifies and issues SSL |
 
 4. Return to Render and verify the domain and TLS certificate. Cloudflare proxying can be considered later but is not necessary.
-5. Keep the original `onrender.com` hostname as a fallback. Do not confuse it with the existing `beachvolleyballproject-dev.onrender.com` dev service.
+5. Keep the original `onrender.com` hostname as a fallback. Do not confuse it with the existing `beachvolleyballhub-dev.onrender.com` dev service.
 
 ## 6. Phase 4 — Update application configuration
 
@@ -132,7 +132,7 @@ Verify host authorization if enabled, default URL options for mailers, redirects
 FRONTEND_URL=https://beachvolleyballhub.com
 API_BASE_URL=https://api.beachvolleyballhub.com
 APP_HOST=api.beachvolleyballhub.com
-ALLOWED_HOSTS=api.beachvolleyballhub.com,beachvolleyballproject-dev.onrender.com
+ALLOWED_HOSTS=api.beachvolleyballhub.com,beachvolleyballhub-dev.onrender.com
 ```
 
 `ALLOWED_HOSTS` is a comma-separated Rails Host Authorization allowlist. Keep the Render default hostname while Render health checks use it, and include the custom API hostname once it is configured. These are illustrative names; check the actual app code and existing environment variables. Configure Google OAuth and other third-party callback/origin allowlists to match the actual auth flow. Keep secrets only in Render environment settings.
@@ -190,14 +190,14 @@ Again, these names are examples and must match the Rails implementation. Referen
 
 ## 8. Phase 6 — Cloudflare DNS inventory (illustrative)
 
-| Record | Host | Destination / value | Purpose |
-|---|---|---|---|
-| A | `@` | Value supplied by Vercel | Main frontend |
-| CNAME | `www` | Value supplied by Vercel | Website alias |
-| CNAME | `api` | Production Render hostname | Rails API |
-| TXT/CNAME/MX | Provider-defined mail hostnames | Exact Resend **or** Brevo values | Email authentication / return path |
-| TXT | `_dmarc.mail` or provider-required hostname | Carefully chosen DMARC policy | Sending-domain protection |
-| CNAME | `assets` (optional) | R2-provided target after custom-domain setup | Public R2 assets |
+| Record       | Host                                        | Destination / value                          | Purpose                            |
+| ------------ | ------------------------------------------- | -------------------------------------------- | ---------------------------------- |
+| A            | `@`                                         | Value supplied by Vercel                     | Main frontend                      |
+| CNAME        | `www`                                       | Value supplied by Vercel                     | Website alias                      |
+| CNAME        | `api`                                       | Production Render hostname                   | Rails API                          |
+| TXT/CNAME/MX | Provider-defined mail hostnames             | Exact Resend **or** Brevo values             | Email authentication / return path |
+| TXT          | `_dmarc.mail` or provider-required hostname | Carefully chosen DMARC policy                | Sending-domain protection          |
+| CNAME        | `assets` (optional)                         | R2-provided target after custom-domain setup | Public R2 assets                   |
 
 Do not add the optional R2 hostname until your application needs it and Cloudflare R2 has explicitly provided the custom-domain configuration. Avoid exposing private objects publicly.
 
@@ -237,7 +237,7 @@ Check DKIM selector records by their **actual provider-supplied names**; the exa
 
 ## 11. Troubleshooting
 
-- **Vercel domain pending:** confirm records match Vercel's *project-specific* instructions; remove conflicting apex A/AAAA records.
+- **Vercel domain pending:** confirm records match Vercel's _project-specific_ instructions; remove conflicting apex A/AAAA records.
 - **Render TLS pending:** keep the `api` CNAME DNS-only while Render verifies it.
 - **Browser reports CORS + 502:** investigate Render availability/memory/restarts first; a gateway failure may omit CORS headers, making CORS look like the root cause.
 - **Frontend still calls old API:** redeploy after changing Vite variables; inspect the built JavaScript and network tab.

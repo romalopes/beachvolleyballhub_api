@@ -12,7 +12,7 @@ require_relative "../lib/resend_delivery"
 require_relative "../lib/mail_transport"
 require_relative "../lib/mail_sender"
 
-module BeachvolleyballprojectApi
+module BeachvolleyballhubApi
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
@@ -34,7 +34,7 @@ module BeachvolleyballprojectApi
     # /api/v1/health/detailed. Kept on the Application config object so it is
     # always present at request time, independent of initializer/eager-load
     # ordering. The React app mirrors this in
-    # beachvolleyballproject/src/constants/versions.ts (APP_VERSION) and the
+    # beachvolleyballhub/src/constants/versions.ts (APP_VERSION) and the
     # "Backend Version Matches APP_VERSION" health check flags drift.
     config.health_version = ENV["APP_VERSION"].presence || "0.0.22"
 

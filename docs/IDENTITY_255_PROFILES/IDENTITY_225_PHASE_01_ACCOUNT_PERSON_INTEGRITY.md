@@ -32,4 +32,4 @@ Migration tests for null backfill, rerun behavior, invalid rows, and uniqueness;
 
 ## Implementation record
 
-Added `20261006100001_enforce_person_on_accounts`. It backfills only null Account links from User name/email, aborts if any null link remains, and then applies `NOT NULL`. Rollback relaxes the constraint but retains generated People. The Account association is now required in the model. The migration applied successfully to `beachvolleyballproject_test`; no representative null-Account fixture was present in the rehearsal evidence.
+Added `20261006100001_enforce_person_on_accounts`. It backfills only null Account links from User name/email, aborts if any null link remains, and then applies `NOT NULL`. Rollback relaxes the constraint but retains generated People. The Account association is now required in the model. The migration applied successfully to `beachvolleyballhub_test`; no representative null-Account fixture was present in the rehearsal evidence.

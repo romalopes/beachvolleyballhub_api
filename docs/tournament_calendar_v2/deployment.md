@@ -6,13 +6,13 @@ Companion docs: [README](./README.md) · [api_contract](./api_contract.md) · [d
 
 ## 1. Release topology (as inspected in the workspace)
 
-| Component | Provider | Evidence |
-| --- | --- | --- |
-| Rails API | Render (`beachvolleyballhub_api`, Ruby 3.4.2, Rails 8.1, PostgreSQL) | `Dockerfile`, no `render.yaml` in-repo — service is configured in the Render dashboard; env vars via Render environment groups |
-| PostgreSQL | Render-managed Postgres (backups mirrored to Cloudflare R2 by GitHub Actions) | `.github/workflows/database_backup.yml`, `database_restore_test.yml`, `database_backup_freshness.yml` |
-| Frontend SPA | Cloudflare Workers (`beachvolleyballhub.romalopes.workers.dev`, previews `*-beachvolleyballhub.romalopes.workers.dev`) | `config/initializers/cors.rb` allow-list |
-| Frontend runtime config | `VITE_API_BASE_URL` (absolute `https://…/api/v1` in deployed builds; empty default `/api/v1` for the dev proxy) | `src/api.ts:6`, `vite.config.ts` proxy |
-| Monitoring | Sentry (DSN present in both repos' env) | `VITE_SENTRY_DSN`, `SENTRY_DSN` in dotenv |
+| Component               | Provider                                                                                                               | Evidence                                                                                                                       |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Rails API               | Render (`beachvolleyballhub_api`, Ruby 3.4.2, Rails 8.1, PostgreSQL)                                                   | `Dockerfile`, no `render.yaml` in-repo — service is configured in the Render dashboard; env vars via Render environment groups |
+| PostgreSQL              | Render-managed Postgres (backups mirrored to Cloudflare R2 by GitHub Actions)                                          | `.github/workflows/database_backup.yml`, `database_restore_test.yml`, `database_backup_freshness.yml`                          |
+| Frontend SPA            | Cloudflare Workers (`beachvolleyballhub.romalopes.workers.dev`, previews `*-beachvolleyballhub.romalopes.workers.dev`) | `config/initializers/cors.rb` allow-list                                                                                       |
+| Frontend runtime config | `VITE_API_BASE_URL` (absolute `https://…/api/v1` in deployed builds; empty default `/api/v1` for the dev proxy)        | `src/api.ts:6`, `vite.config.ts` proxy                                                                                         |
+| Monitoring              | Sentry (DSN present in both repos' env)                                                                                | `VITE_SENTRY_DSN`, `SENTRY_DSN` in dotenv                                                                                      |
 
 A legacy `vercel.json` (SPA rewrite) remains in the frontend repo but the configured CORS surfaces are Cloudflare Workers domains; treat Cloudflare as canonical.
 
@@ -42,9 +42,9 @@ bin/rails db:migrate:status   # confirm "up"
 
 Mandatory pre-deploy backup per [DATABASE_BACKUP_AND_RESTORE](../DATABASE_BACKUP_AND_RESTORE.md):
 
-1. Run **Database Backup** (GitHub Actions → [database_backup.yml](https://github.com/romalopes/beachvolleyballproject_api/actions/workflows/database_backup.yml)) against the production provider.
+1. Run **Database Backup** (GitHub Actions → [database_backup.yml](https://github.com/romalopes/beachvolleyballhub_api/actions/workflows/database_backup.yml)) against the production provider.
 2. Verify in R2: dump + checksum + metadata sidecars present, nonzero sizes.
-3. Optionally run **Database Restore Test** ([database_restore_test.yml](https://github.com/romalopes/beachvolleyballproject_api/actions/workflows/database_restore_test.yml)) if the last verified restore is older than 7 days.
+3. Optionally run **Database Restore Test** ([database_restore_test.yml](https://github.com/romalopes/beachvolleyballhub_api/actions/workflows/database_restore_test.yml)) if the last verified restore is older than 7 days.
 4. Record the backup run URL in the release checklist below. **Do not proceed without a restorable backup.**
 
 ## 4. Deploy sequence
@@ -56,23 +56,23 @@ Mandatory pre-deploy backup per [DATABASE_BACKUP_AND_RESTORE](../DATABASE_BACKUP
 
 ## 5. Post-deploy smoke tests (execute in order, note results in the release record)
 
-| # | Flow | How |
-| --- | --- | --- |
-| 1 | API health | `GET /api/v1/health` (or configured health endpoint) returns 200 from Render |
-| 2 | Migration status | one-off `bin/rails db:migrate:status` → `up 20261009000003` |
-| 3 | Guest directory | open `/tournaments` in the deployed SPA as signed-out user; empty directory renders without console errors |
-| 4 | Admin create | admin creates a tournament via `/admin/tournaments`, adds a division + watch link, publishes |
-| 5 | Participation | a signed-in member self-links via tournament detail and sees it in `/my-tournaments` |
-| 6 | Timezone | create a tournament in a non-UTC timezone; verify the calendar groups it on the correct local day |
-| 7 | Regression: training calendar | open `/calendar`, switch months, confirm sessions still render |
-| 8 | CORS/network | devtools: no CORS or mixed-content errors; requests hit the Render domain |
+| #   | Flow                          | How                                                                                                        |
+| --- | ----------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 1   | API health                    | `GET /api/v1/health` (or configured health endpoint) returns 200 from Render                               |
+| 2   | Migration status              | one-off `bin/rails db:migrate:status` → `up 20261009000003`                                                |
+| 3   | Guest directory               | open `/tournaments` in the deployed SPA as signed-out user; empty directory renders without console errors |
+| 4   | Admin create                  | admin creates a tournament via `/admin/tournaments`, adds a division + watch link, publishes               |
+| 5   | Participation                 | a signed-in member self-links via tournament detail and sees it in `/my-tournaments`                       |
+| 6   | Timezone                      | create a tournament in a non-UTC timezone; verify the calendar groups it on the correct local day          |
+| 7   | Regression: training calendar | open `/calendar`, switch months, confirm sessions still render                                             |
+| 8   | CORS/network                  | devtools: no CORS or mixed-content errors; requests hit the Render domain                                  |
 
 ## 6. Monitoring
 
 - **Errors:** Sentry (API `SENTRY_DSN`, frontend `VITE_SENTRY_DSN`). Watch the first 24 h for new issues tagged with tournament controllers/services.
 - **Logs:** Render log drain — grep for `TournamentsController`, `Tournament*Service`, `ActiveModel::UnknownAttributeError`, `ArgumentError`.
 - **Memory/render checks:** Render metrics dashboard (response time p95, memory); tournament queries are paginated (`per_page` default 25, capped by `TournamentQuery`).
-- **Backup freshness:** scheduled [database_backup_freshness.yml](https://github.com/romalopes/beachvolleyballproject_api/actions/workflows/database_backup_freshness.yml) must stay green post-release.
+- **Backup freshness:** scheduled [database_backup_freshness.yml](https://github.com/romalopes/beachvolleyballhub_api/actions/workflows/database_backup_freshness.yml) must stay green post-release.
 
 ## 7. Rollback
 
@@ -89,22 +89,22 @@ Ordered from least to most invasive; **never** roll back the destructive-free sc
 
 ## 9. Operational ownership
 
-| Concern | Owner | Where |
-| --- | --- | --- |
-| Render service + env vars | Romalopes (repo admin) | Render dashboard |
-| Migrations | Whoever deploys; verify with `db:migrate:status` | §2 |
-| Backups/restore | Repo admin + GitHub Actions secrets owner | `DATABASE_BACKUP_AND_RESTORE.md` |
-| DNS/Workers | Cloudflare account owner | CORS allow-list sync |
-| Content go-live | Organisation admins (publish tournaments) | `/admin/tournaments` |
+| Concern                   | Owner                                            | Where                            |
+| ------------------------- | ------------------------------------------------ | -------------------------------- |
+| Render service + env vars | Romalopes (repo admin)                           | Render dashboard                 |
+| Migrations                | Whoever deploys; verify with `db:migrate:status` | §2                               |
+| Backups/restore           | Repo admin + GitHub Actions secrets owner        | `DATABASE_BACKUP_AND_RESTORE.md` |
+| DNS/Workers               | Cloudflare account owner                         | CORS allow-list sync             |
+| Content go-live           | Organisation admins (publish tournaments)        | `/admin/tournaments`             |
 
 ## 10. Release decision checklist
 
 - [ ] CI green on `main` for both repos (API workflow; frontend gates run locally)
 - [ ] Tournament migration verified `up` in staging-equivalent (or verified additive review)
-- [ ] Pre-deploy backup run, verified in R2, run URL recorded: ____________
+- [ ] Pre-deploy backup run, verified in R2, run URL recorded: ****\_\_\_\_****
 - [ ] `CORS_ORIGINS`/`FRONTEND_URL` includes the deployed frontend origin
 - [ ] Deploy API → smoke tests 1–2 pass
 - [ ] Deploy frontend with correct `VITE_API_BASE_URL` → smoke tests 3–8 pass
 - [ ] Sentry free of new tournament-tagged issues after 24 h
-- [ ] Rollback owner and decision criteria (§7 step 1 trigger) named: ____________
-- [ ] Production changes approved by: ____________
+- [ ] Rollback owner and decision criteria (§7 step 1 trigger) named: ****\_\_\_\_****
+- [ ] Production changes approved by: ****\_\_\_\_****

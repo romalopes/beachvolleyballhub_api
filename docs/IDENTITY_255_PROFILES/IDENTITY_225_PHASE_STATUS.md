@@ -1,6 +1,6 @@
 # Issue 225 implementation plan status
 
-This plan adapts [GitHub issue 225](https://github.com/romalopes/beachvolleyballproject_api/issues/225) to the current application and later product decisions. Each phase document records the implemented work and any remaining gates.
+This plan adapts [GitHub issue 225](https://github.com/romalopes/beachvolleyballhub_api/issues/225) to the current application and later product decisions. Each phase document records the implemented work and any remaining gates.
 
 ## Decisions carried into this plan
 
@@ -12,21 +12,21 @@ This plan adapts [GitHub issue 225](https://github.com/romalopes/beachvolleyball
 
 ## Phase index
 
-| Phase | Scope | Status |
-|---|---|---|
-| 0 | Repository audit and requirements freeze | Complete; see [audit findings](IDENTITY_225_AUDIT_FINDINGS.md) |
-| 1 | Account–Person database integrity | Complete in code and local test/development schema; production-shaped backfill rehearsal remains in Phase 12 |
-| 2 | Profile creator Account ownership | Complete in code and local test/development schema; production legacy-row rehearsal remains in Phase 12 |
-| 3 | Central profile claimability policy | Complete; org/coach scoping, pending-claim exclusion, privacy, and review policy pass the backend suite |
-| 4 | Profile merge and archive lifecycle | Complete in code; migration, reference movement, overlap rejection, and one-winner concurrent merge behavior verified locally. Automated race coverage remains residual risk |
-| 5 | Protected-reference hard deletion | Complete; guarded delete, Person retention, and a local delete/reference race diagnostic showed no orphan |
-| 6 | Profile invitations and claim behavior | Complete; verified exact-email linking, open-link review, token lifecycle, and per-subject uniqueness pass the backend suite |
-| 7 | Legacy claims and invitations transition | Complete for compatibility; reconciliation applied to test/development and read-only readiness is clean. Legacy table retirement remains deferred |
-| 8 | People API decision and backend transition | Complete; People workflows retained and covered by the backend suite |
-| 9 | Frontend navigation and profile workflows | Complete; 878 frontend tests, lint, TypeScript, and production build pass |
-| 10 | Claim and invitation dashboards | Complete; backend/frontend suites pass; manual accessibility review remains recommended |
-| 11 | Final integration and security audit | Complete for local code/test databases; 0 failing tests, migration/readiness checks recorded. Production-shaped restore/rehearsal is Phase 12 |
-| 12 | Production migration and rollout | Blocked: production target, restorable backup, baseline schema, and deploy host remain unverified |
+| Phase | Scope                                      | Status                                                                                                                                                                       |
+| ----- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | Repository audit and requirements freeze   | Complete; see [audit findings](IDENTITY_225_AUDIT_FINDINGS.md)                                                                                                               |
+| 1     | Account–Person database integrity          | Complete in code and local test/development schema; production-shaped backfill rehearsal remains in Phase 12                                                                 |
+| 2     | Profile creator Account ownership          | Complete in code and local test/development schema; production legacy-row rehearsal remains in Phase 12                                                                      |
+| 3     | Central profile claimability policy        | Complete; org/coach scoping, pending-claim exclusion, privacy, and review policy pass the backend suite                                                                      |
+| 4     | Profile merge and archive lifecycle        | Complete in code; migration, reference movement, overlap rejection, and one-winner concurrent merge behavior verified locally. Automated race coverage remains residual risk |
+| 5     | Protected-reference hard deletion          | Complete; guarded delete, Person retention, and a local delete/reference race diagnostic showed no orphan                                                                    |
+| 6     | Profile invitations and claim behavior     | Complete; verified exact-email linking, open-link review, token lifecycle, and per-subject uniqueness pass the backend suite                                                 |
+| 7     | Legacy claims and invitations transition   | Complete for compatibility; reconciliation applied to test/development and read-only readiness is clean. Legacy table retirement remains deferred                            |
+| 8     | People API decision and backend transition | Complete; People workflows retained and covered by the backend suite                                                                                                         |
+| 9     | Frontend navigation and profile workflows  | Complete; 878 frontend tests, lint, TypeScript, and production build pass                                                                                                    |
+| 10    | Claim and invitation dashboards            | Complete; backend/frontend suites pass; manual accessibility review remains recommended                                                                                      |
+| 11    | Final integration and security audit       | Complete for local code/test databases; 0 failing tests, migration/readiness checks recorded. Production-shaped restore/rehearsal is Phase 12                                |
+| 12    | Production migration and rollout           | Blocked: production target, restorable backup, baseline schema, and deploy host remain unverified                                                                            |
 
 Read the phase documents in order. Dependencies are listed in each phase. Phases 4 and 6 may proceed after Phase 3 independently, but Phase 5 depends on Phase 4's reference inventory and lifecycle rules. Phases 7–10 depend on the policy and invitation contracts being stable.
 

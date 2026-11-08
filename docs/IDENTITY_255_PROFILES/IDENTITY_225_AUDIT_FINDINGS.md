@@ -1,6 +1,6 @@
 # Issue 225 — Phase 0 repository audit findings
 
-**Audited:** 2026-10-05 against the current workspace in `beachvolleyballproject_api` and `beachvolleyballproject`.
+**Audited:** 2026-10-05 against the current workspace in `beachvolleyballhub_api` and `beachvolleyballhub`.
 
 ## Current relationship model
 

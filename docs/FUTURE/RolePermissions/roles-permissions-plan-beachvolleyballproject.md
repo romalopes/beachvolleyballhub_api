@@ -1,6 +1,6 @@
 # BeachVolleyballProject — Roles, Permissions and Dashboard Plan
 
-Date: 6 October 2026  
+Date: 6 October 2026
 Status: Detailed implementation plan; no application changes or deployment performed.
 
 ## Goal and deliverables
@@ -8,7 +8,6 @@ Status: Detailed implementation plan; no application changes or deployment perfo
 Introduce configurable roles and explicit permissions, preserve current record-access behavior, and add a complete UI dashboard to manage and explain access. Deliver database migrations, registry/seeds, a centralized resolver and policies, protected administration APIs, frontend capability integration, the dashboard, meaningful tests and rollout documentation. Keep each project independent.
 
 This document is self-contained. Repository observations come from the review in this conversation. Before implementation, recheck the current source, AGENTS.md and deployment conventions. Proposed endpoints/actions are specifications, not claims that they already exist.
-
 
 ## Architecture and design decisions
 
@@ -34,16 +33,16 @@ erDiagram
 
 All new tables use timestamps and real foreign keys. Validate allowed values at both the model and database levels. Use database unique indexes, not only Rails uniqueness validators.
 
-| Table | Columns and constraints | Notes |
-| --- | --- | --- |
-| roles | Existing id/name; add unique non-null key, description, system boolean, archived_at, lock_version | Backfill keys before setting NOT NULL. Protect system roles against deletion and key changes. |
-| permissions | id, unique non-null key, name, description, resource, action, timestamps | Resource/action are grouping metadata; key is authoritative. Supported access scopes come from the code registry. |
-| role_permissions | role_id, permission_id, access_scope, timestamps | Unique (role_id, permission_id, access_scope). Scope defaults must be explicit, never silently `all`. |
-| user_roles | Existing user_id/role_id; add scope_kind, optional organisation_id where supported, granted_by_user_id, expires_at | Assignment context is separate from a grant's access_scope. Keep existing global assignments on upgrade. |
-| user_permissions | user_id, permission_id, effect, access_scope, scope_kind, optional organisation_id where supported, reason, granted_by_user_id, expires_at, lock_version | Effect: grant or deny. Require a reason for manual exceptions. |
-| authorization_audit_events | actor_user_id, effective_user_id, operation, target_type/id, before_data, after_data, reason, request_id, created_at | Preserve audit history when target records are archived/deleted. Reuse an existing audit subsystem where suitable. |
-| users | Add authorization_version integer, non-null, default 0 | Increment on direct assignment and exception changes. |
-| authorization configuration | A singleton configuration revision or equivalent durable revision | Increment on shared role/permission changes for cache invalidation. |
+| Table                       | Columns and constraints                                                                                                                                  | Notes                                                                                                              |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| roles                       | Existing id/name; add unique non-null key, description, system boolean, archived_at, lock_version                                                        | Backfill keys before setting NOT NULL. Protect system roles against deletion and key changes.                      |
+| permissions                 | id, unique non-null key, name, description, resource, action, timestamps                                                                                 | Resource/action are grouping metadata; key is authoritative. Supported access scopes come from the code registry.  |
+| role_permissions            | role_id, permission_id, access_scope, timestamps                                                                                                         | Unique (role_id, permission_id, access_scope). Scope defaults must be explicit, never silently `all`.              |
+| user_roles                  | Existing user_id/role_id; add scope_kind, optional organisation_id where supported, granted_by_user_id, expires_at                                       | Assignment context is separate from a grant's access_scope. Keep existing global assignments on upgrade.           |
+| user_permissions            | user_id, permission_id, effect, access_scope, scope_kind, optional organisation_id where supported, reason, granted_by_user_id, expires_at, lock_version | Effect: grant or deny. Require a reason for manual exceptions.                                                     |
+| authorization_audit_events  | actor_user_id, effective_user_id, operation, target_type/id, before_data, after_data, reason, request_id, created_at                                     | Preserve audit history when target records are archived/deleted. Reuse an existing audit subsystem where suitable. |
+| users                       | Add authorization_version integer, non-null, default 0                                                                                                   | Increment on direct assignment and exception changes.                                                              |
+| authorization configuration | A singleton configuration revision or equivalent durable revision                                                                                        | Increment on shared role/permission changes for cache invalidation.                                                |
 
 For scoped assignments, `scope_kind=global` requires organisation_id NULL; `scope_kind=organisation` requires a valid organisation_id. Use separate partial unique indexes for global and organisation rows: ordinary PostgreSQL uniqueness permits duplicate NULL values. Apply equivalent uniqueness to overrides, including effect and access_scope, and resolve conflicting duplicate submissions in a transaction.
 
@@ -55,13 +54,13 @@ Role updates use optimistic locking. A dashboard submission carries the version 
 
 Each registered permission declares its resource policy, supported scopes, supported assignment contexts, and whether it is restricted to global administrators. Reject unsupported combinations when configuring roles or overrides.
 
-| access_scope | Meaning | Required implementation |
-| --- | --- | --- |
-| own | Records whose ownership matches the principal | Define ownership per model; do not guess from arbitrary column names. |
-| assigned | Records explicitly assigned to the principal | Use the actual assignment relationship. |
-| organisation | Records belonging to the assignment's authorised organisation | Require active membership/authority where the domain requires it. |
-| coach_of_record | Coaching records linked to the principal's verified coach identity | Only register on applicable BVP resources. |
-| all | All records authorized by that action and assignment context | An organisation-scoped assignment still limits `all` to that organisation. |
+| access_scope    | Meaning                                                            | Required implementation                                                    |
+| --------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| own             | Records whose ownership matches the principal                      | Define ownership per model; do not guess from arbitrary column names.      |
+| assigned        | Records explicitly assigned to the principal                       | Use the actual assignment relationship.                                    |
+| organisation    | Records belonging to the assignment's authorised organisation      | Require active membership/authority where the domain requires it.          |
+| coach_of_record | Coaching records linked to the principal's verified coach identity | Only register on applicable BVP resources.                                 |
+| all             | All records authorized by that action and assignment context       | An organisation-scoped assignment still limits `all` to that organisation. |
 
 Not every permission supports every scope. Creation uses a proposed parent/context rather than a persisted record. Require the server to load and authorize an organisation or parent ID from the request. Never trust a frontend-supplied ownership or scope label.
 
@@ -101,20 +100,20 @@ Protect the global Admin role and assignments through dedicated global-admin-onl
 
 Add endpoints under the application's existing authenticated API namespace. Route names below are proposed; inspect existing routes before implementation and avoid collisions.
 
-| Endpoint | Purpose |
-| --- | --- |
-| GET /authorization/me | Effective principal, role assignments, action summaries, authorization revision |
-| GET /admin/permissions | Read-only registry, descriptions, supported scopes and restrictions |
-| GET/POST /admin/roles | List roles/create a custom role |
-| GET/PATCH /admin/roles/:id | Read/update role metadata and complete grant set atomically |
-| POST /admin/roles/:id/archive | Archive a custom role with affected-user summary |
-| GET /admin/users/:id/authorization | Assignments, overrides and effective summary |
-| POST /admin/users/:id/role_assignments | Assign a permitted role/context |
-| DELETE /admin/users/:id/role_assignments/:assignment_id | Revoke an assignment scoped to that user |
-| POST/PATCH/DELETE /admin/users/:id/permission_overrides[/:override_id] | Manage user exceptions |
-| POST /admin/authorization/explain | Explain an action against an existing record or proposed context |
-| GET /admin/authorization/audit_events | Filterable paginated history |
-| GET /authorization/me/explanation | Sanitized explanation of the current user's access |
+| Endpoint                                                               | Purpose                                                                         |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| GET /authorization/me                                                  | Effective principal, role assignments, action summaries, authorization revision |
+| GET /admin/permissions                                                 | Read-only registry, descriptions, supported scopes and restrictions             |
+| GET/POST /admin/roles                                                  | List roles/create a custom role                                                 |
+| GET/PATCH /admin/roles/:id                                             | Read/update role metadata and complete grant set atomically                     |
+| POST /admin/roles/:id/archive                                          | Archive a custom role with affected-user summary                                |
+| GET /admin/users/:id/authorization                                     | Assignments, overrides and effective summary                                    |
+| POST /admin/users/:id/role_assignments                                 | Assign a permitted role/context                                                 |
+| DELETE /admin/users/:id/role_assignments/:assignment_id                | Revoke an assignment scoped to that user                                        |
+| POST/PATCH/DELETE /admin/users/:id/permission_overrides[/:override_id] | Manage user exceptions                                                          |
+| POST /admin/authorization/explain                                      | Explain an action against an existing record or proposed context                |
+| GET /admin/authorization/audit_events                                  | Filterable paginated history                                                    |
+| GET /authorization/me/explanation                                      | Sanitized explanation of the current user's access                              |
 
 Use existing route conventions rather than forcing both projects to share identical URLs. Keep request and response shapes equivalent where practical.
 
@@ -124,8 +123,11 @@ Return action summaries as scope summaries, not misleading universal booleans:
 {
   "authorization_revision": "configuration:7/user:12",
   "capabilities": {
-    "trainings.create": {"available": true},
-    "assessment_sessions.update": {"available": true, "scopes": ["coach_of_record"]}
+    "trainings.create": { "available": true },
+    "assessment_sessions.update": {
+      "available": true,
+      "scopes": ["coach_of_record"]
+    }
   }
 }
 ```
@@ -323,9 +325,9 @@ do not deploy, merge or change production accounts.
 
 Reviewed API snapshot: `a485ef52024e776794f5265941239e6f571f8294`, retrieved 6 October 2026. Recheck the current branch before implementation; these are repository observations, not confirmation of the deployed database.
 
-- API: https://github.com/romalopes/beachvolleyballproject_api
-- Frontend: https://github.com/romalopes/beachvolleyballproject
-- Local development layout: `my_projects/beachvolleyballproject/beachvolleyballproject_api` and `my_projects/beachvolleyballproject/beachvolleyballproject_frontend`.
+- API: https://github.com/romalopes/beachvolleyballhub_api
+- Frontend: https://github.com/romalopes/beachvolleyballhub
+- Local development layout: `my_projects/beachvolleyballhub/beachvolleyballhub_api` and `my_projects/beachvolleyballhub/beachvolleyballhub_frontend`.
 - `app/models/user.rb`: has_many user_roles/roles; player, coach, curator and admin predicates; shared content-manager predicate.
 - `app/models/account.rb`: User → Account → Person; account contact access delegates to Person.
 - `app/controllers/concerns/content_authorization.rb`: creator rules, shared training management, coach-of-record assessment authority, curator oversight, lifecycle restrictions and organisation administration.
@@ -339,21 +341,21 @@ Do not refactor Person, PlayerProfile, CoachProfile, claiming or invitation owne
 
 Treat this as a proposed inventory to validate against all current endpoints. Existing role checks and domain exceptions remain the migration baseline.
 
-| Permission family | Proposed actions | Initial scope/rule |
-| --- | --- | --- |
-| skills / drills / media | read, create, update, delete, submit, publish, reject | Public reads follow publication policy; create and edits preserve current creator/owner and oversight rules. Curator publication authority is separate from creation. |
-| trainings | read, create, update, delete | Preserve shared schedule management for existing global Coach/Curator assignments; do not silently change it to creator-only. New scoped coach roles apply within their organisations. |
-| assessment_sessions | read, create, update, publish, withdraw, restore, delete | Coach-of-record, Curator oversight and Admin rules; private assessment visibility is separate from public schedules. |
-| assessments | read, update, export, import | Preserve session authority and authorized player/session relationships. File import must not bypass record-level authorization. |
-| ranking_consolidations | read, create, update, publish, withdraw, restore, delete | Preserve creator/oversight and lifecycle rules. |
-| assessment_definitions | read, create, update, archive | Seed grants from current endpoint behavior, including any Admin-only mutations. |
-| organisations | read, create, update, reparent, delete | Current create/reparent/delete remain global-Admin-only; edit uses current officers, active creator, Curator and Admin rules. |
-| organisation_memberships | read, create, update, remove | Current active owner/administrator or global Admin authority; ordinary membership is not enough. |
-| groups | read, create, update, manage_members | Respect creator/coach and organisation relationships; inspect current controller/model behavior. |
-| players / coaches / people | read, create, update, archive, delete | Separate profile identity maintenance from assigning login roles. Preserve current Admin-only promotions/deletions. |
-| profile_claims | search, submit, read_queue, approve, reject | Search/submit eligibility follows same organisation or same coach; approver authority is independently scoped. |
-| invitations | create, read, resend, revoke | Email and existing-account destinations; only authorized profile/context actions. |
-| authorization | dashboard_read, roles_manage, roles_assign, overrides_manage, explain, audit_read | Global Admin initially. |
+| Permission family          | Proposed actions                                                                  | Initial scope/rule                                                                                                                                                                     |
+| -------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| skills / drills / media    | read, create, update, delete, submit, publish, reject                             | Public reads follow publication policy; create and edits preserve current creator/owner and oversight rules. Curator publication authority is separate from creation.                  |
+| trainings                  | read, create, update, delete                                                      | Preserve shared schedule management for existing global Coach/Curator assignments; do not silently change it to creator-only. New scoped coach roles apply within their organisations. |
+| assessment_sessions        | read, create, update, publish, withdraw, restore, delete                          | Coach-of-record, Curator oversight and Admin rules; private assessment visibility is separate from public schedules.                                                                   |
+| assessments                | read, update, export, import                                                      | Preserve session authority and authorized player/session relationships. File import must not bypass record-level authorization.                                                        |
+| ranking_consolidations     | read, create, update, publish, withdraw, restore, delete                          | Preserve creator/oversight and lifecycle rules.                                                                                                                                        |
+| assessment_definitions     | read, create, update, archive                                                     | Seed grants from current endpoint behavior, including any Admin-only mutations.                                                                                                        |
+| organisations              | read, create, update, reparent, delete                                            | Current create/reparent/delete remain global-Admin-only; edit uses current officers, active creator, Curator and Admin rules.                                                          |
+| organisation_memberships   | read, create, update, remove                                                      | Current active owner/administrator or global Admin authority; ordinary membership is not enough.                                                                                       |
+| groups                     | read, create, update, manage_members                                              | Respect creator/coach and organisation relationships; inspect current controller/model behavior.                                                                                       |
+| players / coaches / people | read, create, update, archive, delete                                             | Separate profile identity maintenance from assigning login roles. Preserve current Admin-only promotions/deletions.                                                                    |
+| profile_claims             | search, submit, read_queue, approve, reject                                       | Search/submit eligibility follows same organisation or same coach; approver authority is independently scoped.                                                                         |
+| invitations                | create, read, resend, revoke                                                      | Email and existing-account destinations; only authorized profile/context actions.                                                                                                      |
+| authorization              | dashboard_read, roles_manage, roles_assign, overrides_manage, explain, audit_read | Global Admin initially.                                                                                                                                                                |
 
 Do not assume that every named action or endpoint already exists. Build registry entries only for implemented actions, and identify planned profile-claim/dashboard work explicitly.
 
@@ -385,15 +387,15 @@ User access page includes global versus scoped role badges, organisation selecti
 
 Add representative simulator presets:
 
-| Scenario | Expected result |
-| --- | --- |
-| Coach A edits an assessment recorded by Coach B | Deny unless an explicitly applicable oversight grant permits it. |
-| Active organisation administrator manages that club's roster | Allow under the current membership rule. |
-| Same administrator manages another club's roster | Deny. |
-| Member leaves a club and retained creator status is checked | Apply the existing active-creator rule; stale creator ownership must not grant club edit authority. |
-| Coach manages a shared training under an existing global role | Preserve existing allow behavior during migration. |
-| Account claims an eligible profile | May submit; receives no automatic coaching permissions. |
-| Admin impersonates a Player | Ordinary actions use Player authority; real Admin is logged as actor. |
+| Scenario                                                      | Expected result                                                                                     |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Coach A edits an assessment recorded by Coach B               | Deny unless an explicitly applicable oversight grant permits it.                                    |
+| Active organisation administrator manages that club's roster  | Allow under the current membership rule.                                                            |
+| Same administrator manages another club's roster              | Deny.                                                                                               |
+| Member leaves a club and retained creator status is checked   | Apply the existing active-creator rule; stale creator ownership must not grant club edit authority. |
+| Coach manages a shared training under an existing global role | Preserve existing allow behavior during migration.                                                  |
+| Account claims an eligible profile                            | May submit; receives no automatic coaching permissions.                                             |
+| Admin impersonates a Player                                   | Ordinary actions use Player authority; real Admin is logged as actor.                               |
 
 Backend uses the existing BVP test framework (Minitest paths were observed). Extend fixtures and meaningful model/request/service tests, and inspect frontend test scripts before adding component/browser coverage.
 
@@ -402,7 +404,7 @@ Backend uses the existing BVP test framework (Minitest paths were observed). Ext
 ### BVP prompt A — Scoped membership policy
 
 ```text
-In beachvolleyballproject_api, inspect OrganisationMembership and Organisation
+In beachvolleyballhub_api, inspect OrganisationMembership and Organisation
 editable_by?/manageable_by? and ContentAuthorization. Implement the centralized
 membership-to-capability adapter described in this plan. Preserve active owner,
 administrator, creator and Curator exceptions without automatically granting

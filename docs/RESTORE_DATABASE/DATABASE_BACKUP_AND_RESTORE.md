@@ -9,10 +9,10 @@ Checked against this repository’s workflows on 9 October 2026. Live secrets an
 ## Quick links
 
 - [Cloudflare dashboard: select the backup bucket](https://dash.cloudflare.com/) (login and account access required).
-- [Run or inspect Database Backup](https://github.com/romalopes/beachvolleyballproject_api/actions/workflows/database_backup.yml).
-- [Run or inspect Database Restore Test](https://github.com/romalopes/beachvolleyballproject_api/actions/workflows/database_restore_test.yml).
-- [Run or inspect Database Backup Freshness](https://github.com/romalopes/beachvolleyballproject_api/actions/workflows/database_backup_freshness.yml).
-- [Repository Actions secrets](https://github.com/romalopes/beachvolleyballproject_api/settings/secrets/actions).
+- [Run or inspect Database Backup](https://github.com/romalopes/beachvolleyballhub_api/actions/workflows/database_backup.yml).
+- [Run or inspect Database Restore Test](https://github.com/romalopes/beachvolleyballhub_api/actions/workflows/database_restore_test.yml).
+- [Run or inspect Database Backup Freshness](https://github.com/romalopes/beachvolleyballhub_api/actions/workflows/database_backup_freshness.yml).
+- [Repository Actions secrets](https://github.com/romalopes/beachvolleyballhub_api/settings/secrets/actions).
 - [Set up and run a backup](#set-up-backups-and-run-the-first-backup).
 - [Option 1: Restore using GitHub Actions](#option-1-restore-using-github-actions).
 - [Option 2: Restore manually](#option-2-restore-manually).
@@ -47,7 +47,7 @@ Checked against this repository’s workflows on 9 October 2026. Live secrets an
    `PG_CLIENT_MAJOR=18` supports the source server. Record `ENCRYPTION_KEY_ID=v1`
    with the archived key. Make the workflows available on the default branch for
    scheduled execution, and ensure repository Actions are enabled.
-7. **Run a backup.** Open [Database Backup](https://github.com/romalopes/beachvolleyballproject_api/actions/workflows/database_backup.yml)
+7. **Run a backup.** Open [Database Backup](https://github.com/romalopes/beachvolleyballhub_api/actions/workflows/database_backup.yml)
    → **Run workflow**, choose the intended branch and `database_provider`, then
    run. A manual provider choice affects only that run, not the schedules.
 8. **Inspect every step.** Confirm connection/version validation, nonempty dump,
@@ -59,7 +59,7 @@ Checked against this repository’s workflows on 9 October 2026. Live secrets an
    Check the provider/date and all three files. Do not publish or download a
    plaintext database to the repository.
 10. **Prove recovery.** Run Option 1 below against the disposable target and validate
-    representative application records. Then manually run [Backup Freshness](https://github.com/romalopes/beachvolleyballproject_api/actions/workflows/database_backup_freshness.yml).
+    representative application records. Then manually run [Backup Freshness](https://github.com/romalopes/beachvolleyballhub_api/actions/workflows/database_backup_freshness.yml).
     Freshness always uses its configured provider, with no dispatch override.
 11. **Configure retention and monitoring.** Follow [retention and routine checks](#retention-and-routine-checks).
     Confirm the next scheduled backup/freshness runs and weekly restore test. Keep
@@ -94,7 +94,7 @@ separate recovery if missing; they are not included in the database dump.
    separate database and copy its direct connection URL. Verify it is not the live
    database: this workflow overwrites matching objects in its target.
 3. **Configure the target secret.** Open
-   [GitHub Actions secrets](https://github.com/romalopes/beachvolleyballproject_api/settings/secrets/actions)
+   [GitHub Actions secrets](https://github.com/romalopes/beachvolleyballhub_api/settings/secrets/actions)
    and create/update `NEON_RESTORE_TEST_DATABASE_URL` or
    `SUPABASE_RESTORE_TEST_DATABASE_URL`, matching the selected database provider.
 4. **Configure decryption and download access.** Set `BACKUP_ENCRYPTION_IDENTITY`
@@ -103,7 +103,7 @@ separate recovery if missing; they are not included in the database dump.
    are present. An existing backup setup normally already has these R2 secrets.
    Do not generate a new key to decrypt an existing backup.
 5. **Open the restore workflow.** Go to
-   [Database Restore Test](https://github.com/romalopes/beachvolleyballproject_api/actions/workflows/database_restore_test.yml)
+   [Database Restore Test](https://github.com/romalopes/beachvolleyballhub_api/actions/workflows/database_restore_test.yml)
    and click **Run workflow**. Select the intended branch and `database_provider`.
 6. **Select the backup and run.** Enter `latest` in `backup_prefix`, or paste the
    full key such as `beachvolleyball/postgresql/neon/2026/10/08/DAILY_2026-10-08_02-00-00.dump.age`
@@ -167,11 +167,11 @@ handling for each step.
 
 ## Architecture and current configuration
 
-| Workflow | Schedule (UTC) | What it does |
-|---|---|---|
-| [database_backup.yml](../.github/workflows/database_backup.yml) | Daily 02:00; manual dispatch | Custom-format `pg_dump`, age encryption, SHA-256 checksum, JSON metadata, R2 upload and object-size checks, daily pruning. |
-| [database_restore_test.yml](../.github/workflows/database_restore_test.yml) | Sunday 03:00; manual dispatch | Downloads a backup, checks/decrypts it, restores a disposable database, checks tables and reports row counts. |
-| [database_backup_freshness.yml](../.github/workflows/database_backup_freshness.yml) | Daily 06:00; manual dispatch | Fails if no backup exists or the newest encrypted dump is over 36 hours old. |
+| Workflow                                                                            | Schedule (UTC)                | What it does                                                                                                               |
+| ----------------------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [database_backup.yml](../.github/workflows/database_backup.yml)                     | Daily 02:00; manual dispatch  | Custom-format `pg_dump`, age encryption, SHA-256 checksum, JSON metadata, R2 upload and object-size checks, daily pruning. |
+| [database_restore_test.yml](../.github/workflows/database_restore_test.yml)         | Sunday 03:00; manual dispatch | Downloads a backup, checks/decrypts it, restores a disposable database, checks tables and reports row counts.              |
+| [database_backup_freshness.yml](../.github/workflows/database_backup_freshness.yml) | Daily 06:00; manual dispatch  | Fails if no backup exists or the newest encrypted dump is over 36 hours old.                                               |
 
 At the time of this documentation update, the workflows default to `neon`, support
 `neon` and `supabase`, and pin PostgreSQL clients to **18** and age to **1.3.2**.
@@ -215,11 +215,11 @@ Cloudflare account membership and permission to view/read the bucket.
   beachvolleyball/postgresql/<provider>/MONTHLY_<timestamp>.dump.age.json
 ```
 
-| File | Purpose |
-|---|---|
-| `.dump.age` | Encrypted, compressed PostgreSQL custom-format archive; decrypt before using `pg_restore`. |
+| File               | Purpose                                                                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.dump.age`        | Encrypted, compressed PostgreSQL custom-format archive; decrypt before using `pg_restore`.                                                         |
 | `.dump.age.sha256` | SHA-256 checksum of the encrypted file; daily sidecars reference the runner filename `database-<compact timestamp>.dump.age`, not the R2 basename. |
-| `.dump.age.json` | Creation time, provider, dump/server versions, encryption key ID, and retention class. |
+| `.dump.age.json`   | Creation time, provider, dump/server versions, encryption key ID, and retention class.                                                             |
 
 An **object key** starts with `beachvolleyball/`; it excludes the bucket name and `s3://`.
 For example (illustrative timestamp):
@@ -237,20 +237,20 @@ Changes after its snapshot are absent. The `latest` workflow input chooses by R2
 ## Access, credentials, and encryption keys
 
 Add workflow secrets under **Settings → Secrets and variables → Actions** in the
-[repository settings](https://github.com/romalopes/beachvolleyballproject_api/settings/secrets/actions).
+[repository settings](https://github.com/romalopes/beachvolleyballhub_api/settings/secrets/actions).
 
-| Secret | Purpose |
-|---|---|
-| `NEON_DATABASE_URL` | Source connection for the `neon` selection. Use a direct URL with TLS, not a pooler. |
-| `SUPABASE_DATABASE_URL` | Source connection for the `supabase` selection; same connection requirements. |
-| `NEON_RESTORE_TEST_DATABASE_URL` | Direct connection to a disposable Neon restore database. Never production. |
-| `SUPABASE_RESTORE_TEST_DATABASE_URL` | Direct connection to a disposable Supabase restore database. Never production. |
-| `BACKUP_ENCRYPTION_RECIPIENT` | age public key (`age1...`) used to encrypt new backups. |
-| `BACKUP_ENCRYPTION_IDENTITY` | Matching age private key (`AGE-SECRET-KEY-...`) used by the restore workflow. |
-| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | R2 S3 API credentials. |
-| `R2_BUCKET` | Actual private backup bucket name; confirm in Cloudflare and the workflow secret. |
-| `R2_ENDPOINT` | Bucket's S3 API endpoint, copied from Cloudflare; not the dashboard URL. |
-| `SLACK_WEBHOOK_URL` | Optional failure notification configuration. Check Actions directly as well. |
+| Secret                                     | Purpose                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `NEON_DATABASE_URL`                        | Source connection for the `neon` selection. Use a direct URL with TLS, not a pooler. |
+| `SUPABASE_DATABASE_URL`                    | Source connection for the `supabase` selection; same connection requirements.        |
+| `NEON_RESTORE_TEST_DATABASE_URL`           | Direct connection to a disposable Neon restore database. Never production.           |
+| `SUPABASE_RESTORE_TEST_DATABASE_URL`       | Direct connection to a disposable Supabase restore database. Never production.       |
+| `BACKUP_ENCRYPTION_RECIPIENT`              | age public key (`age1...`) used to encrypt new backups.                              |
+| `BACKUP_ENCRYPTION_IDENTITY`               | Matching age private key (`AGE-SECRET-KEY-...`) used by the restore workflow.        |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | R2 S3 API credentials.                                                               |
+| `R2_BUCKET`                                | Actual private backup bucket name; confirm in Cloudflare and the workflow secret.    |
+| `R2_ENDPOINT`                              | Bucket's S3 API endpoint, copied from Cloudflare; not the dashboard URL.             |
+| `SLACK_WEBHOOK_URL`                        | Optional failure notification configuration. Check Actions directly as well.         |
 
 For manual downloads via the dashboard you need Cloudflare access. CLI downloads
 need R2 credentials with object-read access to the bucket; they do not need deletion
@@ -298,7 +298,7 @@ switch the application to the restored database.
    host and database identity independently of its display name; use a direct URL.
 2. Set `NEON_RESTORE_TEST_DATABASE_URL` or `SUPABASE_RESTORE_TEST_DATABASE_URL` to it.
    Ensure R2 secrets and the matching `BACKUP_ENCRYPTION_IDENTITY` are configured.
-3. Open [Database Restore Test](https://github.com/romalopes/beachvolleyballproject_api/actions/workflows/database_restore_test.yml)
+3. Open [Database Restore Test](https://github.com/romalopes/beachvolleyballhub_api/actions/workflows/database_restore_test.yml)
    and select **Run workflow**, using the branch containing the intended workflow.
 4. Select `database_provider`. For `backup_prefix`, use `latest` or paste the full
    object key ending in `.dump.age`, without the bucket name. Despite the input's
@@ -499,7 +499,7 @@ state. Inspect people, player/coach profiles, organisations, drills, training se
 assessments, associations, and representative users;
 nonzero table counts alone do not establish recovery correctness.
 
-From the `beachvolleyballproject_api` directory, with application dependencies configured:
+From the `beachvolleyballhub_api` directory, with application dependencies configured:
 
 ```bash
 DATABASE_URL="$RESTORE_DATABASE_URL" RAILS_ENV=production bin/rails db:migrate:status
@@ -598,18 +598,18 @@ representative attachment downloads alongside database checks.
 
 ## Troubleshooting
 
-| Symptom | What to check |
-|---|---|
-| Bucket link fails / access denied | Correct Cloudflare account and bucket permissions. For CLI access, use R2 S3 credentials and the bucket's S3 endpoint. |
-| No backups / `NoSuchKey` | Provider prefix, exact object key, retention, and backup run logs. Do not include the bucket name in `backup_prefix`. |
-| Checksum reports missing file | Daily sidecars reference `database-<timestamp>.dump.age`. Use the normalized verification steps above; also check for browser-added `(1)` suffixes. |
-| Checksum mismatch | Stop; download the matching dump/sidecar again and investigate. Do not replace the expected checksum with a newly calculated one. |
-| age cannot decrypt | Correct private identity for the JSON key ID; public recipient and newly generated keys cannot decrypt older backups. |
-| `unsupported version ... in file header` | Check `pg_restore --version` and PATH; use the client matching the dump version, currently 18. |
-| Dump client older than source server | Update `PG_CLIENT_MAJOR` in backup and restore workflows together after checking compatibility. |
-| Connection fails / pooler rejected | Direct host, TLS settings, credentials, network reachability, firewall/allowlist, and provider connection limits. |
-| Restore guard aborts | Target must be separate and disposable; do not disguise production to bypass the guard. |
-| Existing relations / duplicate keys | Use a fresh target. A failed nontransactional workflow run may have left partial objects. |
-| Missing role, extension, or permission | Inspect the first restore error. Check target ownership/extension support and provider-managed schemas; do not ignore errors. |
-| Restore is green but records are wrong | Verify selected source, snapshot date, and business data; current automated validation is limited. |
-| Attachments fail after recovery | Check the selected storage service (currently Supabase in production), bucket, endpoint, credentials and referenced object keys. Restore missing media from its separate backup; database metadata does not contain uploaded file bytes. |
+| Symptom                                  | What to check                                                                                                                                                                                                                            |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bucket link fails / access denied        | Correct Cloudflare account and bucket permissions. For CLI access, use R2 S3 credentials and the bucket's S3 endpoint.                                                                                                                   |
+| No backups / `NoSuchKey`                 | Provider prefix, exact object key, retention, and backup run logs. Do not include the bucket name in `backup_prefix`.                                                                                                                    |
+| Checksum reports missing file            | Daily sidecars reference `database-<timestamp>.dump.age`. Use the normalized verification steps above; also check for browser-added `(1)` suffixes.                                                                                      |
+| Checksum mismatch                        | Stop; download the matching dump/sidecar again and investigate. Do not replace the expected checksum with a newly calculated one.                                                                                                        |
+| age cannot decrypt                       | Correct private identity for the JSON key ID; public recipient and newly generated keys cannot decrypt older backups.                                                                                                                    |
+| `unsupported version ... in file header` | Check `pg_restore --version` and PATH; use the client matching the dump version, currently 18.                                                                                                                                           |
+| Dump client older than source server     | Update `PG_CLIENT_MAJOR` in backup and restore workflows together after checking compatibility.                                                                                                                                          |
+| Connection fails / pooler rejected       | Direct host, TLS settings, credentials, network reachability, firewall/allowlist, and provider connection limits.                                                                                                                        |
+| Restore guard aborts                     | Target must be separate and disposable; do not disguise production to bypass the guard.                                                                                                                                                  |
+| Existing relations / duplicate keys      | Use a fresh target. A failed nontransactional workflow run may have left partial objects.                                                                                                                                                |
+| Missing role, extension, or permission   | Inspect the first restore error. Check target ownership/extension support and provider-managed schemas; do not ignore errors.                                                                                                            |
+| Restore is green but records are wrong   | Verify selected source, snapshot date, and business data; current automated validation is limited.                                                                                                                                       |
+| Attachments fail after recovery          | Check the selected storage service (currently Supabase in production), bucket, endpoint, credentials and referenced object keys. Restore missing media from its separate backup; database metadata does not contain uploaded file bytes. |
