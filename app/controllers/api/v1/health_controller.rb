@@ -211,8 +211,8 @@ module Api
         pool = ActiveRecord::Base.connection_pool
         {
           adapter: db_config_value(config, :adapter),
-          database: db_config_value(config, :database)[0, 20],
-          host: db_config_value(config, :host)[0, 20],
+          database: truncated(config, :database),
+          host: truncated(config, :host),
           port: db_config_value(config, :port),
           username: db_config_value(config, :username),
           encoding: db_config_value(config, :encoding),
@@ -233,6 +233,14 @@ module Api
         config.public_send(key)
       rescue NoMethodError
         nil
+      end
+
+      # Truncated for display. A config component may legitimately be nil (a
+      # socket connection has no host; a URL may omit the port), and nil has no
+      # `[]`, so the slice must tolerate absence rather than discarding the
+      # whole diagnostic payload.
+      def truncated(config, key)
+        db_config_value(config, key).to_s[0, 20]
       end
 
       def safe_pool_value(pool, key)

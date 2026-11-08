@@ -1,7 +1,7 @@
 module Admin
   class DrillsController < ApplicationController
     before_action :authorize_admin!
-    before_action :set_drill, only: [:show, :edit, :update, :destroy]
+    before_action :set_drill, only: [ :show, :edit, :update, :destroy ]
 
     def index
       @filters = filter_params
@@ -143,4 +143,3 @@ module Admin
     end
   end
 end
-

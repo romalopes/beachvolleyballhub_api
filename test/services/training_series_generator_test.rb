@@ -116,7 +116,8 @@ class TrainingSeriesGeneratorTest < ActiveSupport::TestCase
       title: "Manual session",
       starts_at: Time.zone.parse("2026-11-02 09:00"),
       ends_at: Time.zone.parse("2026-11-02 10:00"),
-      status: "scheduled"
+      status: "scheduled",
+      organisation: organisations(:sydney_club)
     )
 
     TrainingSeriesGenerator.new(training_series(:monday_series)).call

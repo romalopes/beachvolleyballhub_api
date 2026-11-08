@@ -28,15 +28,15 @@ Rails.application.configure do
   # Change to :null_store to avoid any caching.
   config.cache_store = :memory_store
 
-  # Uploaded files (organisation logos) go to the local disk in development.
-  # Supabase is kept for production, but pointing development at it meant every
-  # attachment failed with an AWS signature error unless the SUPABASE_S3_* env
-  # vars happened to be set — which defeats the point of a local environment.
-  # config.active_storage.service = :local
+# Uploaded files (organisation logos) go to the local disk in development.
+# Supabase is kept for production, but pointing development at it meant every
+# attachment failed with an AWS signature error unless the SUPABASE_S3_* env
+# vars happened to be set — which defeats the point of a local environment.
+# config.active_storage.service = :local
 # config.active_storage.service = :supabase
 config.active_storage.service = :cloudflare_r2
 
-  # config.logger = ActiveSupport::Logger.new("log/development.log")
+# config.logger = ActiveSupport::Logger.new("log/development.log")
 # OR
 config.log_tags = [ :request_id ]
 config.logger = ActiveSupport::Logger.new(STDOUT)

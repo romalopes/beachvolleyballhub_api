@@ -61,9 +61,9 @@ class DrillDefinitionValidator
 
   def entities_by_id
     @entities_by_id ||= {
-      participant: @definition["participants"].to_h { |p| [p["id"], p] },
-      ball: @definition["balls"].to_h { |b| [b["id"], b] },
-      object: @definition["objects"].to_h { |o| [o["id"], o] },
+      participant: @definition["participants"].to_h { |p| [ p["id"], p ] },
+      ball: @definition["balls"].to_h { |b| [ b["id"], b ] },
+      object: @definition["objects"].to_h { |o| [ o["id"], o ] }
     }
   end
 
@@ -179,7 +179,7 @@ class DrillDefinitionValidator
     x_max = right ? cols + 1 : cols
     {
       "side_1" => { x_min: x_min, x_max: x_max, y_min: c1 ? 0 : 1, y_max: rows },
-      "side_2" => { x_min: x_min, x_max: x_max, y_min: 1, y_max: c2 ? rows + 1 : rows },
+      "side_2" => { x_min: x_min, x_max: x_max, y_min: 1, y_max: c2 ? rows + 1 : rows }
     }
   end
 
@@ -282,4 +282,3 @@ class DrillDefinitionValidator
     end
   end
 end
-

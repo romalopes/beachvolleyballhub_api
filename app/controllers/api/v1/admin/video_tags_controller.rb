@@ -11,7 +11,7 @@ module Api
         before_action :authorize_admin!
 
         def index
-          render json: ordered_tags, methods: [:video_count]
+          render json: ordered_tags, methods: [ :video_count ]
         end
 
         def create
@@ -49,7 +49,7 @@ module Api
         def reorder
           return unless reorder_records(VideoTag)
 
-          render json: ordered_tags, methods: [:video_count]
+          render json: ordered_tags, methods: [ :video_count ]
         end
 
         private

@@ -35,6 +35,22 @@ module Api
       end
 
       def create
+        # An optional `organisation_id` inside the location payload links the
+        # new venue to an organisation at birth. Only that organisation's
+        # officers (or site oversight) may propose on its behalf.
+        organisation_id = params[:location]&.[](:organisation_id).presence
+        organisation = nil
+        if organisation_id
+          organisation = Organisation.find_by(id: organisation_id)
+          if organisation.nil?
+            return render json: { errors: [ "Organisation not found" ] }, status: :not_found
+          end
+          unless organisation_officer?(organisation)
+            return render json: { errors: [ "Only an owner or administrator of the organisation may propose a venue for it" ] },
+                           status: :forbidden
+          end
+        end
+
         location = Location.new(location_params)
         location.proposed_by_account = Current.user.account
         if Current.user.admin? || Current.user.curator?
@@ -47,6 +63,10 @@ module Api
         location.status = "active"
         geocoding_fingerprint = prepare_geocoding(location)
         if location.save
+          # A proposal made for an organisation joins its venue list at birth,
+          # so the organisation's members can see and schedule the venue while
+          # it awaits verification.
+          link_to_organisation(organisation, location) if organisation
           LocationGeocodingJob.perform_later(location.id, geocoding_fingerprint) if geocoding_fingerprint
           render json: { location: location_detail(location) }, status: :created
         else
@@ -116,6 +136,26 @@ module Api
 
         render json: { error: "Only a curator or admin can manage canonical locations" },
                status: :forbidden
+      end
+
+      # Whether the caller may propose a venue on the organisation's behalf:
+      # site oversight, or an active owner/administrator membership.
+      def organisation_officer?(organisation)
+        return true if Current.user.admin? || Current.user.curator?
+
+        account = Current.user.account
+        account && OrganisationMembership.active.manageable
+                                        .for_account(account)
+                                        .where(organisation_id: organisation.id)
+                                        .exists?
+      end
+
+      # The attach rule for *existing* venues still requires a verified record;
+      # a proposal born here is attached by the same officer act that created
+      # it, so the selectable check is deliberately skipped.
+      def link_to_organisation(organisation, location)
+        association = organisation.organisation_locations.build(location: location)
+        association.save(validate: false)
       end
 
       def location_params

@@ -19,6 +19,7 @@ monday_skills:
 private_lesson:
   name: Private Setting Lesson
   description: One-on-one setting refinement.
+  organisation: sydney_club
   coach_profile: maria_coach
   location: Maroubra Beach
   level: advanced
@@ -30,6 +31,7 @@ private_lesson:
 
 archived_template:
   name: Retired Fitness Block
+  organisation: sydney_club
   duration_minutes: 45
   visibility: shared
   status: archived

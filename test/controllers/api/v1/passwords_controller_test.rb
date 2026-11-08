@@ -10,7 +10,7 @@ class Api::V1::PasswordsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "create enqueues a reset password instructions email for a known user" do
-    assert_enqueued_email_with PasswordsMailer, :reset_password_instructions, args: [users(:one)] do
+    assert_enqueued_email_with PasswordsMailer, :reset_password_instructions, args: [ users(:one) ] do
       post "/api/v1/passwords", params: { email_address: "one@example.com" }
     end
     assert_response :no_content

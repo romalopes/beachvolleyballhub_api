@@ -1,33 +1,33 @@
-require 'test_helper'
+require "test_helper"
 
 class TournamentCreateServiceTest < ActiveSupport::TestCase
   setup do
-    @organisation = Organisation.create!(name: 'Test Org', acronym: 'TO')
+    @organisation = Organisation.create!(name: "Test Org", acronym: "TO")
     @account = create_account!
   end
 
-  test 'should create a tournament with valid parameters' do
+  test "should create a tournament with valid parameters" do
     params = {
-      name: 'Test Tournament',
+      name: "Test Tournament",
       organisation_id: @organisation.id,
       created_by_account_id: @account.id,
-      scope: 'club',
-      division_scheme: 'letter',
-      starts_at: '2026-10-15 09:00:00',
-      ends_at: '2026-10-15 17:00:00',
-      timezone: 'US/Eastern',
+      scope: "club",
+      division_scheme: "letter",
+      starts_at: "2026-10-15 09:00:00",
+      ends_at: "2026-10-15 17:00:00",
+      timezone: "US/Eastern",
       all_day: false
     }
 
     tournament = TournamentCreateService.call(params)
 
     assert tournament.persisted?
-    assert_equal 'Test Tournament', tournament.name
+    assert_equal "Test Tournament", tournament.name
     assert_equal @organisation.id, tournament.organisation_id
     assert_equal @account.id, tournament.created_by_account_id
-    assert_equal 'club', tournament.scope
-    assert_equal 'letter', tournament.division_scheme
-    assert_equal 'US/Eastern', tournament.timezone
+    assert_equal "club", tournament.scope
+    assert_equal "letter", tournament.division_scheme
+    assert_equal "US/Eastern", tournament.timezone
     assert_equal false, tournament.all_day
 
     # Check that the times are converted to UTC (we expect the UTC times to be 4 hours ahead of US/Eastern in October? Actually, US/Eastern is UTC-4 or UTC-5 depending on DST.
@@ -37,16 +37,16 @@ class TournamentCreateServiceTest < ActiveSupport::TestCase
     assert tournament.ends_at > tournament.starts_at
   end
 
-  test 'should create an all-day tournament' do
+  test "should create an all-day tournament" do
     params = {
-      name: 'All Day Tournament',
+      name: "All Day Tournament",
       organisation_id: @organisation.id,
       created_by_account_id: @account.id,
-      scope: 'club',
-      division_scheme: 'letter',
-      starts_at: '2026-10-15', # date only
-      ends_at: '2026-10-15',   # date only
-      timezone: 'US/Eastern',
+      scope: "club",
+      division_scheme: "letter",
+      starts_at: "2026-10-15", # date only
+      ends_at: "2026-10-15",   # date only
+      timezone: "US/Eastern",
       all_day: true
     }
 
@@ -72,16 +72,16 @@ class TournamentCreateServiceTest < ActiveSupport::TestCase
     assert_equal 59, ends_in_zone.sec
   end
 
-  test 'should raise an error for invalid timezone' do
+  test "should raise an error for invalid timezone" do
     params = {
-      name: 'Test Tournament',
+      name: "Test Tournament",
       organisation_id: @organisation.id,
       created_by_account_id: @account.id,
-      scope: 'club',
-      division_scheme: 'letter',
-      starts_at: '2026-10-15 09:00:00',
-      ends_at: '2026-10-15 17:00:00',
-      timezone: 'Invalid/Timezone',
+      scope: "club",
+      division_scheme: "letter",
+      starts_at: "2026-10-15 09:00:00",
+      ends_at: "2026-10-15 17:00:00",
+      timezone: "Invalid/Timezone",
       all_day: false
     }
 
@@ -90,16 +90,16 @@ class TournamentCreateServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test 'should not create tournament if validation fails' do
+  test "should not create tournament if validation fails" do
     params = {
-      name: '', # invalid
+      name: "", # invalid
       organisation_id: @organisation.id,
       created_by_account_id: @account.id,
-      scope: 'club',
-      division_scheme: 'letter',
-      starts_at: '2026-10-15 09:00:00',
-      ends_at: '2026-10-15 17:00:00',
-      timezone: 'US/Eastern',
+      scope: "club",
+      division_scheme: "letter",
+      starts_at: "2026-10-15 09:00:00",
+      ends_at: "2026-10-15 17:00:00",
+      timezone: "US/Eastern",
       all_day: false
     }
 

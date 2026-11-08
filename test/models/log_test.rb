@@ -53,7 +53,7 @@ class LogTest < ActiveSupport::TestCase
     Log.delete_all
     old = Log.create!(description: "Old", action: "create", method: "POST", created_at: 2.days.ago)
     new = Log.create!(description: "New", action: "create", method: "POST", created_at: 1.hour.ago)
-    assert_equal [new, old], Log.recent(10).to_a
+    assert_equal [ new, old ], Log.recent(10).to_a
   end
 
   test "for_action scope filters by action" do
@@ -83,6 +83,6 @@ class LogTest < ActiveSupport::TestCase
     log2 = Log.create!(description: "Log 2", action: "create", method: "POST")
     LogObject.create!(log: log1, object: @category)
     LogObject.create!(log: log2, object: skills(:one))
-    assert_equal [log1.id], Log.for_object("Category", @category.id).pluck(:id)
+    assert_equal [ log1.id ], Log.for_object("Category", @category.id).pluck(:id)
   end
 end

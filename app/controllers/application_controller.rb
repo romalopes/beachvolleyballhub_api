@@ -102,7 +102,7 @@ class ApplicationController < ActionController::Base
   def set_sentry_context
     if current_user.present?
       Sentry.set_user(id: current_user.id)
-      tier = current_user.try(:account_tier) || current_user.try(:tier) || 'unknown'
+      tier = current_user.try(:account_tier) || current_user.try(:tier) || "unknown"
       Sentry.set_tags(user_id: current_user.id, account_tier: tier)
     else
       # sentry-ruby 7.x requires a Hash for set_user/set_tags; passing nil

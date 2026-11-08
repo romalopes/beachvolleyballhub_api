@@ -24,7 +24,7 @@ module Api
       rescue ActiveRecord::RecordInvalid => e
         render json: { errors: invalid_record_errors(e) }, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotUnique
-        render json: { errors: ["That division code already exists in this tournament"] }, status: :conflict
+        render json: { errors: [ "That division code already exists in this tournament" ] }, status: :conflict
       end
 
       def update
@@ -38,7 +38,7 @@ module Api
       rescue ActiveRecord::RecordInvalid => e
         render json: { errors: invalid_record_errors(e) }, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotUnique
-        render json: { errors: ["That division code already exists in this tournament"] }, status: :conflict
+        render json: { errors: [ "That division code already exists in this tournament" ] }, status: :conflict
       end
 
       def destroy

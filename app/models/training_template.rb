@@ -12,10 +12,15 @@ class TrainingTemplate < ApplicationRecord
   STATUSES = %w[active archived].freeze
   VISIBILITIES = %w[shared private].freeze
 
-  belongs_to :organisation, optional: true
+  # A template belongs to the organisation whose "what we usually run" it
+  # records: every form that schedules from it is organisation-scoped, so the
+  # link is mandatory.
+  belongs_to :organisation, optional: false
   belongs_to :group, optional: true
   belongs_to :coach_profile, optional: true
   belongs_to :created_by, class_name: "User", optional: true
+  belongs_to :canonical_location, class_name: "Location", foreign_key: :location_id,
+             optional: true, inverse_of: :training_templates
 
   # A template that has been used is history; deleting it would leave series
   # and sessions pointing at nothing. Archive instead.
@@ -31,6 +36,8 @@ class TrainingTemplate < ApplicationRecord
   validates :capacity, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :group_belongs_to_the_organisation,
            if: -> { organisation_id.present? && group_id.present? }
+  validate :canonical_location_belongs_to_the_organisation,
+           if: -> { location_id.present? }
 
   scope :active, -> { where(status: "active") }
 
@@ -52,6 +59,7 @@ class TrainingTemplate < ApplicationRecord
       group_id: group_id,
       coach_profile_id: coach_profile_id,
       location: location,
+      location_id: location_id,
       location_detail: location_detail,
       level: level,
       capacity: capacity,
@@ -77,5 +85,14 @@ class TrainingTemplate < ApplicationRecord
     return if group.organisation_id == organisation_id
 
     errors.add(:group, "does not belong to the selected organisation")
+  end
+
+  # A template's venue is picked from the organisation's own locations, so a
+  # canonical location from another organisation is refused rather than saved.
+  def canonical_location_belongs_to_the_organisation
+    return if canonical_location.nil?
+    return if organisation&.organisation_locations&.exists?(location_id: location_id)
+
+    errors.add(:location_id, "must be one of the organisation's locations")
   end
 end

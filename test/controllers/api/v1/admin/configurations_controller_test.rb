@@ -73,7 +73,7 @@ class Api::V1::Admin::ConfigurationsControllerTest < ActionDispatch::Integration
     AppSetting.set!(:test, true)
     AppSetting.set!(:test_email, "romalopes@yahoo.com.br")
     email = PasswordsMailer.reset_password_instructions(users(:one)).deliver_now
-    assert_equal ["romalopes@yahoo.com.br"], email.to
+    assert_equal [ "romalopes@yahoo.com.br" ], email.to
     assert_match(/\[TEST\]/, email.subject)
   end
 end

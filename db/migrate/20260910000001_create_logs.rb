@@ -17,7 +17,7 @@ class CreateLogs < ActiveRecord::Migration[8.0]
     add_index :logs, :user_id
     add_index :logs, :request_id
     add_index :logs, :created_at
-    add_index :logs, [:action, :created_at]
-    add_index :logs, [:user_id, :created_at]
+    add_index :logs, [ :action, :created_at ]
+    add_index :logs, [ :user_id, :created_at ]
   end
 end

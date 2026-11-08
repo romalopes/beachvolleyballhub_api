@@ -41,6 +41,15 @@ class OrganisationMembership < ApplicationRecord
   scope :ended, -> { where(status: "ended") }
   scope :current, -> { where.not(status: "ended") }
   scope :with_role, ->(role) { role.present? ? where(role: role) : all }
+
+  # Several seats at once, e.g. the owner/administrator organisations a form's
+  # user may act for. Unknown roles resolve to an empty set rather than
+  # silently widening the filter.
+  scope :with_roles, ->(roles) {
+    list = Array(roles).flat_map { |role| role.to_s.split(",") }
+                       .map(&:strip).reject(&:blank?).uniq & ROLES
+    where(role: list)
+  }
   scope :manageable, -> { where(role: MANAGEMENT_ROLES) }
   scope :ordered, -> { order(:role, :id) }
 
@@ -52,13 +61,16 @@ class OrganisationMembership < ApplicationRecord
   # the club.
   scope :for_user_subjects, ->(user) {
     account = user&.account
-    if account.nil?
-      none
-    else
-      relation = where(account_id: account.id).or(where(memberable: account))
-      relation = relation.or(where(memberable_type: "PlayerProfile", memberable_id: account.player_profiles.select(:id)))
-      relation.or(where(memberable_type: "CoachProfile", memberable_id: account.coach_profiles.select(:id)))
-    end
+    account.nil? ? none : for_account(account)
+  }
+
+  # The memberships that speak for an Account: its own rows plus the rows
+  # recorded on its linked player and coach profiles. Extracted so the account
+  # half of the subject resolution cannot drift from `for_user_subjects`.
+  scope :for_account, ->(account) {
+    relation = where(account_id: account.id).or(where(memberable: account))
+    relation = relation.or(where(memberable_type: "PlayerProfile", memberable_id: account.player_profiles.select(:id)))
+    relation.or(where(memberable_type: "CoachProfile", memberable_id: account.coach_profiles.select(:id)))
   }
 
   def active?

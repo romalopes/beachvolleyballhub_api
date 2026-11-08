@@ -2,17 +2,17 @@ module AdminAudit
   extend ActiveSupport::Concern
 
   included do
-    after_action :log_admin_action, only: [:create, :update, :destroy]
+    after_action :log_admin_action, only: [ :create, :update, :destroy ]
   end
 
   private
 
   def log_admin_action
     action = case action_name
-             when "create" then "create"
-             when "update" then "update"
-             when "destroy" then "destroy"
-             end
+    when "create" then "create"
+    when "update" then "update"
+    when "destroy" then "destroy"
+    end
 
     return unless action
 
@@ -63,4 +63,3 @@ module AdminAudit
     end
   end
 end
-

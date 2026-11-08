@@ -38,21 +38,21 @@ module Api
           render json: { errors: account.errors.full_messages }, status: :unprocessable_entity
         end
       rescue ActiveRecord::RecordNotUnique
-        render json: { errors: ["An account already exists for this user."] }, status: :unprocessable_entity
+        render json: { errors: [ "An account already exists for this user." ] }, status: :unprocessable_entity
       end
 
       def update_password
         user = Current.user
         unless user.authenticate(params[:current_password])
-          return render json: { errors: ["Current password is incorrect."] }, status: :unprocessable_entity
+          return render json: { errors: [ "Current password is incorrect." ] }, status: :unprocessable_entity
         end
 
         if params[:password].blank? || params[:password].length < 8
-          return render json: { errors: ["Password must be at least 8 characters."] }, status: :unprocessable_entity
+          return render json: { errors: [ "Password must be at least 8 characters." ] }, status: :unprocessable_entity
         end
 
         if params[:password] != params[:password_confirmation]
-          return render json: { errors: ["Password confirmation does not match."] }, status: :unprocessable_entity
+          return render json: { errors: [ "Password confirmation does not match." ] }, status: :unprocessable_entity
         end
 
         if user.update(password: params[:password], password_confirmation: params[:password_confirmation])

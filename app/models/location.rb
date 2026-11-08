@@ -23,6 +23,8 @@ class Location < ApplicationRecord
              dependent: :restrict_with_error, inverse_of: :default_location
   has_many :training_sessions, foreign_key: :location_id, dependent: :restrict_with_error,
              inverse_of: :canonical_location
+  has_many :training_templates, foreign_key: :location_id, dependent: :restrict_with_error,
+             inverse_of: :canonical_location
   has_many :tournaments, dependent: :restrict_with_error
 
   accepts_nested_attributes_for :aliases, allow_destroy: true
@@ -52,8 +54,17 @@ class Location < ApplicationRecord
     verified = active.where(verification_status: "verified")
     next verified if account.blank?
 
-    active.where(verification_status: "verified")
+    verified
       .or(active.where(verification_status: "proposed", proposed_by_account_id: account.id))
+      .or(proposed_for_organisations_of(account))
+  }
+  # A proposal an organisation is waiting on is that organisation's shared
+  # working set: every active member may see and schedule the venue while it
+  # awaits verification, not only the officer who proposed it.
+  scope :proposed_for_organisations_of, lambda { |account|
+    organisation_ids = OrganisationMembership.active.for_account(account).select(:organisation_id)
+    location_ids = OrganisationLocation.where(organisation_id: organisation_ids).select(:location_id)
+    active.where(verification_status: "proposed", id: location_ids)
   }
   scope :ordered, -> { order(:name, :id) }
 
@@ -83,8 +94,16 @@ class Location < ApplicationRecord
   def usable_by?(account)
     return false unless status == "active"
     return true if verification_status == "verified"
+    return false unless verification_status == "proposed" && account.present?
 
-    verification_status == "proposed" && account.present? && proposed_by_account_id == account.id
+    proposed_by_account_id == account.id || proposed_for_organisation_member?(account)
+  end
+
+  # Whether the account holds any active membership in an organisation this
+  # proposed venue is attached to — the member half of `usable_by?`.
+  def proposed_for_organisation_member?(account)
+    organisation_ids = OrganisationLocation.where(location_id: id).select(:organisation_id)
+    OrganisationMembership.active.for_account(account).where(organisation_id: organisation_ids).exists?
   end
 
   def geocodable?

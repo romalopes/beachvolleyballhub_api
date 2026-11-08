@@ -4,8 +4,8 @@ module Api
       include TournamentPayloads
       include TournamentManagementAuthorization
 
-      before_action :set_tournament, only: [:show, :update, :destroy, :archive, :publish, :cancel, :restore, :participate, :destroy_participation, :follow, :unfollow]
-      before_action :require_authentication, only: [:create, :update, :destroy, :archive, :publish, :cancel, :restore, :participate, :destroy_participation, :follow, :unfollow]
+      before_action :set_tournament, only: [ :show, :update, :destroy, :archive, :publish, :cancel, :restore, :participate, :destroy_participation, :follow, :unfollow ]
+      before_action :require_authentication, only: [ :create, :update, :destroy, :archive, :publish, :cancel, :restore, :participate, :destroy_participation, :follow, :unfollow ]
 
       # GET /api/v1/tournaments
       def index
@@ -42,7 +42,7 @@ module Api
         # Convert array parameters - REMOVED (redundant, query object handles type checking)
         # query_params[:letter_levels] = params[:letter_levels] if params[:letter_levels].is_a?(Array)
         # query_params[:division_numbers] = params[:division_numbers] if params[:division_numbers].is_a?(Array)
-        query_params[:mine] = params[:mine] == '1' if params[:mine].present?
+        query_params[:mine] = params[:mine] == "1" if params[:mine].present?
         # Both `mine` and `relationship` narrow to the caller's own tournaments,
         # so both demand a signed-in account; the query object resolves the
         # account's rows from the account_id handed to it here.
@@ -55,8 +55,8 @@ module Api
 
         relation = TournamentQuery.call(query_params)
         # Pagination
-        page = [(params[:page] || 1).to_i, 1].max
-        per_page = [[(params[:per_page] || 25).to_i, 1].max, 100].min
+        page = [ (params[:page] || 1).to_i, 1 ].max
+        per_page = [ [ (params[:per_page] || 25).to_i, 1 ].max, 100 ].min
         total = relation.count
         tournaments = relation.offset((page - 1) * per_page).limit(per_page)
 

@@ -69,7 +69,7 @@ class CreateTournamentTables < ActiveRecord::Migration[8.1]
 
     add_index :tournament_participations, :role
 
-    add_index :tournament_participation_divisions, [:tournament_participation_id, :tournament_division_id], unique: true
+    add_index :tournament_participation_divisions, [ :tournament_participation_id, :tournament_division_id ], unique: true
 
     add_index :tournament_watch_links, :position
 

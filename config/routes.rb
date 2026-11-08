@@ -145,7 +145,7 @@ Rails.application.routes.draw do
         end
         resources :courts, only: %i[index create update destroy]
       end
-      resources :tournaments, only: [:index, :show, :create, :update, :destroy] do
+      resources :tournaments, only: [ :index, :show, :create, :update, :destroy ] do
         member do
           patch :archive
           patch :publish
@@ -159,8 +159,8 @@ Rails.application.routes.draw do
         collection do
           get :options
         end
-        resources :divisions, only: [:create, :update, :destroy], controller: :tournament_divisions
-        resources :watch_links, only: [:create, :update, :destroy], controller: :tournament_watch_links
+        resources :divisions, only: [ :create, :update, :destroy ], controller: :tournament_divisions
+        resources :watch_links, only: [ :create, :update, :destroy ], controller: :tournament_watch_links
       end
       # A read-only account page for the profile catalogues. Editing continues
       # to use the existing singleton `/account` endpoint.
@@ -252,6 +252,9 @@ Rails.application.routes.draw do
           # account id is in the URL because one account may belong to many
           # organisations, so an account's memberships are never a single record.
           get :members
+          # The organisation's coach members, for the training forms' cascading
+          # coach pickers.
+          get :coaches
           # `action:` is required, not decorative: `post :members` would otherwise
           # route to the same `members` action as the GET above and silently
           # answer every write with a 200 and a roster.

@@ -111,6 +111,7 @@ class TrainingSeriesGenerator
       starts_at: occurrence.starts_at,
       ends_at: occurrence.ends_at,
       location: defaults[:location],
+      location_id: defaults[:location_id],
       location_detail: defaults[:location_detail],
       level: defaults[:level],
       capacity: defaults[:capacity],

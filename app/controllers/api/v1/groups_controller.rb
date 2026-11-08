@@ -170,7 +170,7 @@ module Api
         # somebody actually in it can be added. 422 rather than 403 — the request
         # was well formed, the subject simply does not belong.
         unless @group.shares_organisation?([], @group.organisation_id,
-                                           account_ids: account_ids, memberables: [memberable].compact)
+                                           account_ids: account_ids, memberables: [ memberable ].compact)
           return render json: {
             errors: [ "Each roster member must be an active member of this group's organisation." ]
           }, status: :unprocessable_entity
@@ -410,7 +410,7 @@ module Api
 
         # If group has organisation, validate the member belongs to it
         if @group.organisation_id.present? && membership.account_id.present?
-          unless @group.shares_organisation?([], @group.organisation_id, account_ids: [membership.account_id])
+          unless @group.shares_organisation?([], @group.organisation_id, account_ids: [ membership.account_id ])
             return render json: { errors: [ "Member must belong to the group's organisation." ] }, status: :forbidden
           end
         end

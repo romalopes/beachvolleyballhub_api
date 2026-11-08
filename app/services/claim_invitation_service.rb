@@ -204,5 +204,4 @@ class ClaimInvitationService
     { invitation: invitation, outcome: :linked, account: account }
   end
   private_class_method :auto_link!
-
 end

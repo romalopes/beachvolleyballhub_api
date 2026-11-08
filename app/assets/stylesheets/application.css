@@ -369,24 +369,8 @@ ul {
   position: relative;
 }
 
-.home-hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: var(--amber-50);
-  border: 1px solid var(--amber-100);
-  border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--amber-600);
-  margin-bottom: 1.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .home-hero h1 {
-  font-size: 4rem;
+  font-size: 1.8rem;
   font-weight: 800;
   letter-spacing: -0.05em;
   margin-bottom: 1.25rem;
@@ -934,10 +918,6 @@ ul {
     padding: 2rem 1.5rem;
   }
 
-  .home-hero h1 {
-    font-size: 2.5rem;
-  }
-
   h1 {
     font-size: 2rem;
   }
@@ -1315,190 +1295,190 @@ ul {
   font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
-/* ===== Admin show pages ===== */
-.admin-show {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+  /* ===== Admin show pages ===== */
+  .admin-show {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
 
-.admin-show-section {
-  padding: 1.25rem 1.5rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-}
+  .admin-show-section {
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
 
-.admin-show-section h2 {
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
-}
+  .admin-show-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
 
-.admin-show-section h3 {
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  margin-bottom: 0.75rem;
-}
+  .admin-show-section h3 {
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
 
-.admin-show-meta {
-  font-size: 0.875rem !important;
-  color: var(--text-secondary) !important;
-}
+  .admin-show-meta {
+    font-size: 0.875rem !important;
+    color: var(--text-secondary) !important;
+  }
 
-.admin-details {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 0.5rem 1rem;
-  font-size: 0.875rem;
-}
+  .admin-details {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
 
-.admin-details dt {
-  color: var(--text-muted);
-  font-weight: 600;
-}
+  .admin-details dt {
+    color: var(--text-muted);
+    font-weight: 600;
+  }
 
-.admin-details dd {
-  color: var(--text-primary);
-  margin: 0;
-}
+  .admin-details dd {
+    color: var(--text-primary);
+    margin: 0;
+  }
 
-.admin-related-list {
-/* ===== Admin forms ===== */
-.admin-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+  .admin-related-list {
+    /* ===== Admin forms ===== */
+    .admin-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
 
-.admin-form-section {
-  padding: 1.25rem 1.5rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-}
+    .admin-form-section {
+      padding: 1.25rem 1.5rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
 
-.admin-form-section h3 {
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  margin-bottom: 1rem;
-}
+    .admin-form-section h3 {
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
 
-.admin-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  margin-bottom: 1rem;
-}
+    .admin-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+      margin-bottom: 1rem;
+    }
 
-.admin-field:last-child {
-  margin-bottom: 0;
-}
+    .admin-field:last-child {
+      margin-bottom: 0;
+    }
 
-.admin-field label {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
+    .admin-field label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
 
-.admin-input,
-.admin-select,
-.admin-textarea {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 0.625rem 0.875rem;
-  font-size: 0.875rem;
-  font-family: var(--font-sans);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-}
+    .admin-input,
+    .admin-select,
+    .admin-textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.625rem 0.875rem;
+      font-size: 0.875rem;
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
 
-.admin-input:focus,
-.admin-select:focus,
-.admin-textarea:focus {
-  outline: none;
-  border-color: var(--amber-500);
-}
+    .admin-input:focus,
+    .admin-select:focus,
+    .admin-textarea:focus {
+      outline: none;
+      border-color: var(--amber-500);
+    }
 
-.admin-field-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1rem;
-}
+    .admin-field-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+    }
 
-.admin-form-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
+    .admin-form-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
 
-/* ===== Sidebar dropdown ===== */
-.sidebar-dropdown {
-  margin-top: 0.5rem;
-}
+    /* ===== Sidebar dropdown ===== */
+    .sidebar-dropdown {
+      margin-top: 0.5rem;
+    }
 
-.sidebar-dropdown-label {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.875rem 1rem;
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
+    .sidebar-dropdown-label {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.875rem 1rem;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
 
-.sidebar-dropdown-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding-left: 0.5rem;
-  margin-top: 0.25rem;
-}
+    .sidebar-dropdown-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding-left: 0.5rem;
+      margin-top: 0.25rem;
+    }
 
-.sidebar-dropdown-menu .sidebar-link {
-  font-size: 0.875rem;
-  padding: 0.625rem 1rem;
-}
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+    .sidebar-dropdown-menu .sidebar-link {
+      font-size: 0.875rem;
+      padding: 0.625rem 1rem;
+    }
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 
-.admin-related-item {
-  padding: 0.625rem 0.875rem;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
-}
+  .admin-related-item {
+    padding: 0.625rem 0.875rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+  }
 
-.admin-related-item .admin-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
+  .admin-related-item .admin-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
 
-.admin-related-item .admin-link:hover {
-  color: var(--amber-600);
-}
+  .admin-related-item .admin-link:hover {
+    color: var(--amber-600);
+  }
 
-.text-muted {
-  color: var(--text-muted);
-}
+  .text-muted {
+    color: var(--text-muted);
+  }
 
-.admin-link {
-  color: inherit;
-}
+  .admin-link {
+    color: inherit;
+  }
   letter-spacing: 0.06em;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);

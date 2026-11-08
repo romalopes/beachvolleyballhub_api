@@ -24,4 +24,3 @@ class ClaimInvitationDelivery
     false
   end
 end
-

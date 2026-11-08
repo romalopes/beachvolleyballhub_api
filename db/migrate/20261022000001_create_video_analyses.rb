@@ -14,7 +14,7 @@ class CreateVideoAnalyses < ActiveRecord::Migration[8.1]
       t.datetime :archived_at
       t.timestamps
     end
-    add_index :analyses, [:status, :updated_at]
+    add_index :analyses, [ :status, :updated_at ]
     add_check_constraint :analyses, "status IN ('draft', 'published', 'archived')", name: "analyses_status"
     add_check_constraint :analyses, "status <> 'published' OR published_at IS NOT NULL", name: "analyses_published_at"
     add_check_constraint :analyses, "status <> 'archived' OR archived_at IS NOT NULL", name: "analyses_archived_at"
@@ -25,7 +25,7 @@ class CreateVideoAnalyses < ActiveRecord::Migration[8.1]
       t.text :notes
       t.timestamps
     end
-    add_index :analysis_participants, [:analysis_id, :player_profile_id], unique: true, name: "index_analysis_participants_unique"
+    add_index :analysis_participants, [ :analysis_id, :player_profile_id ], unique: true, name: "index_analysis_participants_unique"
 
     create_table :analysis_videos do |t|
       t.references :analysis, null: false, foreign_key: { on_delete: :cascade }
@@ -36,7 +36,7 @@ class CreateVideoAnalyses < ActiveRecord::Migration[8.1]
       t.integer :position, null: false, default: 0
       t.timestamps
     end
-    add_index :analysis_videos, [:analysis_id, :position]
+    add_index :analysis_videos, [ :analysis_id, :position ]
     add_check_constraint :analysis_videos, "source_type IN ('external', 'upload')", name: "analysis_videos_source_type"
     add_check_constraint :analysis_videos, "(source_type = 'external' AND video_id IS NOT NULL) OR (source_type = 'upload' AND video_id IS NULL)", name: "analysis_videos_source"
 
@@ -48,7 +48,7 @@ class CreateVideoAnalyses < ActiveRecord::Migration[8.1]
       t.text :body, null: false
       t.timestamps
     end
-    add_index :analysis_annotations, [:analysis_video_id, :timestamp_seconds]
+    add_index :analysis_annotations, [ :analysis_video_id, :timestamp_seconds ]
     add_check_constraint :analysis_annotations, "timestamp_seconds >= 0", name: "analysis_annotations_timestamp"
 
     create_table :analysis_comments do |t|
@@ -58,13 +58,13 @@ class CreateVideoAnalyses < ActiveRecord::Migration[8.1]
       t.text :body, null: false
       t.timestamps
     end
-    add_index :analysis_comments, [:analysis_id, :created_at]
+    add_index :analysis_comments, [ :analysis_id, :created_at ]
 
     create_table :analysis_assessment_sessions do |t|
       t.references :analysis, null: false, foreign_key: { on_delete: :cascade }
       t.references :assessment_session, null: false, foreign_key: { on_delete: :cascade }
       t.timestamps
     end
-    add_index :analysis_assessment_sessions, [:analysis_id, :assessment_session_id], unique: true, name: "index_analysis_assessment_sessions_unique"
+    add_index :analysis_assessment_sessions, [ :analysis_id, :assessment_session_id ], unique: true, name: "index_analysis_assessment_sessions_unique"
   end
 end

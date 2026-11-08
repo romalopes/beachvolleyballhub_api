@@ -5,7 +5,7 @@ module Api
     # later\" — and is attached to drills/skills/trainings afterwards through
     # the library picker on the reference forms.
     class VideosController < ApplicationController
-      before_action :set_video, only: [:show, :update, :destroy]
+      before_action :set_video, only: [ :show, :update, :destroy ]
       after_action :verify_authorized, except: :index
       after_action :verify_policy_scoped, only: :index
 
@@ -17,7 +17,7 @@ module Api
       # serialized through include: with an explicit field allowlist.
       VIDEO_INCLUDE = {
         video_category: { only: %i[id name slug description position] },
-        video_tags: { only: %i[id name] },
+        video_tags: { only: %i[id name] }
       }.freeze
 
       def index
@@ -41,7 +41,7 @@ module Api
                .merge(created_by: Current.user),
         )
         unless @video
-          return render json: { errors: ["Source URL is not a valid video link"] },
+          return render json: { errors: [ "Source URL is not a valid video link" ] },
                         status: :unprocessable_entity
         end
         sync_tags

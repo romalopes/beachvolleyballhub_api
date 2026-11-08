@@ -42,7 +42,8 @@ class AccountInvitationTest < ActiveSupport::TestCase
     invitation = AccountInvitation.new(
       token_digest: AccountInvitation.generate_token_digest,
       invitee_email: "  TEST@EXAMPLE.COM  ",
-      expires_at: 7.days.from_now
+      expires_at: 7.days.from_now,
+      invited_by: users(:one)
     )
     assert invitation.valid?
     # After save, email should be normalized

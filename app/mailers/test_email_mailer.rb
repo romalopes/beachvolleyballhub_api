@@ -33,8 +33,14 @@ class TestEmailMailer < ApplicationMailer
   # ApplicationMailer#mail redirects every message to AppSetting.test_email
   # when test mode is on. That behaviour is for the application's own
   # notifications; this diagnostics send must always reach the address the
-  # caller supplied, so the redirect does not apply here.
+  # caller supplied, so the redirect is skipped via the opt-out flag. The
+  # [TEST] subject marker is still applied here, so nobody mistakes the
+  # diagnostic for real mail.
   def mail(headers = {}, &block)
+    if AppSetting.use_test_email?
+      headers = headers.merge(subject: "[TEST] #{headers[:subject]}")
+    end
+    headers[:skip_test_email_redirect] = true
     super
   end
 end

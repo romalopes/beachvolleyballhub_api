@@ -28,6 +28,16 @@ module Api
       FOCUS_ATTRIBUTES = %i[id skill_id custom_focus description position].freeze
       SESSION_DRILL_ATTRIBUTES = %i[id drill_id position duration_minutes notes].freeze
       PARTICIPANT_ATTRIBUTES = %i[id player_profile_id status notes].freeze
+      # The slice a signed-out visitor sees of a session detail: the public
+      # schedule itself — what, when, where and at what level — plus the session
+      # plan linking into the public skill/drill catalogues. None of the working
+      # data (roster, attendance, in-session assessments, per-drill notes) is
+      # included; that belongs to the people running the session.
+      PUBLIC_DETAIL_ATTRIBUTES = %i[id title description starts_at ends_at
+                                    location location_id court_id location_detail
+                                    status visibility capacity level
+                                    organisation_id created_by_id].freeze
+      PUBLIC_SESSION_DRILL_ATTRIBUTES = %i[id drill_id position duration_minutes].freeze
       # Fields a series occurrence may diverge on. Editing one of these through
       # the normal training form records an override so a later "update future"
       # does not silently overwrite the coach's change.
@@ -40,6 +50,12 @@ module Api
       INLINE_PERSON_ATTRIBUTES = InlineParticipantResolver::PERSON_ATTRIBUTES
 
       before_action :set_training_session, only: %i[show update destroy]
+      # A session is scheduled on an organisation's behalf: creating one, or
+      # re-pointing it at another organisation, requires a seat (owner,
+      # administrator or coach) in that organisation, or site oversight.
+      # Editing an existing session's other fields keeps the shared-schedule
+      # rule and stays open to training managers as before.
+      before_action :require_organisation_seat!, only: %i[create update]
       before_action :validate_index_filters!, only: :index
       after_action :verify_authorized, except: :index
       after_action :verify_policy_scoped, only: :index
@@ -126,13 +142,58 @@ module Api
         }
       end
 
-      # Builds the detail payload explicitly so each participant can carry the
-      # assessments recorded in this session (plan 4.2): `as_json(include:)`
-      # can only render associations, and a participant's in-session ratings
-      # are a pair of foreign keys (session + player), not an association.
-      # Only published rows appear here — drafts and withdrawn rows are
-      # working notes, reachable through the assessments endpoints.
+      # The seat rule for scheduling a session on an organisation's behalf:
+      # site oversight, or an active owner/administrator/coach membership of
+      # the requested organisation. On update an untouched or unchanged
+      # organisation is not re-checked, so the shared-schedule edit rule holds.
+      def require_organisation_seat!
+        # Guests never get past the Pundit gate below; the seat rule is about
+        # which organisations a signed-in scheduler may act for.
+        return if Current.user.nil?
+
+        requested = training_session_params[:organisation_id]
+        return if action_name == "update" && requested.blank?
+
+        organisation = Organisation.find_by(id: requested)
+        if organisation.nil?
+          return render json: { errors: [ "An organisation is required" ] },
+                        status: :unprocessable_entity
+        end
+        return if action_name == "update" && requested.to_i == @training_session.organisation_id
+        return if Current.user.admin? || Current.user.curator?
+
+        account = Current.user.account
+        seat = account && OrganisationMembership.active
+                                        .with_roles(%w[owner administrator coach])
+                                        .for_account(account)
+                                        .where(organisation_id: organisation.id)
+                                        .exists?
+        return if seat
+
+        render json: { errors: [ "Only an owner, administrator or coach of the organisation may schedule its sessions" ] },
+               status: :forbidden
+      end
+
+      # Builds the detail payload. The complete payload is for signed-in
+      # viewers; a signed-out visitor gets the public schedule slice instead.
+      # Each participant in the complete payload carries the assessments
+      # recorded in this session (plan 4.2): `as_json(include:)` can only render
+      # associations, and a participant's in-session ratings are a pair of
+      # foreign keys (session + player), not an association. Only published rows
+      # appear here — drafts and withdrawn rows are working notes, reachable
+      # through the assessments endpoints.
       def render_session_payload(status: :ok)
+        payload =
+          if Current.user.nil?
+            public_session_payload
+          else
+            complete_session_payload
+          end
+
+        render json: payload, status: status
+      end
+
+      def complete_session_payload
         payload = @training_session.as_json(
           only: DETAIL_ATTRIBUTES,
           methods: %i[status_label duration_minutes],
@@ -150,8 +211,49 @@ module Api
         end
         payload["canonical_location"] = @training_session.canonical_location&.summary
         payload["court"] = @training_session.court&.summary
+        payload
+      end
 
-        render json: payload, status: status
+      # The public schedule slice: what, when, where and at what level, plus the
+      # session plan (focuses and drills, which link into the public skill and
+      # drill catalogues). The roster, attendance, in-session assessments and
+      # per-drill notes stay with the people running the session.
+      def public_session_payload
+        payload = @training_session.as_json(
+          only: PUBLIC_DETAIL_ATTRIBUTES,
+          methods: %i[status_label duration_minutes],
+          include: {
+            created_by: { only: %i[id name] },
+            organisation: { only: %i[id name] },
+            training_focuses: {
+              only: FOCUS_ATTRIBUTES,
+              methods: %i[label],
+              include: {
+                skill: {
+                  only: %i[id title slug description],
+                  include: { category: { only: %i[id name slug] } }
+                }
+              }
+            },
+            training_session_drills: {
+              only: PUBLIC_SESSION_DRILL_ATTRIBUTES,
+              include: {
+                drill: {
+                  except: %i[created_by_id],
+                  include: {
+                    skills: {
+                      only: %i[id title slug],
+                      include: { category: { only: %i[id name slug] } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        )
+        payload["canonical_location"] = @training_session.canonical_location&.summary
+        payload["court"] = @training_session.court&.summary
+        payload
       end
 
       def filtered_training_sessions
@@ -169,6 +271,13 @@ module Api
         scope = scope.where(status: params[:status]) if params[:status].present?
         if params[:training_series_id].present?
           scope = scope.where(training_series_id: params[:training_series_id])
+        end
+
+        # Text search on the owning organisation's name. A session without an
+        # organisation does not match any search term.
+        if params[:organisation].present?
+          term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:organisation])}%"
+          scope = scope.joins(:organisation).where("organisations.name ILIKE ?", term)
         end
 
         # The radius filter ANDs with whatever else is active, and is applied
@@ -334,7 +443,7 @@ module Api
         permitted = params.require(:training_session).permit(
           :title, :description, :starts_at, :ends_at, :location, :location_id, :court_id, :location_detail,
           :capacity, :level, :organisation_id, :group_id, :coach_profile_id,
-          :status,
+          :training_series_id, :status,
           training_focuses_attributes: %i[id skill_id custom_focus description position _destroy],
           training_session_drills_attributes: %i[id drill_id position duration_minutes notes _destroy],
           training_session_participants_attributes: [

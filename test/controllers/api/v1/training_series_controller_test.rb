@@ -64,7 +64,7 @@ class Api::V1::TrainingSeriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "create persists the series and its occurrences" do
-    sign_in_as(@coach)
+    sign_in_as(users(:six)) # the Sydney club's owner, so an officer of the template's organisation
 
     assert_difference -> { TrainingSeries.count }, 1 do
       assert_difference -> { TrainingSession.count }, 8 do
@@ -81,7 +81,7 @@ class Api::V1::TrainingSeriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "create snapshots overrides for occurrences" do
-    sign_in_as(@coach)
+    sign_in_as(users(:six))
     post_json "/api/v1/training_series",
               training_series: payload(overrides: { title: "Sunrise Skills", capacity: 16 })
 
@@ -106,7 +106,7 @@ class Api::V1::TrainingSeriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "create rejects an invalid recurrence without writing" do
-    sign_in_as(@coach)
+    sign_in_as(users(:six))
 
     assert_no_difference -> { TrainingSeries.count } do
       assert_no_difference -> { TrainingSession.count } do
@@ -117,6 +117,29 @@ class Api::V1::TrainingSeriesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_includes json["errors"], "Ends on must be on or after the start date"
+  end
+
+  test "only an officer may schedule a series for the organisation" do
+    sign_in_as(@coach) # a training manager, but not an officer of the template's club
+
+    assert_no_difference -> { TrainingSeries.count } do
+      post_json "/api/v1/training_series", training_series: payload
+    end
+
+    assert_response :forbidden
+    assert_includes json["errors"], "Only an owner or administrator of the organisation may schedule its series"
+  end
+
+  test "a series stays with its template's organisation" do
+    sign_in_as(users(:six))
+
+    assert_no_difference -> { TrainingSeries.count } do
+      post_json "/api/v1/training_series",
+                training_series: payload(organisation_id: organisations(:northern_club).id)
+    end
+
+    assert_response :unprocessable_entity
+    assert_includes json["errors"], "A series is scheduled for its template's organisation"
   end
 
   test "index lists series with filters" do
@@ -189,17 +212,26 @@ class Api::V1::TrainingSeriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "a player cannot use the series endpoints" do
+  test "the series list is readable by players and guests for the public training filter" do
+    get "/api/v1/training_series"
+    assert_response :success
+    assert_equal 3, json["meta"]["total"]
+
     sign_in_as(@player)
     get "/api/v1/training_series"
-    assert_response :forbidden
+    assert_response :success
+    assert_equal 3, json["meta"]["total"]
+  end
+
+  test "a player cannot use the manager series endpoints" do
+    sign_in_as(@player)
 
     post_json "/api/v1/training_series/preview", training_series: payload
     assert_response :forbidden
   end
 
-  test "a guest is unauthorized" do
-    get "/api/v1/training_series"
+  test "a guest cannot use the manager series endpoints" do
+    post_json "/api/v1/training_series/preview", training_series: payload
     assert_response :unauthorized
   end
 

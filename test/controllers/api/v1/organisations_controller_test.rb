@@ -145,9 +145,83 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "index requires authentication" do
+  test "index is readable by a signed-out visitor" do
+    # Public, read-only discovery: the tree is shared context, so a visitor may
+    # see it — but holds no authority over any node, and every permission flag
+    # says so rather than hinting at controls the server would refuse.
     get "/api/v1/organisations"
+
+    assert_response :success
+    assert json["data"].any? { |row| row["name"] == "Sydney Beach Volleyball Club" }
+    json["data"].each do |row|
+      assert_equal false, row["can_edit"]
+      assert_equal false, row["can_delete"]
+      assert_equal false, row["can_manage_members"]
+      assert_equal false, row["can_approve_members"]
+    end
+  end
+
+  test "show is readable by a signed-out visitor with no permission flags" do
+    get "/api/v1/organisations/#{@club.id}"
+
+    assert_response :success
+    assert_equal "Sydney Beach Volleyball Club", json["name"]
+    assert_equal false, json["can_edit"]
+    assert_equal false, json["can_delete"]
+    assert_equal false, json["can_manage_members"]
+    assert_equal false, json["can_approve_members"]
+  end
+
+  test "mutating an organisation still requires authentication" do
+    post_json "/api/v1/organisations", organisation: { name: "Ghost Club", organisation_type: "club" }
     assert_response :unauthorized
+
+    patch_json "/api/v1/organisations/#{@club.id}", organisation: { name: "Renamed" }
+    assert_response :unauthorized
+    assert_equal "Sydney Beach Volleyball Club", @club.reload.name
+  end
+
+  test "mine narrows to the requested seats" do
+    other = Organisation.create!(name: "Other Club", slug: "other-club")
+    OrganisationMembership.create!(
+      organisation: other, account: accounts(:one), memberable: accounts(:one),
+      role: "owner", status: "active", joined_at: Time.current
+    )
+    sign_in_as(users(:five))
+
+    get "/api/v1/organisations", params: { mine: "1", status: "active" }
+    ids = json["data"].map { |row| row["id"] }
+    assert_includes ids, @club.id
+    assert_includes ids, other.id
+
+    get "/api/v1/organisations", params: { mine: "1", status: "active", roles: "owner,administrator" }
+    ids = json["data"].map { |row| row["id"] }
+    assert_equal [ other.id ], ids
+
+    get "/api/v1/organisations", params: { mine: "1", status: "active", roles: "coach" }
+    assert_empty json["data"]
+  end
+
+  test "the coach list returns the organisation's active coach members" do
+    sign_in_as(@coach)
+
+    get "/api/v1/organisations/#{@club.id}/coaches"
+
+    assert_response :success
+    ids = json["coaches"].map { |row| row["id"] }
+    assert_includes ids, coach_profiles(:maria_coach).id
+    assert_includes ids, coach_profiles(:unclaimed_roster_coach).id
+    # An account seat contributes its coach profiles rather than a second row.
+    assert_equal 2, ids.uniq.size
+  end
+
+  test "the coach list is limited to training managers" do
+    get "/api/v1/organisations/#{@club.id}/coaches"
+    assert_response :unauthorized
+
+    sign_in_as(@player_user)
+    get "/api/v1/organisations/#{@club.id}/coaches"
+    assert_response :forbidden
   end
 
   test "index is readable by a training manager, as the other catalogues are" do
@@ -1160,14 +1234,29 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     assert_empty json["data"].reject { |row| row["status"] == "ended" }
   end
 
-  test "a player who is not a training manager may not read the roster at all" do
-    # John Smith is an ordinary member of the club. Being on the roster is not what
-    # opens the organisation to you.
+  test "a player who is not a training manager sees the roster through the visibility ladder" do
+    # John Smith is an ordinary member of the club. The ladder in
+    # `visible_memberships` lets an active member see who they serve alongside —
+    # the active rows — and nothing more: invitations and history belong to the
+    # people who run the roster.
     sign_in_as(users(:five))
 
     get "/api/v1/organisations/#{@club.id}/members"
 
-    assert_response :forbidden
+    assert_response :success
+    assert json["data"].any?
+    assert_empty json["data"].reject { |row| row["status"] == "active" }
+  end
+
+  test "a signed-out visitor sees only historical roster rows" do
+    # Hiding ended memberships from the public would erase the record this
+    # feature exists to keep; the active roster and pending invitations stay
+    # with the people who can act on them.
+    get "/api/v1/organisations/#{organisations(:northern_club).id}/members"
+
+    assert_response :success
+    assert json["data"].any?
+    assert_empty json["data"].reject { |row| row["status"] == "ended" }
   end
 
   test "the owner sees the whole roster" do
@@ -1357,11 +1446,6 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "a guest may not read the roster" do
-    get "/api/v1/organisations/#{@club.id}/members"
-    assert_response :unauthorized
-  end
-
   # --- authorization ---------------------------------------------------------
 
   test "a coach who is not an officer may not edit an organisation" do
@@ -1508,23 +1592,26 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
 
     delete leave_membership_api_v1_organisation_path(@club)
 
-    assert_response :forbidden
-    assert_match(/only active owner/, json["errors"].first)
+    assert_response :unprocessable_entity
+    assert_match(/sole owner/, json["errors"].first)
     membership = OrganisationMembership.find_by(
       organisation: @club, account: @coach.account
     )
     assert_equal "active", membership.status
   end
 
-  test "an owner can leave if another active owner exists" do
-    # Create a second owner
-    other_user = users(:five)
-    OrganisationMembership.create!(
-      organisation: @club,
-      account: other_user.account,
-      role: "owner",
+  test "an owner who has handed over ownership can leave" do
+    # The roster holds exactly one active owner (model validation plus a partial
+    # unique index), so a second owner cannot simply be added: ownership moves
+    # by demoting the incumbent and promoting a member.
+    successor = @club.organisation_memberships.create!(
+      account: users(:three).account,
+      memberable: users(:three).account,
+      role: "member",
       status: "active"
     )
+    @club.organisation_memberships.find_by(account: @coach.account).update!(role: "member")
+    successor.update!(role: "owner")
 
     sign_in_as(@coach)
 
@@ -1681,26 +1768,28 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
 
   # --- leaving (self-service) ------------------------------------------------
 
-  test "a coach can leave an organisation they are a member of" do
-    # @coach is an owner of @club
-    sign_in_as(@coach)
-
-    assert_difference "OrganisationMembership.count", -1 do
-      delete leave_membership_api_v1_organisation_path(@club)
-    end
-
-    assert_response :success
-    assert json["removed"]
-    refute OrganisationMembership.exists?(organisation: @club, account: @coach.account, status: "active")
-  end
-
-  test "leaving ends the membership rather than deleting it (history preserved)" do
-    sign_in_as(@coach)
+  test "a member can leave an organisation they are a member of" do
+    # users(:five) is club_player: an ordinary active (non-owner) member of @club.
+    sign_in_as(users(:five))
 
     delete leave_membership_api_v1_organisation_path(@club)
 
     assert_response :success
-    membership = OrganisationMembership.find_by(organisation: @club, account: @coach.account)
+    refute json["removed"] # the row was ended, not deleted
+    membership = OrganisationMembership.find_by(organisation: @club, account: users(:five).account)
+    assert_equal "ended", membership.status
+  end
+
+  test "leaving ends the membership rather than deleting it (history preserved)" do
+    # users(:five) is club_player: an ordinary active (non-owner) member of @club.
+    sign_in_as(users(:five))
+
+    assert_no_difference "OrganisationMembership.count" do
+      delete leave_membership_api_v1_organisation_path(@club)
+    end
+
+    assert_response :success
+    membership = OrganisationMembership.find_by(organisation: @club, account: users(:five).account)
     assert_not_nil membership
     assert_equal "ended", membership.status
     assert_not_nil membership.left_at
@@ -1712,16 +1801,24 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
 
     delete leave_membership_api_v1_organisation_path(@club)
 
-    assert_response :forbidden
-    assert_match(/only active owner/, json["errors"].first)
+    assert_response :unprocessable_entity
+    assert_match(/sole owner/, json["errors"].first)
     # Membership should still exist
     assert OrganisationMembership.exists?(organisation: @club, account: @coach.account, status: "active")
   end
 
-  test "an owner can leave if there is another active owner" do
-    # Create another owner
-    other = users(:three)
-    @club.organisation_memberships.create!(account: other.account, role: "owner", status: "active")
+  test "an owner can leave after transferring ownership to another member" do
+    # The one-active-owner rule (model validation plus a partial unique index)
+    # means ownership is transferred — demote the incumbent, promote a member —
+    # rather than a second owner being added alongside the first.
+    successor = @club.organisation_memberships.create!(
+      account: users(:three).account,
+      memberable: users(:three).account,
+      role: "member",
+      status: "active"
+    )
+    @club.organisation_memberships.find_by(account: @coach.account).update!(role: "member")
+    successor.update!(role: "owner")
 
     sign_in_as(@coach)
 
@@ -1729,27 +1826,32 @@ class Api::V1::OrganisationsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     refute OrganisationMembership.exists?(organisation: @club, account: @coach.account, status: "active")
-    # Other owner should still be active
-    assert OrganisationMembership.exists?(organisation: @club, account: other.account, status: "active")
+    # The successor keeps the seat as the organisation's active owner.
+    assert OrganisationMembership.exists?(organisation: @club, account: successor.account, status: "active", role: "owner")
   end
 
-  test "a pending membership is withdrawn (destroyed) when leaving" do
-    # Create a pending membership
+  test "leaving is refused while the caller only has a pending request" do
+    # A pending request is not a seat: `leave` ends active memberships, so an
+    # applicant who has not been approved is told they are not a member rather
+    # than having their request silently withdrawn. Withdrawing one's own
+    # pending request is reject_member's job (see "a requester may withdraw
+    # their own pending join request").
     @club.update!(requires_approval: true)
-    sign_in_as(@coach)
+    applicant = users(:three) # no membership of the club yet
+    sign_in_as(applicant)
     post join_api_v1_organisation_path(@club)
     assert_response :created
 
-    membership = OrganisationMembership.find_by(organisation: @club, account: @coach.account)
+    membership = OrganisationMembership.find_by(organisation: @club, account: applicant.account)
     assert_equal "pending", membership.status
 
-    assert_difference "OrganisationMembership.count", -1 do
+    assert_no_difference "OrganisationMembership.count" do
       delete leave_membership_api_v1_organisation_path(@club)
     end
 
-    assert_response :success
-    assert json["removed"]
-    refute OrganisationMembership.exists?(membership.id)
+    assert_response :not_found
+    assert_match(/not an active member/, json["errors"].first)
+    assert_equal "pending", membership.reload.status
   end
 
   test "a guest may not leave an organisation" do

@@ -23,12 +23,14 @@ class AccountInvitation < ApplicationRecord
   validates :token_digest, presence: true, uniqueness: { scope: :status }
   validates :status, inclusion: { in: STATUSES }
   validates :expires_at, presence: true
-  validates :invitee_email, format: { with: URI::MailTo::EMAIL_REGEXP },
+  validates :invitee_email, format: { with: URI::MailTo::EMAIL_REGEXP, message: "format is invalid" },
                             allow_nil: true, allow_blank: true
   validates :used_at, presence: true, if: -> { status == "used" }
   validates :used_by, presence: true, if: -> { status == "used" }
   validates :revoked_at, presence: true, if: -> { status == "revoked" }
   validates :declined_at, presence: true, if: -> { status == "declined" }
+  validate :invitee_email_is_unique_among_active_invitations,
+           if: -> { status == "active" && invitee_email.present? }
 
   scope :active, -> { where(status: "active") }
   scope :by_email, ->(email) { where("LOWER(TRIM(invitee_email)) = ?", email.strip.downcase) }
@@ -61,5 +63,17 @@ class AccountInvitation < ApplicationRecord
       declined_at: declined_at,
       created_at: created_at
     }
+  end
+
+  private
+
+  # Only one outstanding invitation per address: a second active invitation
+  # would leave two redeemable tokens for the same email, so the older one
+  # could be used after a newer invitation was sent. Revoked, used, expired
+  # and declined rows record history and never block a fresh invitation.
+  def invitee_email_is_unique_among_active_invitations
+    rival = AccountInvitation.active.where(invitee_email: invitee_email)
+    rival = rival.where.not(id: id) if persisted?
+    errors.add(:invitee_email, "has already been taken") if rival.exists?
   end
 end

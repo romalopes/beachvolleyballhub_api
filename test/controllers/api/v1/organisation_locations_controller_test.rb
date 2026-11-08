@@ -31,6 +31,35 @@ class Api::V1::OrganisationLocationsControllerTest < ActionDispatch::Integration
     assert_equal false, rows.first.fetch("default")
   end
 
+  test "a signed-out visitor lists the venues attached to an organisation" do
+    # The detail page is public read-only discovery, so its venue list is too.
+    OrganisationLocation.create!(organisation: @organisation, location: @verified)
+    get api_v1_organisation_organisation_locations_path(@organisation)
+
+    assert_response :success
+    rows = response.parsed_body.fetch("locations")
+    assert_equal [ @verified.id ], rows.map { |row| row.fetch("id") }
+  end
+
+  test "the public venue list stops at verified records but members see proposals" do
+    club = @organisation
+    proposal = Location.create!(name: "Awaiting Beach", verification_status: "proposed",
+                                proposed_by_account: accounts(:two))
+    club.organisation_locations.build(location: proposal).save(validate: false)
+    OrganisationLocation.create!(organisation: club, location: @verified)
+
+    get api_v1_organisation_organisation_locations_path(club)
+    ids = response.parsed_body.fetch("locations").map { |row| row.fetch("id") }
+    assert_equal [ @verified.id ], ids
+
+    # Any active member sees the organisation's working set, not only officers.
+    sign_in_as(users(:five))
+    get api_v1_organisation_organisation_locations_path(club)
+    ids = response.parsed_body.fetch("locations").map { |row| row.fetch("id") }
+    assert_includes ids, proposal.id
+    assert_includes ids, @verified.id
+  end
+
   test "an owner attaches a verified venue" do
     sign_in_as(@owner)
 

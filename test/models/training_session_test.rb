@@ -324,6 +324,9 @@ class TrainingSessionTest < ActiveSupport::TestCase
       ends_at: Time.zone.parse("2026-10-01 11:00"),
       location: "Coogee Beach",
       status: "scheduled",
+      # A session is scheduled on an organisation's behalf, and the association
+      # is mandatory (see TrainingSession#organisation).
+      organisation: organisations(:sydney_club),
       created_by: users(:three)
     }.merge(overrides)
   end

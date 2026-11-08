@@ -7,7 +7,7 @@ class CreateDrillSkills < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :drill_skills, [:drill_id, :skill_id], unique: true
+    add_index :drill_skills, [ :drill_id, :skill_id ], unique: true
     add_index :drill_skills, :skill_id
   end
 end

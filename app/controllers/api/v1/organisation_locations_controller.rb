@@ -3,13 +3,19 @@ module Api
     class OrganisationLocationsController < ApplicationController
       include LocationPayloads
 
-      before_action :require_authentication
+      # Listing venues is public read-only discovery — the public detail page
+      # shows them to signed-out visitors — while attaching or changing them
+      # stays editor-gated.
+      before_action :require_authentication, except: :index
       before_action :set_organisation
-      before_action :require_reader!, only: :index
       before_action :require_editor!, except: :index
 
       def index
         rows = @organisation.organisation_locations.includes(:location).order("locations.name")
+        # A proposal is the organisation's working set: its members (and site
+        # oversight) see it here while it awaits verification; the public venue
+        # list stops at verified records.
+        rows = rows.merge(Location.selectable) unless member_or_oversight?
         render json: {
           locations: rows.map do |row|
             location_summary(row.location).merge(
@@ -60,16 +66,22 @@ module Api
         render json: { error: "Organisation not found" }, status: :not_found
       end
 
-      def require_reader!
-        return if OrganisationAccess.can_read?(@organisation, Current.user)
-
-        render json: { error: "Forbidden" }, status: :forbidden
-      end
-
       def require_editor!
         return if OrganisationAccess.can_edit?(@organisation, Current.user)
 
         render json: { error: "Forbidden" }, status: :forbidden
+      end
+
+      # Whether the caller holds any active membership in this organisation —
+      # the visibility line for its unverified venue proposals.
+      def member_or_oversight?
+        return true if Current.user&.admin? || Current.user&.curator?
+
+        account = Current.user&.account
+        account && OrganisationMembership.active
+                                        .for_account(account)
+                                        .where(organisation_id: @organisation.id)
+                                        .exists?
       end
 
       def association_params

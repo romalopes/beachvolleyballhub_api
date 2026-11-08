@@ -14,8 +14,10 @@ u19_squad_pedro:
 
 # An unclaimed player can be rostered before an Account exists. The player detail
 # endpoint must serialize this profile-held row rather than only account rows.
-u19_squad_accountless_player:
-  group: u19_squad
+# The row lives on the club's own squad so the shared U19 roster keeps exactly
+# the two subjects its tests count: Pedro's account and the fixture owner.
+sydney_club_squad_accountless_player:
+  group: sydney_club_squad
   memberable: pedro_player (PlayerProfile)
 
 # users(:six) created u19_squad and owns it.

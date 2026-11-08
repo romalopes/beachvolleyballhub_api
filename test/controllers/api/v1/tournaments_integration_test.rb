@@ -386,7 +386,7 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(@user)
     TournamentParticipation.create!(account: @account, tournament: @tournament, role: "player")
 
-    get "/api/v1/tournaments", params: { relationship: ["participating"] }
+    get "/api/v1/tournaments", params: { relationship: [ "participating" ] }
 
     assert_response :success
     assert_equal [ @tournament.id ], json["tournaments"].map { |t| t["id"] }
@@ -395,7 +395,7 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
   test "relationship=created returns tournaments the caller created" do
     sign_in_as(@user) # @tournament was created by @account
 
-    get "/api/v1/tournaments", params: { relationship: ["created"] }
+    get "/api/v1/tournaments", params: { relationship: [ "created" ] }
 
     assert_response :success
     assert_equal [ @tournament.id ], json["tournaments"].map { |t| t["id"] }
@@ -405,7 +405,7 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(@user)
     TournamentFollow.create!(account: @account, tournament: @tournament)
 
-    get "/api/v1/tournaments", params: { relationship: ["following"] }
+    get "/api/v1/tournaments", params: { relationship: [ "following" ] }
 
     assert_response :success
     assert_equal [ @tournament.id ], json["tournaments"].map { |t| t["id"] }
@@ -427,14 +427,14 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
     )
     TournamentFollow.create!(account: @account, tournament: followed)
 
-    get "/api/v1/tournaments", params: { relationship: ["created", "following"] }
+    get "/api/v1/tournaments", params: { relationship: [ "created", "following" ] }
 
     assert_response :success
     assert_equal [ @tournament.id, followed.id ].sort, json["tournaments"].map { |t| t["id"] }.sort
   end
 
   test "relationship requires authentication" do
-    get "/api/v1/tournaments", params: { relationship: ["following"] }
+    get "/api/v1/tournaments", params: { relationship: [ "following" ] }
 
     assert_response :unauthorized
   end

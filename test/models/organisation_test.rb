@@ -406,16 +406,16 @@ class OrganisationTest < ActiveSupport::TestCase
   end
 
   test "cannot delete organisation with associated tournaments" do
-    organisation = Organisation.create!(name: 'Test Org', slug: 'test-org')
-    account = Account.create!(user: User.create!(email_address: 'test@example.com', password: 'password'))
+    organisation = Organisation.create!(name: "Test Org", slug: "test-org")
+    account = Account.create!(user: User.create!(email_address: "test@example.com", password: "password"))
     Tournament.create!(
-      name: 'Test Tournament',
+      name: "Test Tournament",
       organisation: organisation,
-      scope: 'club',
-      division_scheme: 'letter',
+      scope: "club",
+      division_scheme: "letter",
       starts_at: DateTime.now,
       ends_at: DateTime.now + 1.day,
-      timezone: 'UTC',
+      timezone: "UTC",
       created_by_account: account
     )
 

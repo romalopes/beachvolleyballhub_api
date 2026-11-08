@@ -5,14 +5,14 @@ class Tournament < ApplicationRecord
   self.ignored_columns += %w[city state country]
 
   belongs_to :organisation
-  belongs_to :created_by_account, class_name: 'Account'
+  belongs_to :created_by_account, class_name: "Account"
   belongs_to :location, optional: true
   belongs_to :court, optional: true
-  has_many :divisions, class_name: 'TournamentDivision', dependent: :destroy
-  has_many :participations, class_name: 'TournamentParticipation', dependent: :destroy
-  has_many :watch_links, class_name: 'TournamentWatchLink', dependent: :destroy
+  has_many :divisions, class_name: "TournamentDivision", dependent: :destroy
+  has_many :participations, class_name: "TournamentParticipation", dependent: :destroy
+  has_many :watch_links, class_name: "TournamentWatchLink", dependent: :destroy
   # The watching-list bookmarks. Thin on purpose — see TournamentFollow.
-  has_many :follows, class_name: 'TournamentFollow', dependent: :destroy
+  has_many :follows, class_name: "TournamentFollow", dependent: :destroy
 
   # The DB columns are strings guarded by CHECK constraints (valid_scope /
   # valid_publication_state), so the enum VALUES must be the labels themselves.

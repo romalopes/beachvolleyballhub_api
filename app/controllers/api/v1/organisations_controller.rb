@@ -7,10 +7,11 @@ module Api
     # unbounded, so nothing here may assume how many tiers exist and no code may
     # branch on `organisation_type` to decide behaviour.
     #
-    # Read is gated the same way as the other people-facing catalogues (groups,
-    # players, coaches): a training manager, not any signed-in account. Opening
-    # the tree to player accounts would make this the only roster in the app they
-    # can read, which is not what "shared context" should mean here.
+    # Reading the tree is public: `index` answers signed-out visitors with every
+    # permission flag false (read-only discovery), and `nearby` serves the map.
+    # Everything else stays gated — `show` and `members` to organisation readers,
+    # and the mutating actions to their respective authorities (create is
+    # admin-only).
     class OrganisationsController < ApplicationController
       include ContentAuthorization
       include Pagination
@@ -20,18 +21,20 @@ module Api
       NEARBY_DEFAULT_LIMIT = 20
       NEARBY_MAX_LIMIT = 50
 
-      before_action :require_authentication, except: :nearby
-      before_action :require_training_manager!, except: %i[show index join leave add_created_profile_membership remove_created_profile_membership nearby]
+      # `index`, `show`, `members` and `nearby` are read-only discovery and answer
+      # anyone — `visible_memberships` narrows the roster down for callers without
+      # authority. Every other action needs a signed-in account before its own
+      # authority applies.
+      before_action :require_authentication, except: %i[index show members nearby]
+      before_action :require_training_manager!, except: %i[show index members join leave add_created_profile_membership remove_created_profile_membership nearby]
       # Loaded before the authority checks, not after: every organisation rule below
       # needs the record it is judging, and a rule that silently passed because the
       # record was nil would be the worst kind of bug here.
       before_action :set_organisation,
                     only: %i[show update archive restore logo destroy
-                              members member_candidates create_member update_member end_member join leave
+                              members coaches member_candidates create_member update_member end_member join leave
                               add_created_profile_membership remove_created_profile_membership
                              approve_member reject_member]
-      before_action :require_organisation_reader!, only: :show
-      before_action :require_organisation_reader!, only: :members
       # Creating a node and moving one are claims made *to other clubs* about the
       # tree, so they stay admin-only.
       before_action :require_organisation_admin!, only: %i[create]
@@ -101,10 +104,13 @@ module Api
         # you start a new group for a club you have left. A caller with no Person
         # is a non-member rather than an error, so they simply get none.
         if params[:mine].present?
-          mine_ids = OrganisationMembership
-                     .active
-                     .for_user_subjects(Current.user)
-                     .select(:organisation_id)
+          mine_scope = OrganisationMembership
+                       .active
+                       .for_user_subjects(Current.user)
+          # `roles` narrows "mine" to particular seats, e.g. the
+          # owner/administrator organisations a form's user may schedule for.
+          mine_scope = mine_scope.with_roles(params[:roles]) if params[:roles].present?
+          mine_ids = mine_scope.select(:organisation_id)
           organisations = organisations.where(id: mine_ids)
         end
 
@@ -413,6 +419,21 @@ module Api
         }
       end
 
+      # The coaches who may run sessions for this organisation: its active
+      # coach members. Feeds the coach pickers on the training forms, which
+      # scope to the selected organisation.
+      def coaches
+        memberships = @organisation.organisation_memberships.active
+        profile_ids = memberships.where(memberable_type: "CoachProfile").pluck(:memberable_id)
+        account_ids = memberships.where(memberable_type: "Account").pluck(:memberable_id)
+        account_profile_ids = CoachProfile.where(account_id: account_ids).pluck(:id)
+
+        coaches = CoachProfile.where(id: (profile_ids + account_profile_ids).uniq)
+                              .where(status: "active")
+                              .order(:display_name, :id)
+        render json: { coaches: coaches.map { |coach| coach_option(coach) } }
+      end
+
       # Search subjects that can be added to this organisation's roster. The
       # roster is polymorphic, so the typeahead must be as well: claimed or linked
       # profiles are returned as their canonical Account, while unclaimed player and
@@ -567,16 +588,16 @@ module Api
       def leave
         account = Current.user&.account
         if account.nil?
-          return render json: { errors: ["Your account is not ready."] }, status: :unprocessable_entity
+          return render json: { errors: [ "Your account is not ready." ] }, status: :unprocessable_entity
         end
 
         if @organisation.archived?
-          return render json: { errors: ["Cannot leave an archived organisation."] }, status: :unprocessable_entity
+          return render json: { errors: [ "Cannot leave an archived organisation." ] }, status: :unprocessable_entity
         end
 
         membership = @organisation.organisation_memberships.active.find_by(account: account)
         if !membership
-          return render json: { errors: ["You are not an active member of this organisation."] }, status: :not_found
+          return render json: { errors: [ "You are not an active member of this organisation." ] }, status: :not_found
         end
 
         if membership.owner?
@@ -586,7 +607,7 @@ module Api
                                   .where.not(id: membership.id)
                                   .exists?
           unless other_owner
-            return render json: { errors: ["Cannot leave organisation as the sole owner."] }, status: :unprocessable_entity
+            return render json: { errors: [ "Cannot leave organisation as the sole owner." ] }, status: :unprocessable_entity
           end
         end
 
@@ -844,7 +865,38 @@ module Api
       # grouped query keeps the list at a fixed cost. Omitted arguments (a single
       # `show`) simply fall back to the per-record queries, which are correct and
       # cheap at that size.
+      # The coach picker needs identity only: the profile id it submits and a
+      # display name, with the account's name as the canonical spelling.
+      def coach_option(coach)
+        {
+          id: coach.id,
+          display_name: coach.display_name,
+          full_name: coach.full_name,
+          account: coach.account && { id: coach.account.id, full_name: coach.account.full_name }
+        }
+      end
+
       def serialize(organisation, child_counts: nil, membership_counts: nil)
+        # An anonymous caller of the public index holds no authority over any
+        # node: every permission flag is false so the SPA renders no controls the
+        # server would refuse. The `metadata` call keeps the same shape — counts
+        # are passed through so the list stays a fixed number of queries.
+        if Current.user.nil?
+          return organisation.metadata(
+            editable_ids: Set.new,
+            editable_all: false,
+            manage_members_ids: Set.new,
+            manage_members_all: false,
+            child_counts: child_counts,
+            membership_counts: membership_counts
+          ).merge(
+            can_edit: false,
+            can_delete: false,
+            can_manage_members: false,
+            can_approve_members: false
+          )
+        end
+
         organisation.metadata(
           editable_ids: editable_organisation_ids,
           editable_all: editable_all?,
@@ -922,14 +974,6 @@ module Api
                           .find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Organisation not found" }, status: :not_found
-      end
-
-      # A member may read the organisation they belong to from their Identity
-      # dashboard. Catalogue and management access remain training-manager only.
-      def require_organisation_reader!
-        return if OrganisationAccess.can_read?(@organisation, Current.user)
-
-        render json: { error: "Forbidden" }, status: :forbidden
       end
 
       # `status` is writable so a client can archive or restore in one call, but

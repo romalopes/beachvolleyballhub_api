@@ -27,13 +27,13 @@ module Api
       # for the form to preload (see README "Video categories & tags").
       VIDEO_INCLUDE = {
         video_category: { only: %i[id name slug description position] },
-        video_tags: { only: %i[id name] },
+        video_tags: { only: %i[id name] }
       }.freeze
 
       def create
         video = resolve_video
         unless video
-          return render json: { errors: ["Video URL is not a valid video link"] },
+          return render json: { errors: [ "Video URL is not a valid video link" ] },
                         status: :unprocessable_entity
         end
 
@@ -141,8 +141,8 @@ module Api
         params.require(:video_reference)
               .permit(:start_seconds, :end_seconds, :title, :description, :position,
                       :video_id,
-                      video: [:source_url, :title, :description, :video_category_id,
-                              { video_tag_ids: [] }])
+                      video: [ :source_url, :title, :description, :video_category_id,
+                              { video_tag_ids: [] } ])
               .except(:video_id, :video)
       end
 

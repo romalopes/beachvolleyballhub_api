@@ -104,7 +104,7 @@ class WeatherApiTest < ActiveSupport::TestCase
         wind_kph: nil
       }
     ])
-    response = FakeResponse.new("200", JSON.generate(forecast: { forecastday: [day] }))
+    response = FakeResponse.new("200", JSON.generate(forecast: { forecastday: [ day ] }))
 
     result = travel_to(Time.utc(2026, 10, 27, 5)) do
       WeatherApi.fetch_forecast(0, 0, api_key: "secret", http_class: fake_http(response), cache: nil)

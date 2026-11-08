@@ -37,7 +37,7 @@ class SecurityMailerTest < ActionMailer::TestCase
   test "renders a multipart email with the login details" do
     email = SecurityMailer.new_login_email(@user, @details_hash).deliver_now
 
-    assert_equal [@user.email_address], email.to
+    assert_equal [ @user.email_address ], email.to
     assert_includes email.subject, "New sign-in"
 
     assert email.multipart?

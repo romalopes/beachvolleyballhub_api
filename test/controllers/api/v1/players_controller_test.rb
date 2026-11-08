@@ -172,7 +172,7 @@ class Api::V1::PlayersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     body = JSON.parse(response.body)
     organisation_membership = body.fetch("organisation_memberships").find { |row| row.fetch("id") == organisation_memberships(:accountless_club_member).id }
-    group_membership = body.fetch("group_memberships").find { |row| row.fetch("id") == group_memberships(:u19_squad_accountless_player).id }
+    group_membership = body.fetch("group_memberships").find { |row| row.fetch("id") == group_memberships(:sydney_club_squad_accountless_player).id }
 
     assert_nil organisation_membership.fetch("account_id")
     assert_equal "PlayerProfile", organisation_membership.fetch("memberable_type")
@@ -182,7 +182,7 @@ class Api::V1::PlayersControllerTest < ActionDispatch::IntegrationTest
     assert_nil group_membership.fetch("account_id")
     assert_equal "PlayerProfile", group_membership.fetch("memberable_type")
     assert_equal player.id, group_membership.fetch("memberable_id")
-    assert_equal groups(:u19_squad).name, group_membership.dig("group", "name")
+    assert_equal groups(:sydney_club_squad).name, group_membership.dig("group", "name")
   end
 
   test "private players are hidden from unrelated coaches but visible to owner and curator" do

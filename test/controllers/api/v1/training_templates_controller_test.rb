@@ -128,6 +128,46 @@ class Api::V1::TrainingTemplatesControllerTest < ActionDispatch::IntegrationTest
     assert_includes json["errors"], "Name can't be blank"
   end
 
+  test "create requires an organisation" do
+    sign_in_as(@coach)
+
+    assert_no_difference -> { TrainingTemplate.count } do
+      post_json api_v1_training_templates_path,
+                training_template: valid_payload(organisation_id: nil)
+    end
+
+    assert_response :unprocessable_entity
+    assert_includes json["errors"], "Organisation must exist"
+  end
+
+  test "the canonical location must be one of the organisation's locations" do
+    club = organisations(:sydney_club)
+    other_club = organisations(:northern_club)
+    attached = Location.create!(name: "Club's Own Beach", verification_status: "verified",
+                                verified_at: Time.current, source: "test")
+    OrganisationLocation.create!(organisation: club, location: attached)
+    elsewhere = Location.create!(name: "Another Club's Beach", verification_status: "verified",
+                                 verified_at: Time.current, source: "test")
+    OrganisationLocation.create!(organisation: other_club, location: elsewhere)
+    sign_in_as(@coach)
+
+    assert_no_difference -> { TrainingTemplate.count } do
+      post_json api_v1_training_templates_path,
+                training_template: valid_payload(location_id: elsewhere.id)
+    end
+    assert_response :unprocessable_entity
+    assert_includes json["errors"], "Location must be one of the organisation's locations"
+
+    assert_difference -> { TrainingTemplate.count }, 1 do
+      post_json api_v1_training_templates_path,
+                training_template: valid_payload(location_id: attached.id)
+    end
+    assert_response :created
+    template = TrainingTemplate.order(:id).last
+    assert_equal attached.id, template.location_id
+    assert_equal club.id, template.organisation_id
+  end
+
   test "a player cannot list or create templates" do
     sign_in_as(@player)
     get api_v1_training_templates_path

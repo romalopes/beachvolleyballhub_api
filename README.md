@@ -17,6 +17,7 @@ Cloudflare frontend: [Cloudflare frontend](https://beachvolleyballhub.romalopes.
 | [Email environment and sender configuration](docs/IDENTITY_226_mail_transport/03_ENVIRONMENT_SENDER_AND_ROLLOUT.md) | Provider credentials, sender identity and rollout. |
 | [Email operations and verification](docs/IDENTITY_226_mail_transport/04_OPERATIONS_AND_VERIFICATION.md) | Transport checks and delivery troubleshooting. |
 | [Send a test email](docs/IDENTITY_226_mail_transport/05_SEND_TEST_EMAIL.md) | Exercise outbound delivery. |
+| [Testing](docs/TESTING.md) | Rails API tests, system tests, isolation, and CI artifacts. |
 
 ## Architecture and implementation references
 
