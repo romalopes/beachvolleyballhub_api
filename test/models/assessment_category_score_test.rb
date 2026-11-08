@@ -1,6 +1,6 @@
 require "test_helper"
 
-# What the coach scored for one configured category — and the rule that the
+# What the coach scored for one configured discipline — and the rule that the
 # parent's aggregate is never stale or, worse, partial.
 class AssessmentCategoryScoreTest < ActiveSupport::TestCase
   setup do
@@ -11,7 +11,7 @@ class AssessmentCategoryScoreTest < ActiveSupport::TestCase
     @assessment = build_result
   end
 
-  test "the typed entry converts through the band table, per category" do
+  test "the typed entry converts through the band table, per discipline" do
     row = @assessment.assessment_category_scores.build(
       assessment_category: assessment_categories(:balanced_attack),
       scale: "one_to_five"
@@ -87,7 +87,7 @@ class AssessmentCategoryScoreTest < ActiveSupport::TestCase
     )
     child.update!(reported_value: 8, score: 80)
 
-    assert_nil @assessment.reload.score, "one of three categories is not a result"
+    assert_nil @assessment.reload.score, "one of three disciplines is not a result"
   end
 
   test "removing a score clears the aggregate rather than leaving a stale one" do
@@ -100,9 +100,9 @@ class AssessmentCategoryScoreTest < ActiveSupport::TestCase
     assert_nil @assessment.reload.score
   end
 
-  test "a category scored through its criteria rolls up into the aggregate" do
+  test "a discipline scored through its criteria rolls up into the aggregate" do
     @assessment.save!
-    # balanced_attack carries two criteria (weight 40). The other categories are
+    # balanced_attack carries two criteria (weight 40). The other disciplines are
     # scored as whole areas, which is the shape every existing result uses.
     attack = assessment_categories(:balanced_attack)
     others = categories_assessment_categories - [ attack ]
@@ -115,8 +115,8 @@ class AssessmentCategoryScoreTest < ActiveSupport::TestCase
       assessment_category: attack, criterion: criteria(:balanced_attack_swing),
       scale: "one_to_ten", reported_value: 8, score: 80
     )
-    others.each do |category|
-      row = @assessment.assessment_category_scores.build(assessment_category: category)
+    others.each do |discipline|
+      row = @assessment.assessment_category_scores.build(assessment_category: discipline)
       row.scale = "one_to_ten"
       row.value = 8
       row.save!
@@ -137,8 +137,8 @@ class AssessmentCategoryScoreTest < ActiveSupport::TestCase
       assessment_category: attack, criterion: criteria(:balanced_attack_approach),
       scale: "one_to_ten", reported_value: 6, score: 60
     )
-    others.each do |category|
-      row = @assessment.assessment_category_scores.build(assessment_category: category)
+    others.each do |discipline|
+      row = @assessment.assessment_category_scores.build(assessment_category: discipline)
       row.scale = "one_to_ten"
       row.value = 8
       row.save!
@@ -160,7 +160,7 @@ class AssessmentCategoryScoreTest < ActiveSupport::TestCase
     assert_equal 80, @assessment.score
   end
 
-  test "the same category may not be scored twice for one assessment" do
+  test "the same discipline may not be scored twice for one assessment" do
     @assessment.save!
     first = categories_assessment_categories.first
 
@@ -180,7 +180,7 @@ class AssessmentCategoryScoreTest < ActiveSupport::TestCase
     assert_equal 40, payload[:weight]
     assert_equal 80, payload[:score]
     assert_equal "Attack", payload[:label]
-    assert_equal "category", payload[:source_type]
+    assert_equal "discipline", payload[:source_type]
     assert payload[:score_label].include?("80/100")
   end
 
@@ -200,7 +200,7 @@ class AssessmentCategoryScoreTest < ActiveSupport::TestCase
     @definition.assessment_categories.ordered.to_a
   end
 
-  # Score every configured category, in order, on the 1-10 scale.
+  # Score every configured discipline, in order, on the 1-10 scale.
   def score_into(assessment, rows, values)
     rows.each_with_index do |category_row, index|
       child = assessment.assessment_category_scores.find_or_initialize_by(

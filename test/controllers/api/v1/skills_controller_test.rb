@@ -5,23 +5,23 @@ class Api::V1::SkillsControllerTest < ActionDispatch::IntegrationTest
     @admin = users(:two)    # coach + admin
     @coach = users(:three)  # coach role only
     @player = users(:one)   # player role only
-    @category = categories(:one)
+    @discipline = disciplines(:one)
   end
 
-  test "index is public and includes categories" do
+  test "index is public and includes disciplines" do
     get "/api/v1/skills"
     assert_response :success
     body = JSON.parse(response.body)
     assert_kind_of Array, body
-    assert_equal @category.id, body.find { |s| s["slug"] == "mystring-one" }["category"]["id"]
+    assert_equal @discipline.id, body.find { |s| s["slug"] == "mystring-one" }["discipline"]["id"]
   end
 
-  test "show is public and includes the category" do
+  test "show is public and includes the discipline" do
     get "/api/v1/skills/mystring-one"
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal "MyString", body["title"]
-    assert_equal @category.id, body["category"]["id"]
+    assert_equal @discipline.id, body["discipline"]["id"]
   end
 
   test "show falls back to lookup by id" do
@@ -34,7 +34,7 @@ class Api::V1::SkillsControllerTest < ActionDispatch::IntegrationTest
   test "coach can create a skill" do
     sign_in_as(@coach)
     assert_difference("Skill.count") do
-      post "/api/v1/skills", params: { skill: { title: "Fresh Skill", category_id: @category.id } }
+      post "/api/v1/skills", params: { skill: { title: "Fresh Skill", discipline_id: @discipline.id } }
     end
     assert_response :created
     assert_equal @coach.id, Skill.find_by(title: "Fresh Skill").created_by_id
@@ -42,12 +42,12 @@ class Api::V1::SkillsControllerTest < ActionDispatch::IntegrationTest
 
   test "player cannot create a skill" do
     sign_in_as(@player)
-    post "/api/v1/skills", params: { skill: { title: "Blocked", category_id: @category.id } }
+    post "/api/v1/skills", params: { skill: { title: "Blocked", discipline_id: @discipline.id } }
     assert_response :forbidden
   end
 
   test "guest cannot create a skill" do
-    post "/api/v1/skills", params: { skill: { title: "Blocked", category_id: @category.id } }
+    post "/api/v1/skills", params: { skill: { title: "Blocked", discipline_id: @discipline.id } }
     assert_response :unauthorized
   end
 
@@ -59,7 +59,7 @@ class Api::V1::SkillsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "owner can update their skill" do
-    skill = Skill.create!(title: "Owned", category_id: @category.id, created_by: @coach)
+    skill = Skill.create!(title: "Owned", discipline_id: @discipline.id, created_by: @coach)
     sign_in_as(@coach)
     patch "/api/v1/skills/#{skill.slug}", params: { skill: { title: "Updated" } }
     assert_response :success
@@ -67,21 +67,21 @@ class Api::V1::SkillsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "non-owner cannot update another user's skill" do
-    skill = Skill.create!(title: "Someone Else", category_id: @category.id, created_by: @admin)
+    skill = Skill.create!(title: "Someone Else", discipline_id: @discipline.id, created_by: @admin)
     sign_in_as(@coach)
     patch "/api/v1/skills/#{skill.slug}", params: { skill: { title: "Hacked" } }
     assert_response :forbidden
   end
 
   test "update returns 422 on validation errors" do
-    skill = Skill.create!(title: "Owned", category_id: @category.id, created_by: @coach)
+    skill = Skill.create!(title: "Owned", discipline_id: @discipline.id, created_by: @coach)
     sign_in_as(@coach)
     patch "/api/v1/skills/#{skill.slug}", params: { skill: { title: "" } }
     assert_response :unprocessable_entity
   end
 
   test "owner can destroy their skill" do
-    skill = Skill.create!(title: "Gone", category_id: @category.id, created_by: @coach)
+    skill = Skill.create!(title: "Gone", discipline_id: @discipline.id, created_by: @coach)
     sign_in_as(@coach)
     assert_difference("Skill.count", -1) do
       delete "/api/v1/skills/#{skill.slug}"
@@ -102,7 +102,7 @@ class Api::V1::SkillsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "guest cannot destroy a skill that has an owner" do
-    skill = Skill.create!(title: "Owned", category_id: @category.id, created_by: @coach)
+    skill = Skill.create!(title: "Owned", discipline_id: @discipline.id, created_by: @coach)
     delete "/api/v1/skills/#{skill.slug}"
     assert_response :unauthorized
     assert Skill.exists?(skill.id)

@@ -33,7 +33,7 @@ class AssessmentSessionPublisher
     ranking = AssessmentSessionRanking.new(@session).call
     if ranking[:incomplete].any?
       messages = ranking[:incomplete].map do |row|
-        "#{row[:player_name]} is missing #{row[:missing_category_ids].size} category score(s)"
+        "#{row[:player_name]} is missing #{row[:missing_discipline_ids].size} discipline score(s)"
       end
       raise Error, [ "Score every included player before publishing" ] + messages
     end

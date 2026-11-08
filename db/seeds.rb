@@ -18,14 +18,14 @@ roles.each do |name, description|
 end
 
 puts "Seeded #{Role.count} roles"
-# Seed Categories
-categories = [ "Attack", "Block", "Defence", "Serve", "Reception", "Strategy", "Tactics", "Set" ]
+# Seed Disciplines
+disciplines = [ "Attack", "Block", "Defence", "Serve", "Reception", "Strategy", "Tactics", "Set" ]
 
-categories.each do |category_name|
-  Category.find_or_create_by!(name: category_name)
+disciplines.each do |discipline_name|
+  Discipline.find_or_create_by!(name: discipline_name)
 end
 
-puts "Seeded #{Category.count} categories"
+puts "Seeded #{Discipline.count} disciplines"
 
 # Seed Skills with Descriptions from Beach Volleyball Coaching Curriculum
 skills_data = {
@@ -115,10 +115,10 @@ skills_data = {
   ]
 }
 
-skills_data.each do |category_name, skills|
-  category = Category.find_by!(name: category_name)
+skills_data.each do |discipline_name, skills|
+  discipline = Discipline.find_by!(name: discipline_name)
   skills.each do |skill_data|
-    skill = Skill.find_or_create_by!(title: skill_data[:title], category: category)
+    skill = Skill.find_or_create_by!(title: skill_data[:title], discipline: discipline)
     skill.update!(description: skill_data[:description])
   end
 end

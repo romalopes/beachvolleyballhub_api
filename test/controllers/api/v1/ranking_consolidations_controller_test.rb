@@ -52,8 +52,8 @@ class Api::V1::RankingConsolidationsControllerTest < ActionDispatch::Integration
   end
 
   def category_cells(values, scale: "one_to_ten")
-    @definition.assessment_categories.order(:position, :id).map.with_index do |category, index|
-      { assessment_category_id: category.id, scale: scale, value: values[index] }
+    @definition.assessment_categories.order(:position, :id).map.with_index do |discipline, index|
+      { assessment_category_id: discipline.id, scale: scale, value: values[index] }
     end
   end
 
@@ -62,7 +62,7 @@ class Api::V1::RankingConsolidationsControllerTest < ActionDispatch::Integration
   def put_scores!(session_id, cells_by_player)
     put "#{session_path(session_id)}/scores",
         params: { scores: cells_by_player.map { |player_id, cells|
-          { player_profile_id: player_id, category_scores: cells }
+          { player_profile_id: player_id, discipline_scores: cells }
         } }.to_json,
         headers: { "Content-Type" => "application/json" }
     assert_response :success
@@ -239,7 +239,7 @@ class Api::V1::RankingConsolidationsControllerTest < ActionDispatch::Integration
     other_definition = AssessmentDefinition.create!(
       name: "Other rubric", status: "active", created_by: @owner,
       assessment_categories_attributes: [
-        { category_id: categories(:assessment_rubric).id, weight: 100, position: 0 }
+        { discipline_id: disciplines(:assessment_rubric).id, weight: 100, position: 0 }
       ]
     )
     other = create_draft_session(name: "Other session")
@@ -247,10 +247,10 @@ class Api::V1::RankingConsolidationsControllerTest < ActionDispatch::Integration
     # only accepts the active balanced definition in this setup.
     AssessmentSession.find(other).update_column(:assessment_definition_id, other_definition.id)
     add_players!(other, [ { player_profile_id: @john.id } ])
-    # Score against the *other* definition's single category, so the session is
+    # Score against the *other* definition's single discipline, so the session is
     # genuinely complete and the only thing wrong with it is its definition.
-    other_category = other_definition.assessment_categories.order(:position, :id).first
-    put_scores!(other, { @john.id => [ { assessment_category_id: other_category.id,
+    other_discipline = other_definition.assessment_categories.order(:position, :id).first
+    put_scores!(other, { @john.id => [ { assessment_category_id: other_discipline.id,
                                          scale: "one_to_ten", value: 8 } ] })
     publish_session!(other)
 
@@ -273,7 +273,7 @@ class Api::V1::RankingConsolidationsControllerTest < ActionDispatch::Integration
     score_session!(session_id, { @john.id => [ 8, 7, 9 ], @pedro.id => [ 7, 6, 8 ] })
     publish_session!(session_id)
 
-    # Drop one of pedro's category score rows behind the app's back. (Blanking
+    # Drop one of pedro's discipline score rows behind the app's back. (Blanking
     # the score instead would be rejected by the score-pair check constraint.)
     pedro_assessment = AssessmentSession.find(session_id).assessments
                                                 .find_by(player_profile_id: @pedro.id)

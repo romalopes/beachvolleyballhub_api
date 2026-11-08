@@ -1,10 +1,10 @@
-<%= form_with model: @category, url: @category.new_record? ? admin_categories_path : admin_category_path(@category),
+<%= form_with model: @discipline, url: @discipline.new_record? ? admin_disciplines_path : admin_discipline_path(@discipline),
     class: "admin-form", local: true do |form| %>
-  <% if @category.errors.any? %>
+  <% if @discipline.errors.any? %>
     <div class="auth-flash auth-flash-error">
-      <h4 style="margin-bottom: 0.5rem;"><%= pluralize(@category.errors.count, "error") %> prevented this category from being saved:</h4>
+      <h4 style="margin-bottom: 0.5rem;"><%= pluralize(@discipline.errors.count, "error") %> prevented this discipline from being saved:</h4>
       <ul style="margin: 0; padding-left: 1.5rem;">
-        <% @category.errors.full_messages.each do |message| %>
+        <% @discipline.errors.full_messages.each do |message| %>
           <li><%= message %></li>
         <% end %>
       </ul>
@@ -21,9 +21,9 @@
   </div>
 
   <div class="admin-form-actions">
-    <%= link_to @category.new_record? ? admin_categories_path : admin_category_path(@category), class: "admin-btn" do %>
+    <%= link_to @discipline.new_record? ? admin_disciplines_path : admin_discipline_path(@discipline), class: "admin-btn" do %>
       <%= icon("arrow-left", size: 16) %> Back
     <% end %>
-    <%= form.submit @category.new_record? ? "Create Category" : "Update Category", class: "admin-btn admin-btn-add" %>
+    <%= form.submit @discipline.new_record? ? "Create Discipline" : "Update Discipline", class: "admin-btn admin-btn-add" %>
   </div>
 <% end %>

@@ -3,30 +3,30 @@ require "test_helper"
 class LogServiceTest < ActiveSupport::TestCase
   setup do
     @user = users(:two)
-    @category = categories(:one)
+    @discipline = disciplines(:one)
     @skill = skills(:one)
   end
 
   test "creates a log with all fields" do
     log = LogService.log(
-      description: "Created category \"Blocking\"",
+      description: "Created discipline \"Blocking\"",
       user: @user,
       action: "create",
       method: "POST",
-      path: "/api/v1/admin/categories",
+      path: "/api/v1/admin/disciplines",
       request_id: "req-123",
       ip_address: "127.0.0.1",
       user_agent: "RSpec",
       status: 201,
-      objects: [ @category ]
+      objects: [ @discipline ]
     )
 
     assert log.persisted?
-    assert_equal "Created category \"Blocking\"", log.description
+    assert_equal "Created discipline \"Blocking\"", log.description
     assert_equal @user, log.user
     assert_equal "create", log.action
     assert_equal "POST", log.method
-    assert_equal "/api/v1/admin/categories", log.path
+    assert_equal "/api/v1/admin/disciplines", log.path
     assert_equal "req-123", log.request_id
     assert_equal "127.0.0.1", log.ip_address
     assert_equal "RSpec", log.user_agent
@@ -38,12 +38,12 @@ class LogServiceTest < ActiveSupport::TestCase
       description: "Test",
       action: "create",
       method: "POST",
-      objects: [ @category, @skill, @user ]
+      objects: [ @discipline, @skill, @user ]
     )
 
     assert_equal 3, log.log_objects.count
     types = log.log_objects.pluck(:object_type).sort
-    assert_equal [ "Category", "Skill", "User" ], types
+    assert_equal [ "Discipline", "Skill", "User" ], types
   end
 
   test "handles nil user" do
@@ -64,11 +64,11 @@ class LogServiceTest < ActiveSupport::TestCase
       description: "Test",
       action: "create",
       method: "POST",
-      objects: [ @category, new_skill, nil ]
+      objects: [ @discipline, new_skill, nil ]
     )
 
     assert_equal 1, log.log_objects.count
-    assert_equal "Category", log.log_objects.first.object_type
+    assert_equal "Discipline", log.log_objects.first.object_type
   end
 
   test "returns nil when description is blank" do
@@ -107,7 +107,7 @@ class LogServiceTest < ActiveSupport::TestCase
   end
 
   test "human_label falls back to name" do
-    assert_equal @category.name, LogService.human_label(@category)
+    assert_equal @discipline.name, LogService.human_label(@discipline)
   end
 
   test "human_label falls back to id" do

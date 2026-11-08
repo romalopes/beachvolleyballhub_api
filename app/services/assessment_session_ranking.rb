@@ -2,8 +2,8 @@
 # against it. Ranking is server-owned: clients receive the result, never submit
 # it.
 #
-# Only complete rows are ranked. An included player with a missing category is
-# reported in `incomplete` with the exact missing category ids — never as zero —
+# Only complete rows are ranked. An included player with a missing discipline is
+# reported in `incomplete` with the exact missing discipline ids — never as zero —
 # and excluded players are reported separately so a deliberate absentee is not
 # confused with an unscored player.
 class AssessmentSessionRanking
@@ -17,7 +17,7 @@ class AssessmentSessionRanking
 
     included_participants.each do |participant|
       assessment = assessment_for(participant.player_profile_id)
-      missing = missing_category_ids(assessment)
+      missing = missing_discipline_ids(assessment)
       entry = entry_for(participant, assessment, missing)
 
       if complete_result?(assessment, missing)
@@ -53,7 +53,7 @@ class AssessmentSessionRanking
         status: "excluded",
         overall_score: nil,
         rank: nil,
-        missing_category_ids: [],
+        missing_discipline_ids: [],
         missing_reason: participant.missing_reason
       }
     end
@@ -71,20 +71,20 @@ class AssessmentSessionRanking
     assessments_by_player[player_profile_id]&.max_by(&:id)
   end
 
-  def expected_category_ids
-    @expected_category_ids ||=
+  def expected_discipline_ids
+    @expected_discipline_ids ||=
       session.assessment_definition.assessment_categories.order(:position, :id).pluck(:id)
   end
 
-  # A category is missing when its rollup has no number. Delegating to the model
+  # A discipline is missing when its rollup has no number. Delegating to the model
   # rather than re-reading `criterion_id.nil?` here is the point: the publish
-  # gate, the weighted total and this ranking all asked "is this category
+  # gate, the weighted total and this ranking all asked "is this discipline
   # scored?" and must not be able to answer differently.
-  def missing_category_ids(assessment)
-    return expected_category_ids if assessment.nil?
+  def missing_discipline_ids(assessment)
+    return expected_discipline_ids if assessment.nil?
 
     missing = session.assessment_definition.assessment_categories
-                 .reject { |category| assessment.category_rollup(category).rated? }
+                 .reject { |discipline| assessment.discipline_rollup(discipline).rated? }
     missing.map(&:id)
   end
 
@@ -114,18 +114,18 @@ class AssessmentSessionRanking
       assessment_id: assessment&.id,
       overall_score: nil,
       rank: nil,
-      missing_category_ids: missing,
-      category_scores: category_scores(assessment)
+      missing_discipline_ids: missing,
+      discipline_scores: discipline_scores(assessment)
     }
   end
 
-  # The coach's own typed entry per category, so a client can render the grid it
+  # The coach's own typed entry per discipline, so a client can render the grid it
   # would have shown at entry time. The weighted total alone cannot explain how a
   # result was reached, and a published session is read-only.
   #
   # Only criterion-less rows are reported: the criteria layer is scaffolded but
-  # not in use (D11), so a category still carries exactly one number.
-  def category_scores(assessment)
+  # not in use (D11), so a discipline still carries exactly one number.
+  def discipline_scores(assessment)
     return [] if assessment.nil?
 
     assessment.assessment_category_scores

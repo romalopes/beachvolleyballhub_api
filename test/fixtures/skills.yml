@@ -3,21 +3,21 @@
 one:
   title: MyString
   slug: mystring-one
-  category: one
+  discipline: one
   description: MyText
 
 two:
   title: MyString
   slug: mystring-two
-  category: two
+  discipline: two
   description: MyText
 
 # Reserved for assessment fixtures. A rating's rubric is an ordinary Skill, but
 # keeping assessments off `one`/`two` keeps this file's existing delete tests
-# (which target those two) independent of phase 4 — and it belongs to category
-# `two` because category `one`'s skill count is asserted elsewhere.
+# (which target those two) independent of phase 4 — and it belongs to discipline
+# `two` because discipline `one`'s skill count is asserted elsewhere.
 assessment_rubric:
   title: Forearm pass
   slug: forearm-pass
-  category: two
+  discipline: two
   description: Platform angle and control under a float serve.

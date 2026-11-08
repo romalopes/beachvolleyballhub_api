@@ -40,9 +40,9 @@ class RankingConsolidationRecalculatorTest < ActiveSupport::TestCase
         player_profile_id: player_id, coach_profile: @coach,
         assessment_definition: @definition, created_by: @creator, status: "draft"
       )
-      @definition.assessment_categories.ordered.each_with_index do |category, index|
+      @definition.assessment_categories.ordered.each_with_index do |discipline, index|
         result.assessment_category_scores.create!(
-          assessment_category: category, scale: "one_to_ten", value: values[index]
+          assessment_category: discipline, scale: "one_to_ten", value: values[index]
         )
       end
     end

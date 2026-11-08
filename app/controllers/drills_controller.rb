@@ -4,12 +4,12 @@ class DrillsController < ApplicationController
   def index
     # Public HTML view: only published, shared drills. Draft, private,
     # unlisted, archived and rejected drills are never listed here.
-    @drills = Drill.published_and_shared.includes(skills: :category).order(:title)
+    @drills = Drill.published_and_shared.includes(skills: :discipline).order(:title)
   end
 
   def show
-    @drill = Drill.includes(skills: :category).find_by(slug: params[:id]) ||
-             Drill.includes(skills: :category).find_by(id: params[:id])
+    @drill = Drill.includes(skills: :discipline).find_by(slug: params[:id]) ||
+             Drill.includes(skills: :discipline).find_by(id: params[:id])
     return render_not_found unless @drill
     # A drill that is not published+shared is only visible to its creator.
     render_not_found unless @drill.published_and_shared? || current_user == @drill.created_by

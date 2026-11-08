@@ -5,9 +5,9 @@ require "test_helper"
 #
 #   * the rules a later criteria phase will depend on are already enforced (the
 #     per-area uniqueness, the ordering, and the cross-area integrity that stops
-#     a score quoting another category's criterion);
-#   * creating the structure changed *nothing* about how a category is scored: a
-#     category still carries exactly one row, `criterion_id` stays NULL, and the
+#     a score quoting another discipline's criterion);
+#   * creating the structure changed *nothing* about how a discipline is scored: a
+#     discipline still carries exactly one row, `criterion_id` stays NULL, and the
 #     weighted aggregate is untouched.
 class CriterionTest < ActiveSupport::TestCase
   setup do
@@ -21,7 +21,7 @@ class CriterionTest < ActiveSupport::TestCase
 
   # --- the model -------------------------------------------------------------
 
-  test "a criterion names a scored item inside one configured category" do
+  test "a criterion names a scored item inside one configured discipline" do
     row = @attack.criteria.ordered.first
 
     assert_equal "Approach footwork", row.name
@@ -69,12 +69,12 @@ class CriterionTest < ActiveSupport::TestCase
     assert_equal({ id: row.id, name: "Approach footwork", position: 0 }, row.metadata)
   end
 
-  test "criteria follow their category when the configuration is removed" do
+  test "criteria follow their discipline when the configuration is removed" do
     definition = AssessmentDefinition.create!(name: "Throwaway #{SecureRandom.hex(4)}", status: "draft")
-    category = definition.assessment_categories.create!(
-      category: categories(:assessment_rubric), weight: 100, position: 0
+    discipline = definition.assessment_categories.create!(
+      discipline: disciplines(:assessment_rubric), weight: 100, position: 0
     )
-    criterion = category.criteria.create!(name: "Approach", position: 0)
+    criterion = discipline.criteria.create!(name: "Approach", position: 0)
 
     definition.destroy!
 
@@ -83,7 +83,7 @@ class CriterionTest < ActiveSupport::TestCase
 
   # --- what creating the structure must NOT have changed ----------------------
 
-  test "a category still carries exactly one score row" do
+  test "a discipline still carries exactly one score row" do
     assessment = build_result
     assessment.save!
     assessment.assessment_category_scores.create!(assessment_category: @attack, scale: "one_to_ten")
@@ -98,7 +98,7 @@ class CriterionTest < ActiveSupport::TestCase
 
   # The reason the index was split into two partial ones: the rule that matters
   # today has to survive the split, not merely the model validation.
-  test "the database still refuses a second score row for the same category" do
+  test "the database still refuses a second score row for the same discipline" do
     assessment = build_result
     assessment.save!
     assessment.assessment_category_scores.create!(assessment_category: @attack, scale: "one_to_ten")
@@ -123,7 +123,7 @@ class CriterionTest < ActiveSupport::TestCase
   # The partial index on `criterion_id IS NOT NULL` already permits one row per
   # criterion, so a future phase adds rows without another migration here. It has
   # no effect on the aggregate yet — `definition_fully_scored?` still counts one
-  # row per category, which is exactly what S5 says.
+  # row per discipline, which is exactly what S5 says.
   test "a score row may name a criterion, and the aggregate ignores it for now" do
     assessment = build_result
     assessment.save!
@@ -139,7 +139,7 @@ class CriterionTest < ActiveSupport::TestCase
     assert_nil assessment.reload.score, "scoring does not read criteria yet (S5)"
   end
 
-  test "a score may not quote a criterion from another category" do
+  test "a score may not quote a criterion from another discipline" do
     assessment = build_result
     assessment.save!
 
@@ -150,10 +150,10 @@ class CriterionTest < ActiveSupport::TestCase
     )
 
     assert_not row.valid?
-    assert_includes row.errors[:criterion].join, "must belong to the category it scores"
+    assert_includes row.errors[:criterion].join, "must belong to the discipline it scores"
   end
 
-  test "the uniqueness rule for criterion rows is scoped to the category" do
+  test "the uniqueness rule for criterion rows is scoped to the discipline" do
     assessment = build_result
     assessment.save!
     criterion = criteria(:balanced_attack_approach)

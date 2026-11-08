@@ -56,7 +56,7 @@ module Api
           render json: { errors: @definition.errors.full_messages }, status: :unprocessable_entity
         end
       rescue ActiveRecord::RecordNotUnique
-        render json: { errors: [ "That category is already in this definition" ] },
+        render json: { errors: [ "That discipline is already in this definition" ] },
                status: :unprocessable_entity
       end
 
@@ -72,12 +72,12 @@ module Api
           render json: { errors: @definition.errors.full_messages }, status: :unprocessable_entity
         end
       rescue ActiveRecord::RecordNotUnique
-        render json: { errors: [ "That category is already in this definition" ] },
+        render json: { errors: [ "That discipline is already in this definition" ] },
                status: :unprocessable_entity
       end
 
       # Presentation order only — the calculation is a sum over weights and does
-      # not care. Every category must be listed exactly once, which is what lets
+      # not care. Every discipline must be listed exactly once, which is what lets
       # the client own the drag-and-drop state while the server stays the
       # authority on what the order is.
       def reorder
@@ -87,7 +87,7 @@ module Api
         ids = Array(params[:ids]).map(&:to_i)
         expected = @definition.assessment_categories.pluck(:id).sort
         unless ids.sort == expected
-          return render json: { errors: [ "Reorder must list every category exactly once" ] },
+          return render json: { errors: [ "Reorder must list every discipline exactly once" ] },
                         status: :unprocessable_entity
         end
 
@@ -176,7 +176,7 @@ module Api
         params.require(:assessment_definition).permit(
           :name, :description, :status,
           assessment_categories_attributes: %i[
-            id category_id category_custom_id weight position _destroy
+            id discipline_id discipline_custom_id weight position _destroy
           ]
         )
       end

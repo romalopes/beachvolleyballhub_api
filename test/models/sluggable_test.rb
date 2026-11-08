@@ -2,13 +2,13 @@ require "test_helper"
 
 class SluggableTest < ActiveSupport::TestCase
   test "generates a slug from the title on create" do
-    skill = Skill.create!(title: "Jump Serve", category: categories(:one))
+    skill = Skill.create!(title: "Jump Serve", discipline: disciplines(:one))
     assert_equal "jump-serve", skill.slug
   end
 
   test "generates a unique slug when the base is taken" do
-    first = Skill.create!(title: "Unique Title Here", category: categories(:one))
-    second = Skill.create!(title: "Unique Title Here", category: categories(:two))
+    first = Skill.create!(title: "Unique Title Here", discipline: disciplines(:one))
+    second = Skill.create!(title: "Unique Title Here", discipline: disciplines(:two))
     assert_equal "unique-title-here", first.slug
     assert_equal "unique-title-here-2", second.slug
   end
@@ -27,13 +27,13 @@ class SluggableTest < ActiveSupport::TestCase
   end
 
   test "falls back to a default slug when the title has no URL-safe characters" do
-    category = Category.create!(name: "!!!")
-    assert_equal "item", category.slug
+    discipline = Discipline.create!(name: "!!!")
+    assert_equal "item", discipline.slug
   end
 
   test "keeps slugs unique for duplicates with the same base" do
-    first = Skill.create!(title: "Beach Defense", category: categories(:one))
-    second = Skill.create!(title: "Beach Defense", category: categories(:two))
+    first = Skill.create!(title: "Beach Defense", discipline: disciplines(:one))
+    second = Skill.create!(title: "Beach Defense", discipline: disciplines(:two))
     assert_equal "beach-defense", first.slug
     assert_equal "beach-defense-2", second.slug
   end

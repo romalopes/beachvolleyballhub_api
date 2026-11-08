@@ -213,7 +213,7 @@ class PlayerCoachTest < ActiveSupport::TestCase
       player_profile: stranger,
       coach_profile: @maria,
       created_by: @coach_user,
-      category: categories(:assessment_rubric),
+      discipline: disciplines(:assessment_rubric),
       score: 70,
       reported_value: 4,
       scale: "one_to_five",

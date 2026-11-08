@@ -7,7 +7,7 @@ class AssessmentSessionRestorerTest < ActiveSupport::TestCase
       player_profile: player_profiles(player),
       coach_profile: coach_profiles(:maria_coach),
       created_by: users(:six),
-      category: categories(:assessment_rubric),
+      discipline: disciplines(:assessment_rubric),
       assessment_session: session,
       value: 4,
       status: status
@@ -22,7 +22,7 @@ class AssessmentSessionRestorerTest < ActiveSupport::TestCase
       player_profile: player_profiles(:john_player),
       coach_profile: coach_profiles(:maria_coach),
       created_by: users(:six),
-      category: categories(:assessment_rubric),
+      discipline: disciplines(:assessment_rubric),
       assessment_session: session,
       status: "draft"
     )

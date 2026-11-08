@@ -203,7 +203,7 @@ module Api
         assessments_by_player = Assessment.active
                                   .where(training_session_id: @training_session.id)
                                   .ordered
-                                  .includes(:category, :created_by, :coach_profile)
+                                  .includes(:discipline, :created_by, :coach_profile)
                                   .group_by(&:player_profile_id)
         Array(payload["training_session_participants"]).each do |participant|
           participant["assessments"] =
@@ -231,7 +231,7 @@ module Api
               include: {
                 skill: {
                   only: %i[id title slug description],
-                  include: { category: { only: %i[id name slug] } }
+                  include: { discipline: { only: %i[id name slug] } }
                 }
               }
             },
@@ -243,7 +243,7 @@ module Api
                   include: {
                     skills: {
                       only: %i[id title slug],
-                      include: { category: { only: %i[id name slug] } }
+                      include: { discipline: { only: %i[id name slug] } }
                     }
                   }
                 }
@@ -293,8 +293,8 @@ module Api
         session = TrainingSession
                     .includes(:created_by, :training_series, :training_template, :coach_profile,
                               :organisation, :group,
-                              training_focuses: { skill: :category },
-                              training_session_drills: { drill: { skills: :category } },
+                              training_focuses: { skill: :discipline },
+                              training_session_drills: { drill: { skills: :discipline } },
                               training_session_participants: { player_profile: { account: :contact_detail } },
                               video_references: :video)
                     .find_by(id: params[:id])
@@ -325,7 +325,7 @@ module Api
             include: {
               skill: {
                 only: %i[id title slug description],
-                include: { category: { only: %i[id name slug] } }
+                include: { discipline: { only: %i[id name slug] } }
               }
             }
           },
@@ -337,7 +337,7 @@ module Api
                 include: {
                   skills: {
                     only: %i[id title slug],
-                    include: { category: { only: %i[id name slug] } }
+                    include: { discipline: { only: %i[id name slug] } }
                   }
                 }
               }

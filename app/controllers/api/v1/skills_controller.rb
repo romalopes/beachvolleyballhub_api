@@ -7,14 +7,14 @@ module Api
 
       def index
         # Public catalogue: only published, shared skills (policy scope).
-        @skills = policy_scope(Skill).includes(:category)
-        render json: @skills, include: :category
+        @skills = policy_scope(Skill).includes(:discipline)
+        render json: @skills, include: :discipline
       end
 
       def show
         authorize @skill
         render json: @skill, include: {
-          category: { only: [ :id, :name, :slug ] },
+          discipline: { only: [ :id, :name, :slug ] },
           video_references: {
             only: VideoReferencesController::REFERENCE_ONLY,
             methods: VideoReferencesController::REFERENCE_METHODS,
@@ -52,15 +52,15 @@ module Api
       private
 
       def set_skill
-        @skill = Skill.includes({ video_references: :video }, :category)
+        @skill = Skill.includes({ video_references: :video }, :discipline)
                       .find_by(slug: params[:id]) ||
-                 Skill.includes({ video_references: :video }, :category)
+                 Skill.includes({ video_references: :video }, :discipline)
                       .find_by(id: params[:id])
         render json: { error: "Skill not found" }, status: :not_found if @skill.nil?
       end
 
       def skill_params
-        params.require(:skill).permit(:title, :category_id, :description)
+        params.require(:skill).permit(:title, :discipline_id, :description)
       end
     end
   end

@@ -46,8 +46,8 @@
               <%= focus.label %>
             </span>
             <span class="related-item-meta">
-              <% if focus.skill_based? && focus.skill&.category %>
-                <%= focus.skill.category.name %>
+              <% if focus.skill_based? && focus.skill&.discipline %>
+                <%= focus.skill.discipline.name %>
               <% else %>
                 Custom focus
               <% end %>

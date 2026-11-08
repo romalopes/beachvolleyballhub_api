@@ -1,19 +1,19 @@
-# A coach-authored category that is not part of the club catalogue ("Mental
+# A coach-authored discipline that is not part of the club catalogue ("Mental
 # game", "Communication").
 #
 # Phase 4 kept a custom rubric as free text on the assessment itself, which is
-# right for a one-off observation but leaves "who may use this custom category?"
+# right for a one-off observation but leaves "who may use this custom discipline?"
 # with nothing to reference. A row with `created_by` + `visibility` makes that
 # rule checkable, reusing the shared/private pair the profile-visibility work
 # introduced.
-class CategoryCustom < ApplicationRecord
+class DisciplineCustom < ApplicationRecord
   VISIBILITIES = %w[shared private].freeze
 
   belongs_to :created_by, class_name: "User", optional: true
 
-  # An in-use custom category is edited or left alone, never silently deleted:
+  # An in-use custom discipline is edited or left alone, never silently deleted:
   # dropping it would rewrite the configuration of every definition that points
-  # at it (the same reasoning as an in-use Category).
+  # at it (the same reasoning as an in-use Discipline).
   has_many :assessment_categories, dependent: :restrict_with_error
 
   normalizes :name, with: ->(value) { value.strip.presence }
@@ -32,7 +32,7 @@ class CategoryCustom < ApplicationRecord
     visibility == "private"
   end
 
-  # May this user select this custom category in a definition?
+  # May this user select this custom discipline in a definition?
   #
   # * oversight (curator/admin) always may — they administer the club's config;
   # * `shared` is club knowledge, so any content creator may use it;

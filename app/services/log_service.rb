@@ -13,7 +13,7 @@ class LogService
     #     ip_address: request.remote_ip,
     #     user_agent: request.user_agent,
     #     status: response.status,
-    #     objects: [skill, category]
+    #     objects: [skill, discipline]
     #   )
     def self.log(description:, action:, method:, user: nil, path: nil,
                request_id: nil, ip_address: nil, user_agent: nil,

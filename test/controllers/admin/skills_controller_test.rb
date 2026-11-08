@@ -4,7 +4,7 @@ class Admin::SkillsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @admin = users(:two)   # coach + admin
     @player = users(:one)  # player role only
-    @category = categories(:one)
+    @discipline = disciplines(:one)
   end
 
   test "admin can list skills" do
@@ -30,7 +30,7 @@ class Admin::SkillsControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can create a skill" do
     sign_in_as(@admin)
-    post "/admin/skills", params: { skill: { title: "Brand New", category_id: @category.id, description: "Desc" } }
+    post "/admin/skills", params: { skill: { title: "Brand New", discipline_id: @discipline.id, description: "Desc" } }
     assert_redirected_to admin_skill_path(Skill.find_by(title: "Brand New"))
     assert_equal "Brand New", Skill.find_by(title: "Brand New").title
   end
@@ -50,7 +50,7 @@ class Admin::SkillsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "admin can delete an unused skill" do
-    skill = Skill.create!(title: "Orphan", category_id: @category.id)
+    skill = Skill.create!(title: "Orphan", discipline_id: @discipline.id)
     sign_in_as(@admin)
     delete "/admin/skills/#{skill.id}"
     assert_redirected_to admin_skills_path
@@ -86,16 +86,16 @@ class Admin::SkillsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "No skills match these filters"
   end
 
-  test "admin can filter skills by category" do
+  test "admin can filter skills by discipline" do
     sign_in_as(@admin)
-    get "/admin/skills", params: { category_id: skills(:one).category_id }
+    get "/admin/skills", params: { discipline_id: skills(:one).discipline_id }
     assert_response :success
     assert_includes response.body, skills(:one).title
   end
 
-  test "admin unknown category filter is ignored" do
+  test "admin unknown discipline filter is ignored" do
     sign_in_as(@admin)
-    get "/admin/skills", params: { category_id: 999_999 }
+    get "/admin/skills", params: { discipline_id: 999_999 }
     assert_response :success
     assert_includes response.body, skills(:one).title
   end
@@ -108,9 +108,9 @@ class Admin::SkillsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, titles.first if titles.any?
   end
 
-  test "admin can sort skills by category" do
+  test "admin can sort skills by discipline" do
     sign_in_as(@admin)
-    get "/admin/skills", params: { sort: "category" }
+    get "/admin/skills", params: { sort: "discipline" }
     assert_response :success
   end
 
@@ -121,18 +121,18 @@ class Admin::SkillsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, skills(:one).title
   end
 
-  test "admin skills index shows category context with back link" do
+  test "admin skills index shows discipline context with back link" do
     sign_in_as(@admin)
-    get "/admin/skills", params: { category_id: skills(:one).category_id }
+    get "/admin/skills", params: { discipline_id: skills(:one).discipline_id }
     assert_response :success
     assert_includes response.body, "Showing skills in"
-    assert_includes response.body, skills(:one).category.name
-    assert_select "a[href=?]", admin_categories_path, text: "Back to Categories"
+    assert_includes response.body, skills(:one).discipline.name
+    assert_select "a[href=?]", admin_disciplines_path, text: "Back to Disciplines"
   end
 
-  test "admin skills index shows no category context for unknown category" do
+  test "admin skills index shows no discipline context for unknown discipline" do
     sign_in_as(@admin)
-    get "/admin/skills", params: { category_id: 999_999 }
+    get "/admin/skills", params: { discipline_id: 999_999 }
     assert_response :success
     assert_not_includes response.body, "Showing skills in"
   end

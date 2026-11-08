@@ -1,0 +1,58 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Discipline</h1>
+    <div class="page-header-actions">
+      <%= link_to admin_disciplines_path, class: "admin-btn" do %>
+        <%= icon("arrow-left", size: 16) %> Back to Disciplines
+      <% end %>
+      <%= link_to edit_admin_discipline_path(@discipline), class: "admin-btn admin-btn-edit" do %>
+        <%= icon("edit", size: 16) %> Edit
+      <% end %>
+      <%= button_to "Delete", admin_discipline_path(@discipline), method: :delete,
+            class: "admin-btn admin-btn-delete",
+            data: { turbo_method: :delete, turbo_confirm: "Are you sure you want to delete \"#{@discipline.name}\"? This action cannot be undone." } %>
+    </div>
+  </div>
+
+  <% if flash[:notice] %>
+    <div class="auth-flash auth-flash-notice"><%= flash[:notice] %></div>
+  <% end %>
+  <% if flash[:alert] %>
+    <div class="auth-flash auth-flash-error"><%= flash[:alert] %></div>
+  <% end %>
+
+  <div class="admin-show">
+    <div class="admin-show-section">
+      <h2><%= @discipline.name %></h2>
+      <p class="admin-show-meta"><%= pluralize(@discipline.skills.count, "skill") %></p>
+    </div>
+
+    <div class="admin-show-section">
+      <h3>Details</h3>
+      <dl class="admin-details">
+        <dt>ID</dt><dd><%= @discipline.id %></dd>
+        <dt>Slug</dt><dd><%= @discipline.slug %></dd>
+        <dt>Created at</dt><dd><%= long_date(@discipline.created_at) if @discipline.created_at %></dd>
+        <dt>Updated at</dt><dd><%= long_date(@discipline.updated_at) if @discipline.updated_at %></dd>
+      </dl>
+    </div>
+
+    <div class="admin-show-section">
+      <h3>Skills in this discipline</h3>
+      <% if @discipline.skills.empty? %>
+        <p class="text-muted">No skills in this discipline yet.</p>
+      <% else %>
+        <div class="admin-related-list">
+          <% @discipline.skills.each do |skill| %>
+            <div class="admin-related-item">
+              <%= link_to admin_skill_path(skill), class: "admin-link" do %>
+                <%= skill.title %>
+                <%= icon("arrow-right", size: 14) %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

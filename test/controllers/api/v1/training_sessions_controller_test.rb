@@ -334,7 +334,7 @@ class Api::V1::TrainingSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ 0, 1 ], focuses.map { |f| f["position"] }
     skill_focus = focuses.first
     assert_equal @skill.id, skill_focus["skill"]["id"]
-    assert_equal categories(:one).name, skill_focus["skill"]["category"]["name"]
+    assert_equal disciplines(:one).name, skill_focus["skill"]["discipline"]["name"]
     assert_equal "Focus on platform angle against float serves.", skill_focus["description"]
     custom_focus = focuses.last
     assert_nil custom_focus["skill_id"]

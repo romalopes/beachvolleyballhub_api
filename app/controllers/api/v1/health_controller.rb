@@ -285,7 +285,7 @@ module Api
       # disappears (e.g. pending migration) reports 0 instead of 500ing.
       def record_counts
         {
-          categories: safe_count(Category),
+          disciplines: safe_count(Discipline),
           skills: safe_count(Skill),
           drills: safe_count(Drill),
           drill_skills: safe_count(DrillSkill),

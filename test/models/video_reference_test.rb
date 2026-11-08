@@ -120,7 +120,7 @@ class VideoReferenceTest < ActiveSupport::TestCase
   end
 
   test "deleting a skill destroys its references" do
-    skill = Skill.create!(title: "Video Skill", category: categories(:one))
+    skill = Skill.create!(title: "Video Skill", discipline: disciplines(:one))
     VideoReference.create!(video: @video, referenced: skill)
     assert_difference "VideoReference.count", -1 do
       skill.destroy

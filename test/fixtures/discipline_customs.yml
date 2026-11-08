@@ -3,7 +3,7 @@
 # run — the database's partial behaviour does not either (there is no unique
 # constraint beyond [created_by_id, name], and these two rows differ on both).
 
-# Shared: any content creator may select it (CategoryCustom.usable_by?).
+# Shared: any content creator may select it (DisciplineCustom.usable_by?).
 mental_game:
   name: Mental game
   created_by: six

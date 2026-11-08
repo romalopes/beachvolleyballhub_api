@@ -7,19 +7,19 @@ module Api
         before_action :set_drill, only: [ :show, :update, :destroy ]
 
         def index
-          @drills = Drill.includes([ :training_sessions, { video_references: :video }, skills: :category ])
+          @drills = Drill.includes([ :training_sessions, { video_references: :video }, skills: :discipline ])
                           .order(:title)
           # `except` drops the heavy definition blob; `has_definition` tells the
           # client whether a visualisation exists without transferring it.
           render json: @drills, except: [ :definition ], methods: [ :has_definition ], include: {
-            skills: { only: [ :id, :title, :slug ], include: { category: { only: [ :id, :name, :slug ] } } },
+            skills: { only: [ :id, :title, :slug ], include: { discipline: { only: [ :id, :name, :slug ] } } },
             training_sessions: { only: [ :id, :title, :starts_at, :ends_at, :location, :status ] }
           }
         end
 
         def show
           render json: @drill, include: {
-            skills: { only: [ :id, :title, :description, :slug ], include: { category: { only: [ :id, :name, :slug ] } } },
+            skills: { only: [ :id, :title, :description, :slug ], include: { discipline: { only: [ :id, :name, :slug ] } } },
             video_references: {
               only: VideoReferencesController::REFERENCE_ONLY,
               methods: VideoReferencesController::REFERENCE_METHODS,
@@ -37,7 +37,7 @@ module Api
           if @drill.save
             assign_skills(@drill, skill_ids)
             render json: @drill, status: :created, include: {
-              skills: { only: [ :id, :title, :slug ], include: { category: { only: [ :id, :name, :slug ] } } }
+              skills: { only: [ :id, :title, :slug ], include: { discipline: { only: [ :id, :name, :slug ] } } }
             }
           else
             render json: { errors: @drill.errors.full_messages }, status: :unprocessable_entity
@@ -50,7 +50,7 @@ module Api
           if @drill.update(drill_params.except(:skill_ids))
             assign_skills(@drill, params[:drill][:skill_ids]) if params[:drill].key?(:skill_ids)
             render json: @drill, include: {
-              skills: { only: [ :id, :title, :slug ], include: { category: { only: [ :id, :name, :slug ] } } }
+              skills: { only: [ :id, :title, :slug ], include: { discipline: { only: [ :id, :name, :slug ] } } }
             }
           else
             render json: { errors: @drill.errors.full_messages }, status: :unprocessable_entity
@@ -88,9 +88,9 @@ module Api
         end
 
         def set_drill
-          @drill = Drill.includes(:training_sessions, { video_references: :video }, skills: :category)
+          @drill = Drill.includes(:training_sessions, { video_references: :video }, skills: :discipline)
                         .find_by(slug: params[:id]) ||
-                    Drill.includes(:training_sessions, { video_references: :video }, skills: :category)
+                    Drill.includes(:training_sessions, { video_references: :video }, skills: :discipline)
                          .find_by(id: params[:id])
         rescue ActiveRecord::RecordNotFound
           render json: { error: "Drill not found" }, status: :not_found

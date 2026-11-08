@@ -7,32 +7,32 @@
 # A-Level Assessment — active and balanced: 40 + 30 + 30 = 100.
 balanced_attack:
   assessment_definition: balanced
-  category: assessment_rubric
+  discipline: assessment_rubric
   weight: 40
   position: 0
 
 balanced_defense:
   assessment_definition: balanced
-  category: defense
+  discipline: defense
   weight: 30
   position: 1
 
 balanced_serve:
   assessment_definition: balanced
-  category: serve
+  discipline: serve
   weight: 30
   position: 2
 
-# Pre-season Screening — a draft on 80%, mixing a standard category with a
+# Pre-season Screening — a draft on 80%, mixing a standard discipline with a
 # coach-authored one: 50 + 30.
 pre_season_attack:
   assessment_definition: pre_season
-  category: assessment_rubric
+  discipline: assessment_rubric
   weight: 50
   position: 0
 
 pre_season_mental:
   assessment_definition: pre_season
-  category_custom: mental_game
+  discipline_custom: mental_game
   weight: 30
   position: 1

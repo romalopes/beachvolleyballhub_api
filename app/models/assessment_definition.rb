@@ -174,7 +174,7 @@ class AssessmentDefinition < ApplicationRecord
 
   # D7: an in-use configuration is frozen. Status changes are still allowed
   # (archiving is the supported way to retire it) — it is the *identity* (name)
-  # and the *category set* that may no longer move.
+  # and the *discipline set* that may no longer move.
   def configuration_is_frozen_once_referenced
     return unless referenced?
     return unless will_save_change_to_name? || categories_reconfigured?

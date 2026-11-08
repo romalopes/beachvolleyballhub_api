@@ -10,8 +10,8 @@ class TrainingSessionsController < ApplicationController
 
   def show
     @session = TrainingSession
-                 .includes(:created_by, training_focuses: { skill: :category },
-                           training_session_drills: { drill: { skills: :category } })
+                 .includes(:created_by, training_focuses: { skill: :discipline },
+                           training_session_drills: { drill: { skills: :discipline } })
                  .find_by(id: params[:id])
     return render_not_found unless @session && (@session.publicly_visible? || Current.user&.content_manager?)
 

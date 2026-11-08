@@ -166,7 +166,7 @@ class Api::V1::AssessmentSessionsController < ApplicationController
   end
 
   # Save a whole score grid atomically. The request carries stable player and
-  # category ids; totals and ranks are never accepted from the client.
+  # discipline ids; totals and ranks are never accepted from the client.
   def scores
     return unless authorize_draft_edit!(@assessment_session)
 
@@ -339,8 +339,8 @@ class Api::V1::AssessmentSessionsController < ApplicationController
       id: definition.id,
       name: definition.name,
       status: definition.status,
-      assessment_categories: definition.assessment_categories.order(:position).map do |category|
-        { id: category.id, label: category.label, weight: category.weight, position: category.position }
+      assessment_categories: definition.assessment_categories.order(:position).map do |discipline|
+        { id: discipline.id, label: discipline.label, weight: discipline.weight, position: discipline.position }
       end
     }
   end

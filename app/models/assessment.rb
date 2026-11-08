@@ -1,6 +1,6 @@
-# A coach's assessment of a player, against a category (or a free-text rubric).
+# A coach's assessment of a player, against a discipline (or a free-text rubric).
 #
-# The rubric is deliberately the *category* — the area of the game the coach
+# The rubric is deliberately the *discipline* — the area of the game the coach
 # observed ("Attack", "Serve") — not a single Skill. A Skill is the vocabulary a
 # training focus or drill names; an assessment describes a player's level in an
 # area, which is the coarser and more stable unit.
@@ -31,12 +31,12 @@ class Assessment < ApplicationRecord
   belongs_to :player_profile
   belongs_to :coach_profile
   belongs_to :created_by, class_name: "User", optional: true
-  belongs_to :category, optional: true
+  belongs_to :discipline, optional: true
   belongs_to :assessment_definition, optional: true
   belongs_to :training_session, optional: true
   belongs_to :assessment_session, optional: true
 
-  # Definition-based rows score each configured category; legacy rows have no
+  # Definition-based rows score each configured discipline; legacy rows have no
   # children (plan D12: their rubric and score stay exactly where they are).
   # Restrict, never destroy — a historical score keeps its inputs.
   has_many :assessment_category_scores, dependent: :restrict_with_error,
@@ -66,9 +66,9 @@ class Assessment < ApplicationRecord
     self.score = RatingScale.to_score(number, scale: scale)
   end
 
-  # Blank custom text must become NULL, otherwise a category-based row would
-  # carry an empty string and violate the category-xor-custom check constraint.
-  normalizes :custom_category, with: ->(value) { value.strip.presence }
+  # Blank custom text must become NULL, otherwise a discipline-based row would
+  # carry an empty string and violate the discipline-xor-custom check constraint.
+  normalizes :custom_discipline, with: ->(value) { value.strip.presence }
 
   # A weighted result has no typed counterpart: `score` is derived from the
   # children, so the legacy `reported_value`/`scale` pair belongs to each child
@@ -139,7 +139,7 @@ class Assessment < ApplicationRecord
   # It takes the relation explicitly because a scope cannot return an array, and
   # a class method called on a relation would silently ignore that relation. A
   # player's history is small by construction, so the grouping happens in Ruby
-  # rather than relying on Postgres' DISTINCT ON; `category_key` keeps two
+  # rather than relying on Postgres' DISTINCT ON; `discipline_key` keeps two
   # distinct free-text rubrics from collapsing into one.
   def self.latest_per_rubric(scope = all)
     scope.ordered.group_by(&:rubric_key).values.map(&:first)
@@ -199,17 +199,17 @@ class Assessment < ApplicationRecord
   end
 
   # The rubric, whichever branch it sits on. A definition-based row is labelled
-  # by its definition; a legacy row by its category or its free text.
-  def category_label
+  # by its definition; a legacy row by its discipline or its free text.
+  def discipline_label
     return assessment_definition.name if definition_based?
 
-    category&.name.presence || custom_category
+    discipline&.name.presence || custom_discipline
   end
 
-  def category_key
+  def discipline_key
     return "definition:#{assessment_definition_id}" if definition_based?
 
-    category_id ? "category:#{category_id}" : "custom:#{custom_category.to_s.downcase}"
+    discipline_id ? "discipline:#{discipline_id}" : "custom:#{custom_discipline.to_s.downcase}"
   end
 
   # Does this row apply a weighted definition rather than carry a single rubric?
@@ -217,55 +217,55 @@ class Assessment < ApplicationRecord
     assessment_definition_id.present?
   end
 
-  # Every configured category carries a score, and there is at least one.
+  # Every configured discipline carries a score, and there is at least one.
   # Read from the association target rather than the database so a nested
   # submission is judged on what was submitted, not on what is stored yet.
   #
-  # "Scored" is decided per category through CategoryScoreRollup, so a category
+  # "Scored" is decided per discipline through DisciplineScoreRollup, so a discipline
   # with criteria counts once when all of its criteria are rated — not once per
   # criterion row.
   def definition_fully_scored?
     return false unless definition_based?
     return false if assessment_definition.nil?
 
-    categories = assessment_definition.assessment_categories.to_a
-    return false if categories.empty?
+    disciplines = assessment_definition.assessment_categories.to_a
+    return false if disciplines.empty?
 
     rows = assessment_category_scores.to_a
-    categories.all? { |category| category_rollup(category, rows).rated? }
+    disciplines.all? { |discipline| discipline_rollup(discipline, rows).rated? }
   end
 
-  # The one number this category contributes, or nil when it is not fully rated.
+  # The one number this discipline contributes, or nil when it is not fully rated.
   # Single source of truth for the weighted total, the publish gate and the
   # session ranking, so those three cannot disagree about what "scored" means.
   #
   # Which shape applies is decided by what the *rows* say, never by whether the
-  # category happens to have criteria configured. A category can carry criteria
+  # discipline happens to have criteria configured. A discipline can carry criteria
   # as a template and still be scored as a whole area — configuring criteria is
   # not a commitment to use them, and inferring otherwise would silently
   # invalidate every existing result the moment a coach added one.
-  def category_rollup(category, rows = nil)
+  def discipline_rollup(discipline, rows = nil)
     source = rows || assessment_category_scores.to_a
-    scoped = source.select { |row| row.assessment_category_id == category.id }
+    scoped = source.select { |row| row.assessment_category_id == discipline.id }
 
-    return CategoryScoreRollup.for(scoped, criteria: category.criteria.to_a) if scored_by_criterion?(scoped)
+    return DisciplineScoreRollup.for(scoped, criteria: discipline.criteria.to_a) if scored_by_criterion?(scoped)
 
-    CategoryScoreRollup.category_level(scoped)
+    DisciplineScoreRollup.discipline_level(scoped)
   end
 
-  # Criterion rows present => this category was scored through its criteria.
+  # Criterion rows present => this discipline was scored through its criteria.
   # Absent => the whole-area row carries the score, exactly as before criteria
-  # existed. A category can only be in one of these states, and the database's
+  # existed. A discipline can only be in one of these states, and the database's
   # partial unique indexes keep it that way.
   def scored_by_criterion?(rows)
     rows.any? { |row| row.criterion_id.present? }
   end
 
-  # Every configured category, in the order the definition declares. Exposed as
+  # Every configured discipline, in the order the definition declares. Exposed as
   # a serialized payload so the API can carry a result's breakdown without the
   # SPA needing a second round-trip per assessment.
-  def category_scores
-    ordered_category_scores.map(&:metadata)
+  def discipline_scores
+    ordered_discipline_scores.map(&:metadata)
   end
 
   # Recompute the canonical aggregate from the children. An incomplete set
@@ -284,7 +284,7 @@ class Assessment < ApplicationRecord
   # PlayerProfile#latest_rated_assessments groups by this name ("per rubric",
   # in the plan's vocabulary); an alias keeps both readers of the same idea
   # from drifting apart.
-  alias_method :rubric_key, :category_key
+  alias_method :rubric_key, :discipline_key
 
   # Display values: both scales the club reads, plus the canonical pair. They are
   # nil for an unrated draft, so a caller cannot render a rating of zero.
@@ -306,16 +306,16 @@ class Assessment < ApplicationRecord
       player_profile_id: player_profile_id,
       coach_profile_id: coach_profile_id,
       created_by: created_by ? { id: created_by.id, name: created_by.name } : nil,
-      category: category ? { id: category.id, name: category.name, slug: category.slug } : nil,
-      custom_category: custom_category,
-      category_label: category_label,
+      discipline: discipline ? { id: discipline.id, name: discipline.name, slug: discipline.slug } : nil,
+      custom_discipline: custom_discipline,
+      discipline_label: discipline_label,
       assessment_definition: assessment_definition ? {
         id: assessment_definition.id,
         name: assessment_definition.name,
         status: assessment_definition.status,
         total_weight: assessment_definition.total_weight
       } : nil,
-      category_scores: category_scores,
+      discipline_scores: discipline_scores,
       training_session_id: training_session_id,
       score: score,
       reported_value: reported_value,
@@ -335,20 +335,20 @@ class Assessment < ApplicationRecord
 
   # The order the coach configured, not insertion order: position is the
   # presentation order the definition carries into every list and report.
-  def ordered_category_scores
+  def ordered_discipline_scores
     assessment_category_scores.sort_by { |row| [ row.assessment_category&.position || 0, row.id || 0 ] }
   end
 
-  # Σ(category_score × weight) / 100, rounded to the canonical integer. The
+  # Σ(discipline_score × weight) / 100, rounded to the canonical integer. The
   # children are already on the 0..100 scale, so this is a plain weighted mean.
   #
-  # Each category is reduced through `category_rollup` first, so a category
+  # Each discipline is reduced through `discipline_rollup` first, so a discipline
   # scored on several criteria contributes one weighted number rather than one
-  # per criterion row. This is only ever called once every category is rated, so
+  # per criterion row. This is only ever called once every discipline is rated, so
   # no rollup is nil here.
   def weighted_total(rows)
-    categories = assessment_definition.assessment_categories.to_a
-    sum = categories.sum { |category| category_rollup(category, rows).score * category.weight }
+    disciplines = assessment_definition.assessment_categories.to_a
+    sum = disciplines.sum { |discipline| discipline_rollup(discipline, rows).score * discipline.weight }
     (sum / 100.0).round
   end
 
@@ -400,21 +400,21 @@ class Assessment < ApplicationRecord
     errors.add(:score, "is required once the assessment leaves draft")
   end
 
-  # Exactly one rubric *kind*: a weighted definition (whose categories live on
-  # the definition's own rows) or the Phase 4 pair of category/free text — never
+  # Exactly one rubric *kind*: a weighted definition (whose disciplines live on
+  # the definition's own rows) or the Phase 4 pair of discipline/free text — never
   # both, and never neither.
   def definition_or_legacy_rubric
     if definition_based?
-      if category_id.present? || custom_category.present?
-        errors.add(:category, "must be blank when an assessment definition is used")
+      if discipline_id.present? || custom_discipline.present?
+        errors.add(:discipline, "must be blank when an assessment definition is used")
       end
       return
     end
 
-    if category_id.present? && custom_category.present?
-      errors.add(:custom_category, "must be blank when a category is selected")
-    elsif category_id.blank? && custom_category.blank?
-      errors.add(:base, "Choose a category or describe what was assessed")
+    if discipline_id.present? && custom_discipline.present?
+      errors.add(:custom_discipline, "must be blank when a discipline is selected")
+    elsif discipline_id.blank? && custom_discipline.blank?
+      errors.add(:base, "Choose a discipline or describe what was assessed")
     end
   end
 
@@ -430,13 +430,13 @@ class Assessment < ApplicationRecord
     errors.add(:assessment_definition, "must be active before it can be applied")
   end
 
-  # Publishing means endorsing every configured category, not just some of them.
+  # Publishing means endorsing every configured discipline, not just some of them.
   # A draft may be partial (the same rule that lets a legacy draft be unrated).
   def definition_fully_scored_when_active
     return unless definition_based? && active?
     return if definition_fully_scored?
 
-    errors.add(:base, "Score every category of the definition before publishing")
+    errors.add(:base, "Score every discipline of the definition before publishing")
   end
 
   def clear_legacy_rating_fields

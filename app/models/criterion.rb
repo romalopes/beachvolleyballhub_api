@@ -1,10 +1,10 @@
 # Phase 6 (Assessment Sessions), plan S5: one scored line item inside a
-# configured category — "Attack" is the weighted area, "Approach footwork" a
+# configured discipline — "Attack" is the weighted area, "Approach footwork" a
 # criterion inside it.
 #
 # The table is created ahead of its use. Nothing scores against a criterion yet:
 # every `assessment_category_scores` row keeps `criterion_id` NULL, which means
-# "this row is the whole area", so a category still carries exactly one number
+# "this row is the whole area", so a discipline still carries exactly one number
 # and normalisation remains an identity (D11).
 #
 # The structure exists now for two reasons:
@@ -14,7 +14,7 @@
 #   * the cross-row rule "a criterion must belong to the area it scores" can be
 #     enforced from day one, before any UI exists that could break it.
 #
-# Criteria belong to the *configured category*, not the definition: §20's own
+# Criteria belong to the *configured discipline*, not the definition: §20's own
 # example compares areas carrying different numbers of items, so Attack's
 # criteria are not Defence's.
 class Criterion < ApplicationRecord

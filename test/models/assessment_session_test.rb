@@ -92,9 +92,9 @@ class AssessmentSessionTest < ActiveSupport::TestCase
       assessment_session: session,
       status: "draft"
     )
-    @active.assessment_categories.ordered.each do |category|
+    @active.assessment_categories.ordered.each do |discipline|
       assessment.assessment_category_scores.build(
-        assessment_category: category,
+        assessment_category: discipline,
         scale: "one_to_ten",
         reported_value: 8,
         score: 80

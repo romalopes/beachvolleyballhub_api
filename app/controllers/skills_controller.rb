@@ -2,15 +2,15 @@ class SkillsController < ApplicationController
   allow_unauthenticated_access
 
   def index
-    @categories = Category.order(:name)
-    @skills = Skill.includes(:category).order(:title)
+    @disciplines = Discipline.order(:name)
+    @skills = Skill.includes(:discipline).order(:title)
   end
 
   def show
-    @skill = Skill.includes(:category).find_by(slug: params[:id]) || Skill.includes(:category).find_by(id: params[:id])
+    @skill = Skill.includes(:discipline).find_by(slug: params[:id]) || Skill.includes(:discipline).find_by(id: params[:id])
     return render_not_found unless @skill
 
-    @related_drills = @skill.drills.includes(skills: :category).order(:title)
+    @related_drills = @skill.drills.includes(skills: :discipline).order(:title)
   end
 
   private

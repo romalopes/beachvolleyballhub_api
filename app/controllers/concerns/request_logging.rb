@@ -44,7 +44,7 @@ module RequestLogging
   def log_objects
     records = []
 
-    # Standard instance variable pattern: @skill, @drill, @category
+    # Standard instance variable pattern: @skill, @drill, @discipline
     resource_name = controller_name.singularize
     entity = instance_variable_get("@#{resource_name}") rescue nil
     records << entity if entity.present?

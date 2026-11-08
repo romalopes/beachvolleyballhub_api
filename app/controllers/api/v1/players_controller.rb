@@ -100,7 +100,7 @@ module Api
         payload["assessments"] = Assessment.visible_to(Current.user)
                                          .where(player_profile_id: @player.id)
                                          .ordered
-                                         .includes(:category, :assessment_definition, :assessment_session, :created_by,
+                                         .includes(:discipline, :assessment_definition, :assessment_session, :created_by,
                                                    coach_profile: :account)
                                          .map { |assessment| assessment_payload(assessment) }
 

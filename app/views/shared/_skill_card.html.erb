@@ -1,6 +1,6 @@
-<%= link_to skill_path(skill), class: "card skill-card", data: { filter_target: "item", search: skill.title.to_s.downcase, filter: skill.category&.name } do %>
-  <% if skill.category %>
-    <div class="card-category"><%= skill.category.name %></div>
+<%= link_to skill_path(skill), class: "card skill-card", data: { filter_target: "item", search: skill.title.to_s.downcase, filter: skill.discipline&.name } do %>
+  <% if skill.discipline %>
+    <div class="card-discipline"><%= skill.discipline.name %></div>
   <% end %>
   <h3 class="card-title"><%= skill.title %></h3>
   <% if skill.description %>

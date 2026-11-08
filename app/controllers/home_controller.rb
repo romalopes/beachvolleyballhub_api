@@ -2,7 +2,7 @@ class HomeController < ApplicationController
   allow_unauthenticated_access
 
   def index
-    @categories = Category.all
+    @disciplines = Discipline.all
     @skills = Skill.all
     # Public home page: only published, shared drills.
     @drills = Drill.published_and_shared

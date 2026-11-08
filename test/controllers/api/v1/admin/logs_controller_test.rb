@@ -10,7 +10,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
     @admin = users(:two)   # coach + admin
     @coach = users(:three) # coach role only
     @player = users(:one)  # player role only
-    @category = categories(:one)
+    @discipline = disciplines(:one)
     @skill = skills(:one)
     LogObject.delete_all
     Log.delete_all
@@ -23,7 +23,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can list logs" do
     sign_in_as(@admin)
-    post "/api/v1/admin/skills", params: { skill: { title: "Log Test Skill", category_id: @category.id } }
+    post "/api/v1/admin/skills", params: { skill: { title: "Log Test Skill", discipline_id: @discipline.id } }
     assert_response :created
     get "/api/v1/admin/logs"
     assert_response :success
@@ -35,7 +35,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can show a log" do
     sign_in_as(@admin)
-    post "/api/v1/admin/skills", params: { skill: { title: "Show Test", category_id: @category.id } }
+    post "/api/v1/admin/skills", params: { skill: { title: "Show Test", discipline_id: @discipline.id } }
     assert_response :created
     log = Log.last
     get "/api/v1/admin/logs/#{log.id}"
@@ -47,7 +47,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can filter logs by action" do
     sign_in_as(@admin)
-    post "/api/v1/admin/skills", params: { skill: { title: "Filter Test", category_id: @category.id } }
+    post "/api/v1/admin/skills", params: { skill: { title: "Filter Test", discipline_id: @discipline.id } }
     assert_response :created
     get "/api/v1/admin/logs", params: { action_filter: "create" }
     assert_response :success
@@ -57,7 +57,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can filter logs by user" do
     sign_in_as(@admin)
-    post "/api/v1/admin/skills", params: { skill: { title: "User Filter Test", category_id: @category.id } }
+    post "/api/v1/admin/skills", params: { skill: { title: "User Filter Test", discipline_id: @discipline.id } }
     assert_response :created
     get "/api/v1/admin/logs", params: { user_id: @admin.id }
     assert_response :success
@@ -67,7 +67,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can filter logs by object" do
     sign_in_as(@admin)
-    post "/api/v1/admin/skills", params: { skill: { title: "Object Filter Test", category_id: @category.id } }
+    post "/api/v1/admin/skills", params: { skill: { title: "Object Filter Test", discipline_id: @discipline.id } }
     assert_response :created
     skill = Skill.last
     get "/api/v1/admin/logs", params: { object_type: "Skill", object_id: skill.id }
@@ -101,7 +101,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
 
   test "pagination metadata is correct" do
     sign_in_as(@admin)
-    3.times { |i| post "/api/v1/admin/skills", params: { skill: { title: "Page Test #{i}", category_id: @category.id } } }
+    3.times { |i| post "/api/v1/admin/skills", params: { skill: { title: "Page Test #{i}", discipline_id: @discipline.id } } }
     get "/api/v1/admin/logs", params: { page: 1, per_page: 2 }
     assert_response :success
     body = JSON.parse(response.body)
@@ -113,7 +113,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
 
   test "log detail includes full object info" do
     sign_in_as(@admin)
-    post "/api/v1/admin/skills", params: { skill: { title: "Detail Test", category_id: @category.id } }
+    post "/api/v1/admin/skills", params: { skill: { title: "Detail Test", discipline_id: @discipline.id } }
     assert_response :created
     log = Log.last
     get "/api/v1/admin/logs/#{log.id}"
@@ -126,7 +126,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
 
   test "log detail shows deleted objects" do
     sign_in_as(@admin)
-    post "/api/v1/admin/skills", params: { skill: { title: "Delete Obj Test", category_id: @category.id } }
+    post "/api/v1/admin/skills", params: { skill: { title: "Delete Obj Test", discipline_id: @discipline.id } }
     assert_response :created
     log = Log.last
     skill = Skill.last
@@ -143,7 +143,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
   test "creating a skill generates a log" do
     sign_in_as(@admin)
     assert_difference -> { Log.count }, 1 do
-      post "/api/v1/admin/skills", params: { skill: { title: "Logged Skill", category_id: @category.id } }
+      post "/api/v1/admin/skills", params: { skill: { title: "Logged Skill", discipline_id: @discipline.id } }
     end
     assert_response :created
     log = Log.last
@@ -164,7 +164,7 @@ class Api::V1::Admin::LogsControllerTest < ActionDispatch::IntegrationTest
 
   test "deleting a skill generates a log" do
     sign_in_as(@admin)
-    orphan = Skill.create!(title: "Deletable", category_id: @category.id)
+    orphan = Skill.create!(title: "Deletable", discipline_id: @discipline.id)
     assert_difference -> { Log.count }, 1 do
       delete "/api/v1/admin/skills/#{orphan.id}"
     end

@@ -9,18 +9,18 @@ module Api
         # Public endpoint: the policy scope returns only published, shared
         # drills. Draft, private, unlisted, archived, or rejected drills are
         # never listed.
-        @drills = policy_scope(Drill).includes(skills: :category).order(:title)
+        @drills = policy_scope(Drill).includes(skills: :discipline).order(:title)
         # `except` drops the heavy definition blob; `has_definition` tells the
         # client whether a visualisation exists without transferring it.
         render json: @drills, except: [ :definition ], methods: [ :has_definition ], include: {
-          skills: { only: [ :id, :title, :slug ], include: { category: { only: [ :id, :name, :slug ] } } }
+          skills: { only: [ :id, :title, :slug ], include: { discipline: { only: [ :id, :name, :slug ] } } }
         }
       end
 
       def show
         authorize @drill
         render json: @drill, include: {
-          skills: { only: [ :id, :title, :description, :slug ], include: { category: { only: [ :id, :name, :slug ] } } },
+          skills: { only: [ :id, :title, :description, :slug ], include: { discipline: { only: [ :id, :name, :slug ] } } },
           video_references: {
             only: VideoReferencesController::REFERENCE_ONLY,
             methods: VideoReferencesController::REFERENCE_METHODS,
@@ -69,9 +69,9 @@ module Api
       private
 
       def set_drill
-        @drill = Drill.includes(:training_sessions, { video_references: :video }, skills: :category)
+        @drill = Drill.includes(:training_sessions, { video_references: :video }, skills: :discipline)
                       .find_by(slug: params[:id]) ||
-                Drill.includes(:training_sessions, { video_references: :video }, skills: :category)
+                Drill.includes(:training_sessions, { video_references: :video }, skills: :discipline)
                      .find_by(id: params[:id])
         render_not_found_api if @drill.nil?
       end

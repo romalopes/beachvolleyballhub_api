@@ -63,7 +63,7 @@ class Api::V1::AssessmentsControllerTest < ActionDispatch::IntegrationTest
       player_profile: player_profiles(:pedro_player),
       coach_profile: coach,
       created_by: user,
-      category: categories(:assessment_rubric),
+      discipline: disciplines(:assessment_rubric),
       status: "draft"
     )
     sign_in_as(user)

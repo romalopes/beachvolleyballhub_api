@@ -6,7 +6,7 @@ module Admin
     def index
       @filters = filter_params
       @skills = filtered_skills(@filters)
-      @categories = Category.order(:name)
+      @disciplines = Discipline.order(:name)
     end
 
     def show
@@ -14,16 +14,16 @@ module Admin
 
     def new
       @skill = Skill.new
-      @categories = Category.order(:name)
+      @disciplines = Discipline.order(:name)
     end
 
     def edit
-      @categories = Category.order(:name)
+      @disciplines = Discipline.order(:name)
     end
 
     def create
       @skill = Skill.new(skill_params)
-      @categories = Category.order(:name)
+      @disciplines = Discipline.order(:name)
       if @skill.save
         redirect_to admin_skill_path(@skill), notice: "Skill was successfully created."
       else
@@ -32,7 +32,7 @@ module Admin
     end
 
     def update
-      @categories = Category.order(:name)
+      @disciplines = Discipline.order(:name)
       if @skill.update(skill_params)
         redirect_to admin_skill_path(@skill), notice: "Skill was successfully updated."
       else
@@ -58,33 +58,33 @@ module Admin
     end
 
     def skill_params
-      params.require(:skill).permit(:title, :category_id, :description)
+      params.require(:skill).permit(:title, :discipline_id, :description)
     end
 
-    SORT_OPTIONS = %w[name-asc name-desc category].freeze
+    SORT_OPTIONS = %w[name-asc name-desc discipline].freeze
 
     def filter_params
-      params.permit(:q, :category_id, :sort).to_h
+      params.permit(:q, :discipline_id, :sort).to_h
     end
 
     def filtered_skills(filters)
-      scope = Skill.includes(:category, :drills)
+      scope = Skill.includes(:discipline, :drills)
 
       q = filters[:q].to_s.strip
       if q.present?
         scope = scope.where("skills.title ILIKE ?", "%#{Skill.sanitize_sql_like(q)}%")
       end
 
-      category_id = Integer(filters[:category_id].to_s, exception: false)
-      if category_id && Category.exists?(category_id)
-        scope = scope.where(category_id: category_id)
+      discipline_id = Integer(filters[:discipline_id].to_s, exception: false)
+      if discipline_id && Discipline.exists?(discipline_id)
+        scope = scope.where(discipline_id: discipline_id)
       end
 
       case filters[:sort].to_s
       when "name-desc"
         scope.order(title: :desc)
-      when "category"
-        scope.left_joins(:category).order(Arel.sql("categories.name ASC NULLS LAST, skills.title ASC"))
+      when "discipline"
+        scope.left_joins(:discipline).order(Arel.sql("disciplines.name ASC NULLS LAST, skills.title ASC"))
       else
         scope.order(title: :asc)
       end

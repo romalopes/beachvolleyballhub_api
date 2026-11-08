@@ -3,7 +3,7 @@ class Skill < ApplicationRecord
   source_column :title
 
   belongs_to :created_by, class_name: "User", optional: true
-  belongs_to :category
+  belongs_to :discipline
   has_many :drill_skills, dependent: :destroy
   has_many :drills, through: :drill_skills
   has_many :video_references, as: :referenced, dependent: :destroy

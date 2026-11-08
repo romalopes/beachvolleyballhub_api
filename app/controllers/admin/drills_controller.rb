@@ -53,7 +53,7 @@ module Admin
     private
 
     def set_drill
-      @drill = Drill.includes(skills: :category).find_by(slug: params[:id]) || Drill.find(params[:id])
+      @drill = Drill.includes(skills: :discipline).find_by(slug: params[:id]) || Drill.find(params[:id])
     rescue ActiveRecord::RecordNotFound
       redirect_to admin_drills_path, alert: "Drill not found."
     end
@@ -70,7 +70,7 @@ module Admin
     end
 
     def filtered_drills(filters)
-      scope = Drill.includes(skills: :category)
+      scope = Drill.includes(skills: :discipline)
 
       q = filters[:q].to_s.strip
       if q.present?

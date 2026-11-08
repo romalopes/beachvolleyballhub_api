@@ -38,7 +38,7 @@ class RankingConsolidationBuilderTest < ActiveSupport::TestCase
     ).call
   end
 
-  # Score every category of the definition for one player, which is what makes a
+  # Score every discipline of the definition for one player, which is what makes a
   # session's ranking non-empty. Used to prove a re-derivation actually sees new
   # numbers rather than replaying the old snapshot.
   def rescore_session(session, player_id:, values:)
@@ -48,9 +48,9 @@ class RankingConsolidationBuilderTest < ActiveSupport::TestCase
     result.created_by = @creator
     result.status = "draft"
     result.save!
-    @definition.assessment_categories.ordered.each_with_index do |category, index|
+    @definition.assessment_categories.ordered.each_with_index do |discipline, index|
       row = result.assessment_category_scores.find_or_initialize_by(
-        assessment_category: category
+        assessment_category: discipline
       )
       row.scale = "one_to_ten"
       row.value = values[index]

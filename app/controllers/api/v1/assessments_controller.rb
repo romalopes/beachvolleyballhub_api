@@ -1,6 +1,6 @@
 module Api
   module V1
-    # RESTful API for Assessments: a coach's rating of a player against a category.
+    # RESTful API for Assessments: a coach's rating of a player against a discipline.
     #
     # Existence and authority are separate concerns (see Assessment):
     #   * index/show return only rows that exist for the caller — `active` rows
@@ -38,17 +38,17 @@ module Api
       # `five_scale` let the SPA show the rating on either scale without
       # converting it again.
       ASSESSMENT_ONLY = %i[
-        id player_profile_id coach_profile_id assessment_definition_id category_id custom_category
+        id player_profile_id coach_profile_id assessment_definition_id discipline_id custom_discipline
         assessment_session_id training_session_id score reported_value scale notes status
         created_at updated_at
       ].freeze
       ASSESSMENT_METHODS = %i[
-        category_label ten_scale five_scale score_label status_label
-        player_profile_id coach_profile_id category_scores
+        discipline_label ten_scale five_scale score_label status_label
+        player_profile_id coach_profile_id discipline_scores
       ].freeze
       ASSESSMENT_INCLUDES = {
         created_by: { only: %i[id] },
-        category: { only: %i[id name slug] },
+        discipline: { only: %i[id name slug] },
         assessment_definition: { only: %i[id name status] }
       }.freeze
 
@@ -58,10 +58,10 @@ module Api
                  .ordered
                  .includes(player_profile: :account)
                  .includes(coach_profile: :account)
-                 .includes(:created_by, :category, :assessment_definition, :assessment_session)
+                 .includes(:created_by, :discipline, :assessment_definition, :assessment_session)
         rows = rows.where(player_profile_id: params[:player_id]) if params[:player_id].present?
         rows = rows.where(coach_profile_id: params[:coach_id]) if params[:coach_id].present?
-        rows = rows.where(category_id: params[:category_id]) if params[:category_id].present?
+        rows = rows.where(discipline_id: params[:discipline_id]) if params[:discipline_id].present?
         rows = rows.where(training_session_id: params[:training_session_id]) if params[:training_session_id].present?
         rows = params[:status].present? ? rows.where(status: params[:status]) : rows.active
         if params[:mine].present?
@@ -105,7 +105,7 @@ module Api
         apply_value!
         return if performed?
 
-        apply_category_values!
+        apply_discipline_values!
         return if performed?
 
         resolve_score!
@@ -138,7 +138,7 @@ module Api
         apply_value!
         return if performed?
 
-        apply_category_values!
+        apply_discipline_values!
         return if performed?
 
         resolve_score!
@@ -155,18 +155,18 @@ module Api
 
       def set_assessment
         @assessment = Assessment
-                        .includes(:player_profile, :coach_profile, :created_by, :category,
+                        .includes(:player_profile, :coach_profile, :created_by, :discipline,
                                   :assessment_definition, assessment_category_scores: { assessment_category: {} })
                         .find(params[:id])
       end
 
       def assessment_params
         params.require(:assessment).permit(
-          :player_profile_id, :coach_profile_id, :category_id, :custom_category,
+          :player_profile_id, :coach_profile_id, :discipline_id, :custom_discipline,
           :assessment_definition_id,
           :training_session_id, :score, :reported_value, :scale, :value,
           :notes, :status,
-          # Definition-based rows score each configured category; the virtual
+          # Definition-based rows score each configured discipline; the virtual
           # `value` is the coach's own entry, converted through RatingScale.
           assessment_category_scores_attributes: %i[
             id assessment_category_id score reported_value scale value notes
@@ -175,7 +175,7 @@ module Api
       end
 
       # A weighted result carries no single typed rating: each configured
-      # category has its own. Sending `value`/`score` alongside a definition
+      # discipline has its own. Sending `value`/`score` alongside a definition
       # would be two answers to the same question, so it is refused rather than
       # silently ignored (plan D9/D10).
       def reject_single_rating_for_definition!
@@ -186,7 +186,7 @@ module Api
 
         @assessment.errors.add(
           :base,
-          "A weighted assessment scores each category; remove the single rating fields"
+          "A weighted assessment scores each discipline; remove the single rating fields"
         )
         render json: { errors: @assessment.errors.full_messages }, status: :unprocessable_entity
       end
@@ -195,7 +195,7 @@ module Api
       # performs for a legacy row happens per child here. An entry that does not
       # exist on the named scale is a 422 the coach can act on — never a row
       # saved without a rating.
-      def apply_category_values!
+      def apply_discipline_values!
         rows = assessment_params[:assessment_category_scores_attributes]
         return if rows.blank?
 
@@ -331,7 +331,7 @@ module Api
         payload["created_by"] = if row.created_by
           { "id" => row.created_by.id, "name" => row.created_by.name }
         end
-        payload["category"] = nil unless payload.key?("category")
+        payload["discipline"] = nil unless payload.key?("discipline")
         payload["assessment_definition"] = nil unless payload.key?("assessment_definition")
         payload["player_profile"] = {
           "id" => row.player_profile.id,

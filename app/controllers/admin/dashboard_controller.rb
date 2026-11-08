@@ -4,7 +4,7 @@ module Admin
 
     def index
       @skills_count = Skill.count
-      @categories_count = Category.count
+      @disciplines_count = Discipline.count
       @drills_count = Drill.count
     end
   end

@@ -1,6 +1,6 @@
-# What the coach scored for one configured category of an applied definition.
+# What the coach scored for one configured discipline of an applied definition.
 #
-# The typed entry lives here, per category — a coach may enter 1–5 for one area
+# The typed entry lives here, per discipline — a coach may enter 1–5 for one area
 # and 1–100 for another — while the parent Assessment stores only the derived
 # weighted aggregate. The children are inputs; the parent is the result.
 #
@@ -13,7 +13,7 @@ class AssessmentCategoryScore < ApplicationRecord
 
   # The criterion inside the area this row scores, when a criteria layer is in
   # use (plan S5). NULL — every row today — means "this row is the whole area",
-  # which is what keeps a category carrying exactly one number and normalisation
+  # which is what keeps a discipline carrying exactly one number and normalisation
   # an identity (D11). The column exists ahead of its use so a later phase fills
   # it in without another migration to this table.
   belongs_to :criterion, optional: true
@@ -26,7 +26,7 @@ class AssessmentCategoryScore < ApplicationRecord
   after_save :recalculate_parent_score
   after_destroy :recalculate_parent_score
 
-  # One row per category while criteria are not in use (every row today has
+  # One row per discipline while criteria are not in use (every row today has
   # `criterion_id` NULL); one row per criterion once they are. The two partial
   # unique indexes in `AddCriterionToAssessmentCategoryScores` say the same
   # thing in the database, which is what actually guarantees it.
@@ -127,6 +127,6 @@ class AssessmentCategoryScore < ApplicationRecord
     return if criterion_id.nil?
     return if criterion&.assessment_category_id == assessment_category_id
 
-    errors.add(:criterion, "must belong to the category it scores")
+    errors.add(:criterion, "must belong to the discipline it scores")
   end
 end

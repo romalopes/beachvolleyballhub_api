@@ -5,7 +5,7 @@ class Api::V1::Admin::SkillsControllerTest < ActionDispatch::IntegrationTest
     @admin = users(:two)   # coach + admin
     @coach = users(:three) # coach role only
     @player = users(:one)  # player role only
-    @category = categories(:one)
+    @discipline = disciplines(:one)
   end
 
   test "admin can list skills" do
@@ -25,7 +25,7 @@ class Api::V1::Admin::SkillsControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can create a skill" do
     sign_in_as(@admin)
-    post "/api/v1/admin/skills", params: { skill: { title: "New Skill", category_id: @category.id, description: "Desc" } }
+    post "/api/v1/admin/skills", params: { skill: { title: "New Skill", discipline_id: @discipline.id, description: "Desc" } }
     assert_response :created
     assert_equal "New Skill", Skill.find_by(title: "New Skill").title
   end
@@ -39,7 +39,7 @@ class Api::V1::Admin::SkillsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "admin can delete a skill not used by drills" do
-    skill = Skill.create!(title: "Orphan", category_id: @category.id)
+    skill = Skill.create!(title: "Orphan", discipline_id: @discipline.id)
     sign_in_as(@admin)
     delete "/api/v1/admin/skills/#{skill.id}"
     assert_response :no_content
@@ -60,7 +60,7 @@ class Api::V1::Admin::SkillsControllerTest < ActionDispatch::IntegrationTest
 
   test "validation errors return 422" do
     sign_in_as(@admin)
-    post "/api/v1/admin/skills", params: { skill: { title: "", category_id: @category.id } }
+    post "/api/v1/admin/skills", params: { skill: { title: "", discipline_id: @discipline.id } }
     assert_response :unprocessable_entity
     assert JSON.parse(response.body)["errors"].any?
   end

@@ -10,36 +10,36 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
 
   create_table "account_addresses", force: :cascade do |t|
     t.bigint "account_id", null: false
+    t.string "street_address"
     t.string "city"
+    t.string "state"
+    t.string "postal_code"
     t.string "country"
     t.datetime "created_at", null: false
-    t.string "postal_code"
-    t.string "state"
-    t.string "street_address"
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_account_addresses_on_account_id", unique: true
   end
 
   create_table "account_invitations", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "declined_at"
-    t.datetime "emailed_at"
-    t.datetime "expires_at", null: false
     t.bigint "invited_by_id", null: false
-    t.string "invitee_email"
-    t.datetime "revoked_at"
-    t.string "status", default: "active", null: false
     t.string "token_digest", null: false
-    t.datetime "updated_at", null: false
+    t.string "invitee_email"
+    t.string "status", default: "active", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "emailed_at"
     t.datetime "used_at"
+    t.datetime "revoked_at"
+    t.datetime "declined_at"
     t.bigint "used_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["expires_at"], name: "index_account_invitations_on_expires_at"
     t.index ["invited_by_id"], name: "index_account_invitations_on_invited_by_id"
     t.index ["status"], name: "index_account_invitations_on_status"
@@ -48,31 +48,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "accounts", force: :cascade do |t|
+    t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
     t.index ["user_id"], name: "index_accounts_on_user_id", unique: true
   end
 
   create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.bigint "record_id", null: false
-    t.string "record_type", null: false
     t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
   create_table "active_storage_blobs", force: :cascade do |t|
-    t.bigint "byte_size", null: false
-    t.string "checksum"
-    t.string "content_type"
-    t.datetime "created_at", null: false
-    t.string "filename", null: false
     t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
     t.text "metadata"
     t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
     t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
   end
 
@@ -83,33 +83,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "admin_activities", force: :cascade do |t|
+    t.bigint "user_id", null: false
     t.string "action", null: false
-    t.datetime "created_at", null: false
+    t.string "entity_type", null: false
     t.bigint "entity_id", null: false
     t.string "entity_label"
-    t.string "entity_type", null: false
     t.string "ip_address"
-    t.datetime "updated_at", null: false
     t.string "user_agent"
-    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["action", "created_at"], name: "index_admin_activities_on_action_and_created_at"
     t.index ["entity_type", "entity_id"], name: "index_admin_activities_on_entity_type_and_entity_id"
     t.index ["user_id"], name: "index_admin_activities_on_user_id"
   end
 
   create_table "analyses", force: :cascade do |t|
-    t.datetime "archived_at"
-    t.bigint "assigned_coach_profile_id"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id", null: false
-    t.bigint "group_id"
-    t.bigint "organisation_id"
-    t.datetime "published_at"
-    t.string "status", default: "draft", null: false
-    t.text "summary"
     t.string "title", null: false
-    t.bigint "tournament_id"
+    t.text "summary"
+    t.string "status", default: "draft", null: false
+    t.bigint "created_by_id", null: false
+    t.bigint "assigned_coach_profile_id"
+    t.bigint "organisation_id"
+    t.bigint "group_id"
     t.bigint "training_session_id"
+    t.bigint "tournament_id"
+    t.datetime "published_at"
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["assigned_coach_profile_id"], name: "index_analyses_on_assigned_coach_profile_id"
     t.index ["created_by_id"], name: "index_analyses_on_created_by_id"
@@ -126,10 +126,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   create_table "analysis_annotations", force: :cascade do |t|
     t.bigint "analysis_video_id", null: false
     t.bigint "author_id", null: false
-    t.text "body", null: false
-    t.datetime "created_at", null: false
     t.bigint "player_profile_id"
     t.integer "timestamp_seconds", null: false
+    t.text "body", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["analysis_video_id", "timestamp_seconds"], name: "idx_on_analysis_video_id_timestamp_seconds_1522cf9aaa"
     t.index ["analysis_video_id"], name: "index_analysis_annotations_on_analysis_video_id"
@@ -151,9 +151,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   create_table "analysis_comments", force: :cascade do |t|
     t.bigint "analysis_id", null: false
     t.bigint "author_id", null: false
+    t.bigint "parent_id"
     t.text "body", null: false
     t.datetime "created_at", null: false
-    t.bigint "parent_id"
     t.datetime "updated_at", null: false
     t.index ["analysis_id", "created_at"], name: "index_analysis_comments_on_analysis_id_and_created_at"
     t.index ["analysis_id"], name: "index_analysis_comments_on_analysis_id"
@@ -163,9 +163,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
 
   create_table "analysis_participants", force: :cascade do |t|
     t.bigint "analysis_id", null: false
-    t.datetime "created_at", null: false
-    t.text "notes"
     t.bigint "player_profile_id", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["analysis_id", "player_profile_id"], name: "index_analysis_participants_unique", unique: true
     t.index ["analysis_id"], name: "index_analysis_participants_on_analysis_id"
@@ -174,13 +174,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
 
   create_table "analysis_videos", force: :cascade do |t|
     t.bigint "analysis_id", null: false
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.integer "position", default: 0, null: false
+    t.bigint "video_id"
     t.string "source_type", null: false
     t.string "title"
+    t.text "description"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "video_id"
     t.index ["analysis_id", "position"], name: "index_analysis_videos_on_analysis_id_and_position"
     t.index ["analysis_id"], name: "index_analysis_videos_on_analysis_id"
     t.index ["video_id"], name: "index_analysis_videos_on_video_id"
@@ -190,55 +190,55 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
 
   create_table "api_idempotency_keys", force: :cascade do |t|
     t.string "actor_scope", null: false
-    t.string "content_type", default: "application/json", null: false
-    t.datetime "created_at", null: false
-    t.string "request_digest", null: false
     t.string "request_key", null: false
     t.string "request_method", null: false
     t.string "request_path", null: false
-    t.text "response_body", null: false
+    t.string "request_digest", null: false
     t.integer "status", null: false
+    t.string "content_type", default: "application/json", null: false
+    t.text "response_body", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["actor_scope", "request_key"], name: "index_api_idempotency_keys_on_actor_and_key", unique: true
     t.index ["created_at"], name: "index_api_idempotency_keys_on_created_at"
   end
 
   create_table "app_settings", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "key", null: false
-    t.datetime "updated_at", null: false
     t.text "value"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["key"], name: "index_app_settings_on_key", unique: true
   end
 
   create_table "assessment_categories", force: :cascade do |t|
     t.bigint "assessment_definition_id", null: false
-    t.bigint "category_custom_id"
-    t.bigint "category_id"
-    t.datetime "created_at", null: false
-    t.integer "position", default: 0, null: false
-    t.datetime "updated_at", null: false
+    t.bigint "discipline_id"
+    t.bigint "discipline_custom_id"
     t.integer "weight", null: false
-    t.index ["assessment_definition_id", "category_custom_id"], name: "index_assessment_categories_on_definition_and_custom", unique: true, where: "(category_custom_id IS NOT NULL)"
-    t.index ["assessment_definition_id", "category_id"], name: "index_assessment_categories_on_definition_and_category", unique: true, where: "(category_id IS NOT NULL)"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assessment_definition_id", "discipline_custom_id"], name: "index_assessment_categories_on_definition_and_discipline_custom", unique: true, where: "(discipline_custom_id IS NOT NULL)"
+    t.index ["assessment_definition_id", "discipline_id"], name: "index_assessment_categories_on_definition_and_discipline", unique: true, where: "(discipline_id IS NOT NULL)"
     t.index ["assessment_definition_id"], name: "index_assessment_categories_on_assessment_definition_id"
-    t.index ["category_custom_id"], name: "index_assessment_categories_on_category_custom_id"
-    t.index ["category_id"], name: "index_assessment_categories_on_category_id"
+    t.index ["discipline_custom_id"], name: "index_assessment_categories_on_discipline_custom_id"
+    t.index ["discipline_id"], name: "index_assessment_categories_on_discipline_id"
     t.check_constraint "\"position\" >= 0", name: "assessment_categories_position_non_negative"
-    t.check_constraint "category_id IS NOT NULL AND category_custom_id IS NULL OR category_id IS NULL AND category_custom_id IS NOT NULL", name: "assessment_categories_source_xor"
+    t.check_constraint "discipline_id IS NOT NULL AND discipline_custom_id IS NULL OR discipline_id IS NULL AND discipline_custom_id IS NOT NULL", name: "assessment_categories_source_xor"
     t.check_constraint "weight > 0", name: "assessment_categories_weight_positive"
   end
 
   create_table "assessment_category_scores", force: :cascade do |t|
-    t.bigint "assessment_category_id", null: false
     t.bigint "assessment_id", null: false
-    t.datetime "created_at", null: false
-    t.bigint "criterion_id"
-    t.text "notes"
+    t.bigint "assessment_category_id", null: false
+    t.integer "score"
     t.integer "reported_value"
     t.string "scale", default: "one_to_ten", null: false
-    t.integer "score"
+    t.text "notes"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "criterion_id"
     t.index ["assessment_category_id"], name: "index_assessment_category_scores_on_assessment_category_id"
     t.index ["assessment_id", "assessment_category_id", "criterion_id"], name: "index_assessment_category_scores_on_category_and_criterion", unique: true, where: "(criterion_id IS NOT NULL)"
     t.index ["assessment_id", "assessment_category_id"], name: "index_assessment_category_scores_on_assessment_and_category", unique: true, where: "(criterion_id IS NULL)"
@@ -250,11 +250,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "assessment_definitions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.text "description"
     t.string "name", null: false
     t.string "status", default: "draft", null: false
+    t.text "description"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_assessment_definitions_on_created_by_id"
     t.index ["name"], name: "index_assessment_definitions_on_name"
@@ -264,10 +264,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
 
   create_table "assessment_session_participants", force: :cascade do |t|
     t.bigint "assessment_session_id", null: false
-    t.datetime "created_at", null: false
+    t.bigint "player_profile_id", null: false
     t.string "inclusion", default: "included", null: false
     t.string "missing_reason"
-    t.bigint "player_profile_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["assessment_session_id", "player_profile_id"], name: "index_session_participants_on_session_and_player", unique: true
     t.index ["assessment_session_id"], name: "index_assessment_session_participants_on_assessment_session_id"
@@ -278,14 +278,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   create_table "assessment_sessions", force: :cascade do |t|
     t.bigint "assessment_definition_id", null: false
     t.bigint "coach_profile_id", null: false
-    t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.bigint "group_id"
     t.string "name"
-    t.text "notes"
-    t.datetime "published_at"
     t.date "scheduled_on"
     t.string "status", default: "draft", null: false
+    t.text "notes"
+    t.datetime "published_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["assessment_definition_id"], name: "index_assessment_sessions_on_assessment_definition_id"
     t.index ["coach_profile_id"], name: "index_assessment_sessions_on_coach_profile_id"
@@ -298,73 +298,53 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "assessments", force: :cascade do |t|
-    t.bigint "assessment_definition_id"
-    t.bigint "assessment_session_id"
-    t.bigint "category_id"
-    t.bigint "coach_profile_id", null: false
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.string "custom_category"
-    t.text "notes"
     t.bigint "player_profile_id", null: false
+    t.bigint "coach_profile_id", null: false
+    t.bigint "created_by_id"
+    t.bigint "training_session_id"
+    t.integer "score"
     t.integer "reported_value"
     t.string "scale", default: "one_to_ten"
-    t.integer "score"
+    t.text "notes"
     t.string "status", default: "draft", null: false
-    t.bigint "training_session_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "discipline_id"
+    t.string "custom_discipline"
+    t.bigint "assessment_definition_id"
+    t.bigint "assessment_session_id"
     t.index ["assessment_definition_id"], name: "index_assessments_on_assessment_definition_id"
     t.index ["assessment_session_id"], name: "index_assessments_on_assessment_session_id"
-    t.index ["category_id"], name: "index_assessments_on_category_id"
     t.index ["coach_profile_id"], name: "index_assessments_on_coach_profile_id"
     t.index ["created_by_id"], name: "index_assessments_on_created_by_id"
+    t.index ["discipline_id"], name: "index_assessments_on_discipline_id"
     t.index ["player_profile_id", "created_at"], name: "index_assessments_on_player_profile_id_and_created_at"
     t.index ["player_profile_id"], name: "index_assessments_on_player_profile_id"
     t.index ["status"], name: "index_assessments_on_status"
     t.index ["training_session_id"], name: "index_assessments_on_training_session_id"
     t.check_constraint "assessment_definition_id IS NOT NULL OR (score IS NULL) = (reported_value IS NULL)", name: "assessments_score_pair"
-    t.check_constraint "assessment_definition_id IS NOT NULL OR category_id IS NOT NULL AND custom_category IS NULL OR category_id IS NULL AND custom_category IS NOT NULL", name: "assessments_category_xor_custom_category"
-    t.check_constraint "assessment_definition_id IS NULL OR category_id IS NULL AND custom_category IS NULL", name: "assessment_definition_xor_rubric"
+    t.check_constraint "assessment_definition_id IS NOT NULL OR discipline_id IS NOT NULL AND custom_discipline IS NULL OR discipline_id IS NULL AND custom_discipline IS NOT NULL", name: "assessments_discipline_xor_custom_discipline"
+    t.check_constraint "assessment_definition_id IS NULL OR discipline_id IS NULL AND custom_discipline IS NULL", name: "assessment_definition_xor_rubric"
     t.check_constraint "score IS NULL OR score >= 0 AND score <= 100", name: "assessments_score_range"
     t.check_constraint "status::text = 'draft'::text OR score IS NOT NULL AND (assessment_definition_id IS NOT NULL OR reported_value IS NOT NULL)", name: "assessments_published_requires_score"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'active'::character varying::text, 'withdrawn'::character varying::text])", name: "assessments_status"
   end
 
-  create_table "categories", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "name"
-    t.string "slug"
-    t.datetime "updated_at", null: false
-    t.index ["slug"], name: "index_categories_on_slug", unique: true
-  end
-
-  create_table "category_customs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.string "name", null: false
-    t.datetime "updated_at", null: false
-    t.string "visibility", default: "shared", null: false
-    t.index ["created_by_id", "name"], name: "index_category_customs_on_creator_and_name", unique: true
-    t.index ["created_by_id"], name: "index_category_customs_on_created_by_id"
-    t.index ["visibility"], name: "index_category_customs_on_visibility"
-    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying::text, 'private'::character varying::text])", name: "category_customs_visibility"
-  end
-
   create_table "claim_invitations", force: :cascade do |t|
-    t.bigint "claimable_id", null: false
     t.string "claimable_type", null: false
-    t.datetime "created_at", null: false
-    t.datetime "declined_at"
-    t.datetime "emailed_at"
-    t.datetime "expires_at", null: false
+    t.bigint "claimable_id", null: false
     t.bigint "invited_by_id", null: false
-    t.string "invitee_email"
-    t.datetime "revoked_at"
-    t.string "status", default: "active", null: false
-    t.string "token_digest", null: false
-    t.datetime "updated_at", null: false
-    t.datetime "used_at"
     t.bigint "used_by_id"
+    t.string "invitee_email"
+    t.datetime "emailed_at"
+    t.string "token_digest", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "used_at"
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "declined_at"
     t.index ["claimable_type", "claimable_id"], name: "index_claim_invitations_on_claimable"
     t.index ["claimable_type", "claimable_id"], name: "index_claim_invitations_one_active_per_subject", unique: true, where: "((status)::text = 'active'::text)"
     t.index ["invited_by_id"], name: "index_claim_invitations_on_invited_by_id"
@@ -374,21 +354,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "coach_profiles", force: :cascade do |t|
-    t.bigint "account_id"
-    t.datetime "archived_at"
     t.string "coaching_level"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_account_id"
-    t.bigint "created_by_id"
-    t.string "display_name"
-    t.string "email"
-    t.datetime "merged_at"
-    t.bigint "merged_by_account_id"
-    t.bigint "merged_into_profile_id"
     t.text "qualifications"
     t.string "status", default: "active", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "visibility", default: "shared", null: false
+    t.bigint "created_by_id"
+    t.string "display_name"
+    t.bigint "created_by_account_id"
+    t.datetime "archived_at"
+    t.bigint "merged_into_profile_id"
+    t.datetime "merged_at"
+    t.bigint "merged_by_account_id"
+    t.bigint "account_id"
+    t.string "email"
     t.index ["account_id"], name: "index_coach_profiles_on_account_id"
     t.index ["created_by_account_id"], name: "index_coach_profiles_on_created_by_account_id"
     t.index ["created_by_id"], name: "index_coach_profiles_on_created_by_id"
@@ -401,25 +381,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
 
   create_table "contact_details", force: :cascade do |t|
     t.bigint "account_id", null: false
-    t.datetime "created_at", null: false
-    t.date "date_of_birth"
-    t.string "email"
     t.string "first_name", null: false
     t.string "last_name"
+    t.string "email"
     t.string "phone"
+    t.date "date_of_birth"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_contact_details_on_account_id", unique: true
   end
 
   create_table "courts", force: :cascade do |t|
-    t.text "access_instructions"
-    t.datetime "created_at", null: false
-    t.decimal "latitude", precision: 10, scale: 7
     t.bigint "location_id", null: false
-    t.decimal "longitude", precision: 10, scale: 7
     t.string "name", null: false
     t.string "normalized_name", null: false
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
+    t.text "access_instructions"
     t.string "status", default: "active", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["location_id", "normalized_name"], name: "index_courts_on_location_id_and_normalized_name", unique: true
     t.index ["location_id"], name: "index_courts_on_location_id"
@@ -431,9 +411,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
 
   create_table "criteria", force: :cascade do |t|
     t.bigint "assessment_category_id", null: false
-    t.datetime "created_at", null: false
     t.string "name", null: false
     t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["assessment_category_id", "name"], name: "index_criteria_on_assessment_category_id_and_name", unique: true
     t.index ["assessment_category_id", "position"], name: "index_criteria_on_assessment_category_id_and_position"
@@ -441,33 +421,53 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
     t.check_constraint "\"position\" >= 0", name: "criteria_position_non_negative"
   end
 
-  create_table "drill_skills", force: :cascade do |t|
+  create_table "discipline_customs", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "created_by_id"
+    t.string "visibility", default: "shared", null: false
     t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id", "name"], name: "index_discipline_customs_on_creator_and_name", unique: true
+    t.index ["created_by_id"], name: "index_discipline_customs_on_created_by_id"
+    t.index ["visibility"], name: "index_discipline_customs_on_visibility"
+    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying::text, 'private'::character varying::text])", name: "discipline_customs_visibility"
+  end
+
+  create_table "disciplines", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "slug"
+    t.index ["slug"], name: "index_disciplines_on_slug", unique: true
+  end
+
+  create_table "drill_skills", force: :cascade do |t|
     t.bigint "drill_id", null: false
     t.bigint "skill_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["drill_id", "skill_id"], name: "index_drill_skills_on_drill_id_and_skill_id", unique: true
     t.index ["skill_id"], name: "index_drill_skills_on_skill_id"
   end
 
   create_table "drills", force: :cascade do |t|
+    t.string "title"
+    t.text "setup_instructions"
+    t.integer "ideal_num_players"
+    t.string "difficulty_level"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "created_by_id"
+    t.string "training_stage"
+    t.integer "min_players"
+    t.integer "max_players"
+    t.string "slug"
+    t.jsonb "definition", default: {}, null: false
+    t.string "visibility", default: "shared", null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "published_at"
     t.datetime "approved_at"
     t.bigint "approved_by_id"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.jsonb "definition", default: {}, null: false
-    t.string "difficulty_level"
-    t.integer "ideal_num_players"
-    t.integer "max_players"
-    t.integer "min_players"
-    t.datetime "published_at"
-    t.text "setup_instructions"
-    t.string "slug"
-    t.string "status", default: "draft", null: false
-    t.string "title"
-    t.string "training_stage"
-    t.datetime "updated_at", null: false
-    t.string "visibility", default: "shared", null: false
     t.index ["created_by_id"], name: "index_drills_on_created_by_id"
     t.index ["slug"], name: "index_drills_on_slug", unique: true
     t.index ["status"], name: "index_drills_on_status"
@@ -480,16 +480,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "group_memberships", force: :cascade do |t|
-    t.bigint "account_id"
-    t.datetime "created_at", null: false
     t.bigint "group_id", null: false
-    t.datetime "joined_at"
-    t.datetime "left_at"
-    t.bigint "memberable_id", null: false
-    t.string "memberable_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.string "role", default: "member", null: false
     t.string "status", default: "active", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "joined_at"
+    t.datetime "left_at"
+    t.bigint "account_id"
+    t.string "memberable_type", null: false
+    t.bigint "memberable_id", null: false
     t.index ["account_id"], name: "index_group_memberships_on_account_id"
     t.index ["group_id", "account_id"], name: "index_group_memberships_on_group_and_account", unique: true, where: "(account_id IS NOT NULL)"
     t.index ["group_id", "memberable_type", "memberable_id"], name: "index_group_memberships_on_subject", unique: true
@@ -502,17 +502,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "groups", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "created_by_id"
-    t.bigint "default_location_id"
-    t.text "description"
     t.string "name", null: false
+    t.string "slug", null: false
+    t.text "description"
+    t.string "visibility", default: "shared", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.bigint "organisation_id"
     t.boolean "requires_approval", default: false, null: false
-    t.string "slug", null: false
-    t.string "status", default: "active", null: false
-    t.datetime "updated_at", null: false
-    t.string "visibility", default: "shared", null: false
+    t.bigint "default_location_id"
     t.index "lower((name)::text)", name: "index_groups_on_lower_name", unique: true
     t.index ["created_by_id"], name: "index_groups_on_created_by_id"
     t.index ["default_location_id"], name: "index_groups_on_default_location_id"
@@ -526,11 +526,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "location_aliases", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "location_id", null: false
     t.string "name", null: false
     t.string "normalized_name", null: false
     t.string "source"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["location_id", "normalized_name"], name: "index_location_aliases_unique_name", unique: true
     t.index ["location_id"], name: "index_location_aliases_on_location_id"
@@ -538,31 +538,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "locations", force: :cascade do |t|
-    t.string "administrative_area"
-    t.datetime "archived_at"
-    t.string "coordinate_source"
-    t.string "country_code", limit: 2
-    t.datetime "created_at", null: false
-    t.string "formatted_address"
-    t.string "geocoding_status", default: "not_requested", null: false
-    t.text "internal_notes"
-    t.decimal "latitude", precision: 10, scale: 7
-    t.string "locality"
-    t.string "location_type", default: "beach", null: false
-    t.decimal "longitude", precision: 10, scale: 7
-    t.bigint "merged_into_id"
     t.string "name", null: false
     t.string "normalized_name", null: false
-    t.bigint "proposed_by_account_id"
-    t.string "slug", null: false
+    t.string "location_type", default: "beach", null: false
+    t.string "formatted_address"
+    t.string "locality"
+    t.string "administrative_area"
+    t.string "country_code", limit: 2
+    t.string "timezone"
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
+    t.string "status", default: "active", null: false
+    t.string "verification_status", default: "proposed", null: false
+    t.string "geocoding_status", default: "not_requested", null: false
     t.string "source"
     t.string "source_reference"
-    t.string "status", default: "active", null: false
-    t.string "timezone"
-    t.datetime "updated_at", null: false
-    t.string "verification_status", default: "proposed", null: false
-    t.datetime "verified_at"
+    t.string "coordinate_source"
+    t.bigint "proposed_by_account_id"
     t.bigint "verified_by_account_id"
+    t.datetime "verified_at"
+    t.datetime "archived_at"
+    t.bigint "merged_into_id"
+    t.text "internal_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "slug", null: false
     t.index ["locality", "administrative_area", "country_code"], name: "index_locations_on_locality_scope"
     t.index ["merged_into_id"], name: "index_locations_on_merged_into_id"
     t.index ["normalized_name"], name: "index_locations_on_normalized_name"
@@ -579,10 +579,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "log_objects", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "log_id", null: false
-    t.bigint "object_id", null: false
     t.string "object_type", null: false
+    t.bigint "object_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["log_id"], name: "index_log_objects_on_log_id"
     t.index ["object_type", "object_id"], name: "index_log_objects_on_object"
@@ -590,17 +590,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "logs", force: :cascade do |t|
-    t.string "action", null: false
-    t.datetime "created_at", null: false
     t.string "description", null: false
-    t.string "ip_address"
+    t.bigint "user_id"
+    t.string "action", null: false
     t.string "method", null: false
     t.string "path"
+    t.string "ip_address"
+    t.text "user_agent"
     t.string "request_id"
     t.integer "status"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "user_agent"
-    t.bigint "user_id"
     t.index ["action", "created_at"], name: "index_logs_on_action_and_created_at"
     t.index ["created_at"], name: "index_logs_on_created_at"
     t.index ["request_id"], name: "index_logs_on_request_id"
@@ -610,11 +610,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
 
   create_table "notification_preferences", force: :cascade do |t|
     t.bigint "account_id", null: false
-    t.datetime "created_at", null: false
-    t.string "email_cadence", default: "immediate", null: false
-    t.boolean "email_enabled", default: false, null: false
     t.boolean "in_app_enabled", default: true, null: false
+    t.boolean "email_enabled", default: false, null: false
+    t.string "email_cadence", default: "immediate", null: false
     t.jsonb "muted_event_types", default: [], null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_notification_preferences_on_account_id", unique: true
     t.check_constraint "email_cadence::text = ANY (ARRAY['immediate'::character varying, 'daily'::character varying, 'weekly'::character varying, 'none'::character varying]::text[])", name: "notification_preferences_email_cadence"
@@ -623,20 +623,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   create_table "notifications", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.bigint "actor_account_id"
-    t.datetime "created_at", null: false
-    t.text "email_error"
-    t.datetime "email_failed_at"
-    t.datetime "emailed_at"
-    t.string "event_key", null: false
-    t.string "event_type", null: false
-    t.text "message", null: false
-    t.jsonb "metadata", default: {}, null: false
-    t.bigint "notifiable_id"
     t.string "notifiable_type"
-    t.datetime "read_at"
-    t.string "target_label"
-    t.string "target_path"
+    t.bigint "notifiable_id"
+    t.string "event_type", null: false
+    t.string "event_key", null: false
     t.string "title", null: false
+    t.text "message", null: false
+    t.string "target_path"
+    t.string "target_label"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "read_at"
+    t.datetime "emailed_at"
+    t.datetime "email_failed_at"
+    t.text "email_error"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id", "event_key"], name: "index_notifications_on_account_id_and_event_key", unique: true
     t.index ["account_id", "read_at", "created_at"], name: "index_notifications_inbox"
@@ -647,10 +647,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "organisation_locations", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "organisation_id", null: false
     t.bigint "location_id", null: false
     t.text "notes"
-    t.bigint "organisation_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["location_id"], name: "index_organisation_locations_on_location_id"
     t.index ["organisation_id", "location_id"], name: "index_organisation_locations_unique", unique: true
@@ -658,16 +658,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "organisation_memberships", force: :cascade do |t|
-    t.bigint "account_id"
-    t.datetime "created_at", null: false
-    t.datetime "joined_at"
-    t.datetime "left_at"
-    t.bigint "memberable_id", null: false
-    t.string "memberable_type", null: false
     t.bigint "organisation_id", null: false
     t.string "role", default: "member", null: false
     t.string "status", default: "pending", null: false
+    t.datetime "joined_at"
+    t.datetime "left_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "account_id"
+    t.string "memberable_type", null: false
+    t.bigint "memberable_id", null: false
     t.index ["account_id"], name: "index_organisation_memberships_on_account_id"
     t.index ["memberable_type", "memberable_id"], name: "index_organisation_memberships_on_memberable"
     t.index ["organisation_id", "account_id"], name: "index_org_memberships_on_org_and_account", unique: true, where: "(account_id IS NOT NULL)"
@@ -681,18 +681,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "organisations", force: :cascade do |t|
-    t.string "acronym"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_account_id"
-    t.bigint "default_location_id"
-    t.text "description"
-    t.string "name", null: false
-    t.string "organisation_type", default: "other", null: false
     t.bigint "parent_organisation_id"
-    t.boolean "requires_approval", default: false, null: false
+    t.string "name", null: false
     t.string "slug", null: false
+    t.string "organisation_type", default: "other", null: false
+    t.text "description"
     t.string "status", default: "active", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "acronym"
+    t.bigint "created_by_account_id"
+    t.boolean "requires_approval", default: false, null: false
+    t.bigint "default_location_id"
     t.index "lower((name)::text)", name: "index_organisations_on_lower_name", unique: true
     t.index ["acronym"], name: "index_organisations_on_acronym"
     t.index ["created_by_account_id"], name: "index_organisations_on_created_by_account_id"
@@ -705,18 +705,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "player_claims", force: :cascade do |t|
-    t.bigint "claimable_id"
-    t.string "claimable_type"
-    t.bigint "claimant_account_id"
-    t.datetime "created_at", null: false
-    t.bigint "initiated_by_account_id"
     t.bigint "player_profile_id"
-    t.text "rejection_reason"
-    t.datetime "reviewed_at"
-    t.bigint "reviewed_by_account_id"
     t.string "status", default: "pending", null: false
+    t.datetime "reviewed_at"
+    t.text "rejection_reason"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "claimable_type"
+    t.bigint "claimable_id"
+    t.bigint "claimant_account_id"
+    t.bigint "reviewed_by_account_id"
     t.string "verification_method"
+    t.bigint "initiated_by_account_id"
     t.index ["claimable_type", "claimable_id", "claimant_account_id"], name: "index_player_claims_pending_per_account_and_claimable", unique: true, where: "(((status)::text = 'pending'::text) AND (claimant_account_id IS NOT NULL))"
     t.index ["claimable_type", "claimable_id"], name: "index_player_claims_on_claimable"
     t.index ["claimant_account_id"], name: "index_player_claims_on_claimant_account_id"
@@ -729,11 +729,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "player_coaches", force: :cascade do |t|
-    t.bigint "coach_profile_id", null: false
-    t.datetime "created_at", null: false
-    t.date "end_date"
     t.bigint "player_profile_id", null: false
+    t.bigint "coach_profile_id", null: false
     t.date "start_date", null: false
+    t.date "end_date"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["coach_profile_id", "end_date"], name: "index_player_coaches_on_coach_and_end"
     t.index ["coach_profile_id"], name: "index_player_coaches_on_coach_profile_id"
@@ -745,21 +745,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "player_profiles", force: :cascade do |t|
-    t.bigint "account_id"
-    t.datetime "archived_at"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_account_id"
-    t.bigint "created_by_id"
-    t.string "display_name"
-    t.string "email"
-    t.string "level"
-    t.datetime "merged_at"
-    t.bigint "merged_by_account_id"
-    t.bigint "merged_into_profile_id"
     t.string "preferred_position"
+    t.string "level"
     t.string "status", default: "active", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "visibility", default: "shared", null: false
+    t.bigint "created_by_id"
+    t.string "display_name"
+    t.bigint "created_by_account_id"
+    t.datetime "archived_at"
+    t.bigint "merged_into_profile_id"
+    t.datetime "merged_at"
+    t.bigint "merged_by_account_id"
+    t.bigint "account_id"
+    t.string "email"
     t.index ["account_id"], name: "index_player_profiles_on_account_id"
     t.index ["created_by_account_id"], name: "index_player_profiles_on_created_by_account_id"
     t.index ["created_by_id"], name: "index_player_profiles_on_created_by_id"
@@ -771,14 +771,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "profile_merges", force: :cascade do |t|
-    t.bigint "canonical_profile_id", null: false
+    t.string "source_profile_type", null: false
+    t.bigint "source_profile_id", null: false
     t.string "canonical_profile_type", null: false
-    t.datetime "created_at", null: false
+    t.bigint "canonical_profile_id", null: false
     t.bigint "merged_by_account_id", null: false
     t.text "reason", null: false
     t.jsonb "reference_counts", default: {}, null: false
-    t.bigint "source_profile_id", null: false
-    t.string "source_profile_type", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["canonical_profile_type", "canonical_profile_id"], name: "index_profile_merges_canonical"
     t.index ["merged_by_account_id"], name: "index_profile_merges_on_merged_by_account_id"
@@ -787,13 +787,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "ranking_consolidation_rows", force: :cascade do |t|
-    t.integer "average_score"
+    t.bigint "ranking_consolidation_id", null: false
+    t.bigint "player_profile_id", null: false
     t.jsonb "coach_scores", default: {}, null: false
     t.integer "coverage", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.bigint "player_profile_id", null: false
+    t.integer "average_score"
     t.integer "rank"
-    t.bigint "ranking_consolidation_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["player_profile_id"], name: "index_ranking_consolidation_rows_on_player_profile_id"
     t.index ["ranking_consolidation_id", "player_profile_id"], name: "index_consolidation_rows_on_consolidation_and_player", unique: true
@@ -801,12 +801,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "ranking_consolidation_sessions", force: :cascade do |t|
-    t.bigint "assessment_session_id", null: false
-    t.datetime "created_at", null: false
-    t.boolean "excluded_from_snapshot", default: false, null: false
     t.bigint "ranking_consolidation_id", null: false
+    t.bigint "assessment_session_id", null: false
     t.jsonb "ranking_snapshot", default: [], null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "excluded_from_snapshot", default: false, null: false
     t.index ["assessment_session_id"], name: "index_ranking_consolidation_sessions_on_assessment_session_id"
     t.index ["ranking_consolidation_id", "assessment_session_id"], name: "index_consolidation_sessions_on_consolidation_and_session", unique: true
     t.index ["ranking_consolidation_id"], name: "idx_on_ranking_consolidation_id_c8618d652c"
@@ -814,16 +814,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
 
   create_table "ranking_consolidations", force: :cascade do |t|
     t.bigint "assessment_definition_id", null: false
-    t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.string "name"
     t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "source_warnings", default: [], null: false
+    t.string "status", default: "draft", null: false
     t.datetime "published_at"
     t.datetime "recalculated_at"
     t.bigint "recalculated_by_id"
-    t.jsonb "source_warnings", default: [], null: false
-    t.string "status", default: "draft", null: false
-    t.datetime "updated_at", null: false
     t.index ["assessment_definition_id"], name: "index_ranking_consolidations_on_assessment_definition_id"
     t.index ["created_by_id"], name: "index_ranking_consolidations_on_created_by_id"
     t.index ["recalculated_by_id"], name: "index_ranking_consolidations_on_recalculated_by_id"
@@ -832,222 +832,51 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "roles", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
     t.string "name"
+    t.text "description"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_roles_on_name", unique: true
   end
 
   create_table "sessions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "ip_address"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.string "api_token"
     t.datetime "api_token_expires_at"
-    t.datetime "created_at", null: false
     t.bigint "impersonated_user_id"
-    t.string "ip_address"
-    t.datetime "updated_at", null: false
-    t.string "user_agent"
-    t.bigint "user_id", null: false
     t.index ["api_token"], name: "index_sessions_on_api_token", unique: true
     t.index ["impersonated_user_id"], name: "index_sessions_on_impersonated_user_id"
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
   create_table "skills", force: :cascade do |t|
-    t.bigint "category_id", null: false
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.text "description"
-    t.datetime "published_at"
-    t.string "slug"
-    t.string "status", default: "published", null: false
     t.string "title"
+    t.bigint "discipline_id", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "created_by_id"
+    t.string "slug"
     t.string "visibility", default: "shared", null: false
-    t.index ["category_id"], name: "index_skills_on_category_id"
+    t.string "status", default: "published", null: false
+    t.datetime "published_at"
     t.index ["created_by_id"], name: "index_skills_on_created_by_id"
+    t.index ["discipline_id"], name: "index_skills_on_discipline_id"
     t.index ["slug"], name: "index_skills_on_slug", unique: true
     t.index ["status"], name: "index_skills_on_status"
     t.index ["visibility"], name: "index_skills_on_visibility"
   end
 
-  create_table "solid_cable_messages", force: :cascade do |t|
-    t.binary "channel", null: false
-    t.bigint "channel_hash", null: false
-    t.datetime "created_at", null: false
-    t.binary "payload", null: false
-    t.index ["channel"], name: "index_solid_cable_messages_on_channel"
-    t.index ["channel_hash"], name: "index_solid_cable_messages_on_channel_hash"
-    t.index ["created_at"], name: "index_solid_cable_messages_on_created_at"
-  end
-
-  create_table "solid_cache_entries", force: :cascade do |t|
-    t.integer "byte_size", null: false
-    t.datetime "created_at", null: false
-    t.binary "key", null: false
-    t.bigint "key_hash", null: false
-    t.binary "value", null: false
-    t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
-    t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
-    t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
-  end
-
-  create_table "solid_queue_batch_executions", force: :cascade do |t|
-    t.bigint "batch_id", null: false
-    t.datetime "created_at", null: false
-    t.bigint "job_id", null: false
-    t.index ["batch_id"], name: "index_solid_queue_batch_executions_on_batch_id"
-    t.index ["job_id"], name: "index_solid_queue_batch_executions_on_job_id", unique: true
-  end
-
-  create_table "solid_queue_batches", force: :cascade do |t|
-    t.string "active_job_batch_id"
-    t.integer "completed_jobs", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.string "description"
-    t.datetime "enqueued_at"
-    t.datetime "failed_at"
-    t.integer "failed_jobs", default: 0, null: false
-    t.datetime "finished_at"
-    t.text "metadata"
-    t.text "on_failure"
-    t.text "on_finish"
-    t.text "on_success"
-    t.integer "total_jobs", default: 0, null: false
-    t.datetime "updated_at", null: false
-    t.index ["active_job_batch_id"], name: "index_solid_queue_batches_on_active_job_batch_id", unique: true
-    t.index ["finished_at"], name: "index_solid_queue_batches_on_finished_at"
-  end
-
-  create_table "solid_queue_blocked_executions", force: :cascade do |t|
-    t.string "concurrency_key", null: false
-    t.datetime "created_at", null: false
-    t.datetime "expires_at", null: false
-    t.bigint "job_id", null: false
-    t.integer "priority", default: 0, null: false
-    t.string "queue_name", null: false
-    t.index ["concurrency_key", "priority", "job_id"], name: "index_solid_queue_blocked_executions_for_release"
-    t.index ["expires_at", "concurrency_key"], name: "index_solid_queue_blocked_executions_for_maintenance"
-    t.index ["job_id"], name: "index_solid_queue_blocked_executions_on_job_id", unique: true
-  end
-
-  create_table "solid_queue_claimed_executions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "job_id", null: false
-    t.bigint "process_id"
-    t.index ["job_id"], name: "index_solid_queue_claimed_executions_on_job_id", unique: true
-    t.index ["process_id", "job_id"], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
-  end
-
-  create_table "solid_queue_failed_executions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "error"
-    t.bigint "job_id", null: false
-    t.index ["job_id"], name: "index_solid_queue_failed_executions_on_job_id", unique: true
-  end
-
-  create_table "solid_queue_jobs", force: :cascade do |t|
-    t.string "active_job_id"
-    t.text "arguments"
-    t.bigint "batch_id"
-    t.string "class_name", null: false
-    t.string "concurrency_key"
-    t.datetime "created_at", null: false
-    t.datetime "finished_at"
-    t.integer "priority", default: 0, null: false
-    t.string "queue_name", null: false
-    t.datetime "scheduled_at"
-    t.datetime "updated_at", null: false
-    t.index ["active_job_id"], name: "index_solid_queue_jobs_on_active_job_id"
-    t.index ["batch_id"], name: "index_solid_queue_jobs_on_batch_id"
-    t.index ["class_name"], name: "index_solid_queue_jobs_on_class_name"
-    t.index ["finished_at"], name: "index_solid_queue_jobs_on_finished_at"
-    t.index ["queue_name", "finished_at"], name: "index_solid_queue_jobs_for_filtering"
-    t.index ["scheduled_at", "finished_at"], name: "index_solid_queue_jobs_for_alerting"
-  end
-
-  create_table "solid_queue_pauses", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "queue_name", null: false
-    t.index ["queue_name"], name: "index_solid_queue_pauses_on_queue_name", unique: true
-  end
-
-  create_table "solid_queue_processes", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "hostname"
-    t.string "kind", null: false
-    t.datetime "last_heartbeat_at", null: false
-    t.text "metadata"
-    t.string "name", null: false
-    t.integer "pid", null: false
-    t.bigint "supervisor_id"
-    t.index ["last_heartbeat_at"], name: "index_solid_queue_processes_on_last_heartbeat_at"
-    t.index ["name", "supervisor_id"], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
-    t.index ["supervisor_id"], name: "index_solid_queue_processes_on_supervisor_id"
-  end
-
-  create_table "solid_queue_ready_executions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "job_id", null: false
-    t.integer "priority", default: 0, null: false
-    t.string "queue_name", null: false
-    t.index ["job_id"], name: "index_solid_queue_ready_executions_on_job_id", unique: true
-    t.index ["priority", "job_id"], name: "index_solid_queue_poll_all"
-    t.index ["queue_name", "priority", "job_id"], name: "index_solid_queue_poll_by_queue"
-  end
-
-  create_table "solid_queue_recurring_executions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "job_id", null: false
-    t.datetime "run_at", null: false
-    t.string "task_key", null: false
-    t.index ["job_id"], name: "index_solid_queue_recurring_executions_on_job_id", unique: true
-    t.index ["task_key", "run_at"], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at", unique: true
-  end
-
-  create_table "solid_queue_recurring_tasks", force: :cascade do |t|
-    t.text "arguments"
-    t.string "class_name"
-    t.string "command", limit: 2048
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.string "key", null: false
-    t.integer "priority", default: 0
-    t.string "queue_name"
-    t.string "schedule", null: false
-    t.boolean "static", default: true, null: false
-    t.datetime "updated_at", null: false
-    t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
-    t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
-  end
-
-  create_table "solid_queue_scheduled_executions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "job_id", null: false
-    t.integer "priority", default: 0, null: false
-    t.string "queue_name", null: false
-    t.datetime "scheduled_at", null: false
-    t.index ["job_id"], name: "index_solid_queue_scheduled_executions_on_job_id", unique: true
-    t.index ["scheduled_at", "priority", "job_id"], name: "index_solid_queue_dispatch_all"
-  end
-
-  create_table "solid_queue_semaphores", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "expires_at", null: false
-    t.string "key", null: false
-    t.datetime "updated_at", null: false
-    t.integer "value", default: 1, null: false
-    t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
-    t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
-    t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
-  end
-
   create_table "tournament_divisions", force: :cascade do |t|
+    t.bigint "tournament_id", null: false
+    t.string "letter_level"
+    t.integer "division_number"
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
-    t.integer "division_number"
-    t.string "letter_level"
-    t.bigint "tournament_id", null: false
     t.datetime "updated_at", null: false
     t.index ["active"], name: "index_tournament_divisions_on_active"
     t.index ["division_number"], name: "index_tournament_divisions_on_division_number"
@@ -1057,13 +886,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
     t.index ["tournament_id"], name: "index_tournament_divisions_on_tournament_id"
     t.check_constraint "division_number IS NULL OR division_number > 0", name: "division_number_positive"
     t.check_constraint "letter_level IS NOT NULL AND division_number IS NULL OR letter_level IS NULL AND division_number IS NOT NULL", name: "division_level_or_number"
-    t.check_constraint "letter_level IS NULL OR (letter_level::text = ANY (ARRAY['B'::character varying::text, 'BB'::character varying::text, 'BBB'::character varying::text, 'A'::character varying::text, 'AA'::character varying::text, 'AAA'::character varying::text, 'AAAA'::character varying::text]))", name: "valid_letter_level"
+    t.check_constraint "letter_level IS NULL OR (letter_level::text = ANY (ARRAY['B'::character varying, 'BB'::character varying, 'BBB'::character varying, 'A'::character varying, 'AA'::character varying, 'AAA'::character varying, 'AAAA'::character varying]::text[]))", name: "valid_letter_level"
   end
 
   create_table "tournament_follows", force: :cascade do |t|
     t.bigint "account_id", null: false
-    t.datetime "created_at", null: false
     t.bigint "tournament_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id", "tournament_id"], name: "index_tournament_follows_on_account_id_and_tournament_id", unique: true
     t.index ["account_id"], name: "index_tournament_follows_on_account_id"
@@ -1071,10 +900,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "tournament_participation_divisions", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "tournament_participation_id", null: false
     t.bigint "tournament_division_id", null: false
     t.bigint "tournament_id", null: false
-    t.bigint "tournament_participation_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["tournament_division_id"], name: "idx_on_tournament_division_id_3fea2c228f"
     t.index ["tournament_id"], name: "index_tournament_participation_divisions_on_tournament_id"
@@ -1084,9 +913,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
 
   create_table "tournament_participations", force: :cascade do |t|
     t.bigint "account_id", null: false
-    t.datetime "created_at", null: false
-    t.string "role", null: false
     t.bigint "tournament_id", null: false
+    t.string "role", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_tournament_participations_on_account_id"
     t.index ["role"], name: "index_tournament_participations_on_role"
@@ -1094,39 +923,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "tournament_watch_links", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.string "name", null: false
-    t.integer "position", default: 0, null: false
-    t.string "provider"
-    t.datetime "starts_at"
     t.bigint "tournament_id", null: false
-    t.datetime "updated_at", null: false
+    t.string "name", null: false
     t.string "url", null: false
+    t.string "provider"
+    t.text "description"
+    t.datetime "starts_at"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["position"], name: "index_tournament_watch_links_on_position"
     t.index ["tournament_id"], name: "index_tournament_watch_links_on_tournament_id"
     t.check_constraint "url::text ~* '^https?://'::text", name: "valid_url"
   end
 
   create_table "tournaments", force: :cascade do |t|
-    t.boolean "all_day", default: false, null: false
-    t.bigint "court_id"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_account_id", null: false
-    t.text "description"
-    t.string "division_scheme", null: false
-    t.datetime "ends_at", null: false
-    t.string "location_detail"
-    t.bigint "location_id"
-    t.string "location_name"
     t.string "name", null: false
     t.bigint "organisation_id", null: false
-    t.string "publication_state", default: "draft", null: false
     t.string "scope", null: false
+    t.string "division_scheme", null: false
     t.datetime "starts_at", null: false
+    t.datetime "ends_at", null: false
     t.string "timezone", null: false
-    t.datetime "updated_at", null: false
+    t.boolean "all_day", default: false, null: false
+    t.text "description"
+    t.string "location_name"
     t.string "website_url"
+    t.string "publication_state", default: "draft", null: false
+    t.bigint "created_by_account_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "location_id"
+    t.bigint "court_id"
+    t.string "location_detail"
     t.index ["court_id"], name: "index_tournaments_on_court_id"
     t.index ["created_by_account_id"], name: "index_tournaments_on_created_by_account_id"
     t.index ["ends_at"], name: "index_tournaments_on_ends_at"
@@ -1135,17 +964,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
     t.index ["publication_state"], name: "index_tournaments_on_publication_state"
     t.index ["starts_at"], name: "index_tournaments_on_starts_at"
     t.check_constraint "ends_at > starts_at", name: "ends_after_starts"
-    t.check_constraint "publication_state::text = ANY (ARRAY['draft'::character varying::text, 'active'::character varying::text, 'cancelled'::character varying::text, 'archived'::character varying::text])", name: "valid_publication_state"
-    t.check_constraint "scope::text = ANY (ARRAY['club'::character varying::text, 'state'::character varying::text, 'national'::character varying::text, 'international'::character varying::text, 'other'::character varying::text])", name: "valid_scope"
+    t.check_constraint "publication_state::text = ANY (ARRAY['draft'::character varying, 'active'::character varying, 'cancelled'::character varying, 'archived'::character varying]::text[])", name: "valid_publication_state"
+    t.check_constraint "scope::text = ANY (ARRAY['club'::character varying, 'state'::character varying, 'national'::character varying, 'international'::character varying, 'other'::character varying]::text[])", name: "valid_scope"
   end
 
   create_table "training_focuses", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "training_session_id", null: false
+    t.bigint "skill_id"
     t.string "custom_focus"
     t.text "description"
     t.integer "position", default: 0, null: false
-    t.bigint "skill_id"
-    t.bigint "training_session_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["skill_id"], name: "index_training_focuses_on_skill_id"
     t.index ["training_session_id", "position"], name: "index_training_focuses_on_training_session_id_and_position"
@@ -1156,25 +985,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "training_series", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.jsonb "defaults_snapshot", default: {}, null: false
-    t.integer "duration_minutes", null: false
-    t.date "ends_on", null: false
-    t.string "frequency", default: "weekly", null: false
-    t.date "generated_through"
-    t.integer "interval", default: 1, null: false
-    t.datetime "last_generated_at"
-    t.time "local_start_time", null: false
-    t.bigint "organisation_id"
-    t.date "starts_on", null: false
-    t.string "status", default: "active", null: false
-    t.datetime "stopped_at"
-    t.text "stopped_reason"
-    t.string "time_zone", default: "Australia/Sydney", null: false
     t.bigint "training_template_id", null: false
-    t.datetime "updated_at", null: false
+    t.bigint "organisation_id"
+    t.bigint "created_by_id"
+    t.string "frequency", default: "weekly", null: false
+    t.integer "interval", default: 1, null: false
     t.string "weekdays", default: [], null: false, array: true
+    t.date "starts_on", null: false
+    t.date "ends_on", null: false
+    t.time "local_start_time", null: false
+    t.integer "duration_minutes", null: false
+    t.string "time_zone", default: "Australia/Sydney", null: false
+    t.string "status", default: "active", null: false
+    t.date "generated_through"
+    t.jsonb "defaults_snapshot", default: {}, null: false
+    t.datetime "last_generated_at"
+    t.datetime "stopped_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "stopped_reason"
     t.index ["created_by_id"], name: "index_training_series_on_created_by_id"
     t.index ["organisation_id"], name: "index_training_series_on_organisation_id"
     t.index ["starts_on"], name: "index_training_series_on_starts_on"
@@ -1191,12 +1020,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "training_session_drills", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "training_session_id", null: false
     t.bigint "drill_id", null: false
+    t.integer "position", default: 0, null: false
     t.integer "duration_minutes"
     t.text "notes"
-    t.integer "position", default: 0, null: false
-    t.bigint "training_session_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["drill_id"], name: "index_training_session_drills_on_drill_id"
     t.index ["training_session_id", "drill_id"], name: "index_training_session_drills_on_session_and_drill", unique: true
@@ -1207,13 +1036,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "training_session_participants", force: :cascade do |t|
-    t.datetime "cancellation_notified_at"
-    t.datetime "created_at", null: false
-    t.text "notes"
+    t.bigint "training_session_id", null: false
     t.bigint "player_profile_id", null: false
     t.string "status", default: "invited", null: false
-    t.bigint "training_session_id", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "cancellation_notified_at"
     t.index ["player_profile_id"], name: "index_training_session_participants_on_player_profile_id"
     t.index ["status"], name: "index_training_session_participants_on_status"
     t.index ["training_session_id", "player_profile_id"], name: "index_training_session_participants_on_session_and_player", unique: true
@@ -1221,32 +1050,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "training_sessions", force: :cascade do |t|
-    t.text "cancellation_reason"
-    t.datetime "cancelled_at"
-    t.bigint "cancelled_by_id"
-    t.integer "capacity"
-    t.bigint "coach_profile_id"
-    t.bigint "court_id"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.text "description"
-    t.datetime "ends_at", null: false
-    t.bigint "group_id"
-    t.string "level"
     t.string "location"
-    t.string "location_detail"
-    t.bigint "location_id"
-    t.bigint "organisation_id", null: false
-    t.datetime "original_starts_at"
-    t.jsonb "override_fields", default: {}, null: false
-    t.string "recurrence_key"
-    t.datetime "starts_at", null: false
-    t.string "status", default: "draft", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "created_by_id"
     t.string "title", null: false
+    t.text "description"
+    t.datetime "starts_at", null: false
+    t.datetime "ends_at", null: false
+    t.string "status", default: "draft", null: false
+    t.string "visibility", default: "shared", null: false
     t.bigint "training_series_id"
     t.bigint "training_template_id"
-    t.datetime "updated_at", null: false
-    t.string "visibility", default: "shared", null: false
+    t.bigint "organisation_id", null: false
+    t.bigint "group_id"
+    t.bigint "coach_profile_id"
+    t.bigint "cancelled_by_id"
+    t.integer "capacity"
+    t.string "level"
+    t.string "location_detail"
+    t.string "recurrence_key"
+    t.datetime "original_starts_at"
+    t.jsonb "override_fields", default: {}, null: false
+    t.text "cancellation_reason"
+    t.datetime "cancelled_at"
+    t.bigint "location_id"
+    t.bigint "court_id"
     t.index ["cancelled_by_id"], name: "index_training_sessions_on_cancelled_by_id"
     t.index ["coach_profile_id"], name: "index_training_sessions_on_coach_profile_id"
     t.index ["court_id"], name: "index_training_sessions_on_court_id"
@@ -1268,22 +1097,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "training_templates", force: :cascade do |t|
-    t.integer "capacity"
-    t.bigint "coach_profile_id"
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
+    t.string "name", null: false
     t.text "description"
-    t.integer "duration_minutes", default: 90, null: false
+    t.bigint "organisation_id", null: false
     t.bigint "group_id"
-    t.string "level"
+    t.bigint "coach_profile_id"
     t.string "location"
     t.string "location_detail"
-    t.bigint "location_id"
-    t.string "name", null: false
-    t.bigint "organisation_id", null: false
-    t.string "status", default: "active", null: false
-    t.datetime "updated_at", null: false
+    t.string "level"
+    t.integer "capacity"
+    t.integer "duration_minutes", default: 90, null: false
     t.string "visibility", default: "shared", null: false
+    t.string "status", default: "active", null: false
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "location_id"
     t.index ["coach_profile_id"], name: "index_training_templates_on_coach_profile_id"
     t.index ["created_by_id"], name: "index_training_templates_on_created_by_id"
     t.index ["group_id"], name: "index_training_templates_on_group_id"
@@ -1298,35 +1127,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "user_roles", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "role_id", null: false
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.bigint "role_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["role_id"], name: "index_user_roles_on_role_id"
     t.index ["user_id", "role_id"], name: "index_user_roles_on_user_id_and_role_id", unique: true
     t.index ["user_id"], name: "index_user_roles_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "email_address", null: false
-    t.datetime "email_verification_sent_at"
-    t.string "email_verification_token_digest"
-    t.datetime "email_verified_at"
     t.string "password_digest", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "email_verified_at"
+    t.string "email_verification_token_digest"
+    t.datetime "email_verification_sent_at"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
     t.index ["email_verification_token_digest"], name: "index_users_on_email_verification_token_digest"
   end
 
   create_table "video_categories", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.text "description"
     t.string "name", null: false
+    t.text "description"
     t.integer "position", default: 0, null: false
-    t.string "slug"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "slug"
     t.index ["created_by_id"], name: "index_video_categories_on_created_by_id"
     t.index ["name"], name: "index_video_categories_on_name", unique: true
     t.index ["position"], name: "index_video_categories_on_position"
@@ -1334,16 +1163,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "video_references", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.integer "end_seconds"
-    t.integer "position"
-    t.bigint "referenced_id", null: false
-    t.string "referenced_type", null: false
-    t.integer "start_seconds"
-    t.string "title"
-    t.datetime "updated_at", null: false
     t.bigint "video_id", null: false
+    t.string "referenced_type", null: false
+    t.bigint "referenced_id", null: false
+    t.integer "start_seconds"
+    t.integer "end_seconds"
+    t.string "title"
+    t.text "description"
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["referenced_type", "referenced_id", "position"], name: "index_video_references_on_referenced_and_position"
     t.index ["referenced_type", "referenced_id"], name: "index_video_references_on_referenced"
     t.index ["video_id"], name: "index_video_references_on_video_id"
@@ -1353,41 +1182,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   end
 
   create_table "video_taggings", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
     t.bigint "video_id", null: false
     t.bigint "video_tag_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["video_id", "video_tag_id"], name: "index_video_taggings_on_video_id_and_video_tag_id", unique: true
     t.index ["video_id"], name: "index_video_taggings_on_video_id"
     t.index ["video_tag_id"], name: "index_video_taggings_on_video_tag_id"
   end
 
   create_table "video_tags", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "name", null: false
-    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "position", default: 0, null: false
     t.index "lower((name)::text)", name: "index_video_tags_on_lower_name", unique: true
     t.index ["name"], name: "index_video_tags_on_name", unique: true
     t.index ["position"], name: "index_video_tags_on_position"
   end
 
   create_table "videos", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.text "description"
-    t.integer "duration_seconds"
     t.string "provider", null: false
     t.string "provider_video_id"
-    t.datetime "published_at"
     t.string "source_url"
-    t.string "status", default: "published", null: false
     t.string "storage_key"
-    t.string "thumbnail_url"
     t.string "title"
+    t.text "description"
+    t.integer "duration_seconds"
+    t.string "thumbnail_url"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "video_category_id"
     t.string "visibility", default: "shared", null: false
+    t.string "status", default: "published", null: false
+    t.datetime "published_at"
     t.index ["created_by_id"], name: "index_videos_on_created_by_id"
     t.index ["provider", "provider_video_id"], name: "index_videos_on_provider_and_provider_video_id", unique: true, where: "(provider_video_id IS NOT NULL)"
     t.index ["provider"], name: "index_videos_on_provider"
@@ -1398,13 +1227,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
 
   create_table "weather_advisor_preferences", force: :cascade do |t|
     t.bigint "account_id", null: false
-    t.datetime "created_at", null: false
-    t.integer "humidity_weight", default: 10, null: false
-    t.integer "rain_weight", default: 25, null: false
-    t.integer "temperature_weight", default: 20, null: false
-    t.datetime "updated_at", null: false
-    t.integer "uv_weight", default: 5, null: false
     t.integer "wind_weight", default: 40, null: false
+    t.integer "temperature_weight", default: 20, null: false
+    t.integer "rain_weight", default: 25, null: false
+    t.integer "uv_weight", default: 5, null: false
+    t.integer "humidity_weight", default: 10, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_weather_advisor_preferences_on_account_id", unique: true
     t.check_constraint "(wind_weight + temperature_weight + rain_weight + uv_weight + humidity_weight) = 100", name: "weather_advisor_preferences_weights_total"
     t.check_constraint "humidity_weight >= 0 AND humidity_weight <= 100", name: "weather_advisor_preferences_humidity_weight_range"
@@ -1440,8 +1269,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   add_foreign_key "analysis_videos", "analyses", on_delete: :cascade
   add_foreign_key "analysis_videos", "videos", on_delete: :nullify
   add_foreign_key "assessment_categories", "assessment_definitions"
-  add_foreign_key "assessment_categories", "categories"
-  add_foreign_key "assessment_categories", "category_customs"
+  add_foreign_key "assessment_categories", "discipline_customs"
+  add_foreign_key "assessment_categories", "disciplines"
   add_foreign_key "assessment_category_scores", "assessment_categories"
   add_foreign_key "assessment_category_scores", "assessments"
   add_foreign_key "assessment_category_scores", "criteria"
@@ -1454,12 +1283,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   add_foreign_key "assessment_sessions", "users", column: "created_by_id"
   add_foreign_key "assessments", "assessment_definitions"
   add_foreign_key "assessments", "assessment_sessions", on_delete: :nullify
-  add_foreign_key "assessments", "categories"
   add_foreign_key "assessments", "coach_profiles"
+  add_foreign_key "assessments", "disciplines"
   add_foreign_key "assessments", "player_profiles"
   add_foreign_key "assessments", "training_sessions", on_delete: :nullify
   add_foreign_key "assessments", "users", column: "created_by_id"
-  add_foreign_key "category_customs", "users", column: "created_by_id"
   add_foreign_key "claim_invitations", "users", column: "invited_by_id"
   add_foreign_key "claim_invitations", "users", column: "used_by_id"
   add_foreign_key "coach_profiles", "accounts", column: "created_by_account_id"
@@ -1470,6 +1298,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   add_foreign_key "contact_details", "accounts", on_delete: :restrict
   add_foreign_key "courts", "locations"
   add_foreign_key "criteria", "assessment_categories"
+  add_foreign_key "discipline_customs", "users", column: "created_by_id"
   add_foreign_key "drill_skills", "drills"
   add_foreign_key "drill_skills", "skills"
   add_foreign_key "drills", "users", column: "approved_by_id"
@@ -1515,16 +1344,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000002) do
   add_foreign_key "ranking_consolidations", "users", column: "recalculated_by_id"
   add_foreign_key "sessions", "users"
   add_foreign_key "sessions", "users", column: "impersonated_user_id"
-  add_foreign_key "skills", "categories"
+  add_foreign_key "skills", "disciplines"
   add_foreign_key "skills", "users", column: "created_by_id"
-  add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade
-  add_foreign_key "solid_queue_batch_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "tournament_divisions", "tournaments"
   add_foreign_key "tournament_follows", "accounts"
   add_foreign_key "tournament_follows", "tournaments"

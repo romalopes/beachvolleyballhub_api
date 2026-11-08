@@ -1,0 +1,62 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Disciplines</h1>
+    <p>Manage disciplines used to organise skills.</p>
+    <div class="page-header-actions">
+      <%= link_to new_admin_discipline_path, class: "admin-btn admin-btn-add" do %>
+        <%= icon("plus", size: 16) %> Add New Discipline
+      <% end %>
+    </div>
+  </div>
+
+  <% if flash[:notice] %>
+    <div class="auth-flash auth-flash-notice"><%= flash[:notice] %></div>
+  <% end %>
+  <% if flash[:alert] %>
+    <div class="auth-flash auth-flash-error"><%= flash[:alert] %></div>
+  <% end %>
+
+  <% if @disciplines.any? %>
+    <p class="admin-result-count"><%= pluralize(@disciplines.size, "discipline") %></p>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Skills</th>
+          <th>Created</th>
+          <th style="width: 150px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @disciplines.each do |discipline| %>
+          <tr>
+            <td class="admin-name">
+              <%= link_to admin_discipline_path(discipline), class: "admin-link" do %>
+                <%= discipline.name %>
+                <%= icon("arrow-right", size: 14) %>
+              <% end %>
+            </td>
+            <td><%= link_to discipline.skills.size, admin_skills_path(discipline_id: discipline.id), class: "admin-link" %></td>
+            <td><%= short_date(discipline.created_at) if discipline.created_at %></td>
+            <td class="admin-actions">
+              <%= link_to edit_admin_discipline_path(discipline), class: "admin-btn admin-btn-edit" do %>
+                <%= icon("edit", size: 14) %> Edit
+              <% end %>
+              <%= button_to "Delete", admin_discipline_path(discipline),
+                  method: :delete, class: "admin-btn admin-btn-delete",
+                  data: { turbo_method: :delete, turbo_confirm: "Are you sure you want to delete \"#{discipline.name}\"? This action cannot be undone." } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="empty-state">
+      <h3>No disciplines yet</h3>
+      <p>Add your first discipline to get started.</p>
+      <%= link_to new_admin_discipline_path, class: "admin-btn admin-btn-add" do %>
+        <%= icon("plus", size: 16) %> Add New Discipline
+      <% end %>
+    </div>
+  <% end %>
+</div>

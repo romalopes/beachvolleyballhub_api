@@ -205,7 +205,7 @@ class Api::V1::Admin::ImpersonationsControllerTest < ActionDispatch::Integration
     assert_response :created
     # Player is not a content creator: effective permissions apply, so
     # creating a skill is forbidden (an admin could do it).
-    post "/api/v1/skills", params: { skill: { title: "Nope", category_id: categories(:one).id } }
+    post "/api/v1/skills", params: { skill: { title: "Nope", discipline_id: disciplines(:one).id } }
     assert_response :forbidden
   end
 

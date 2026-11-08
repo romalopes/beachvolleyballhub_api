@@ -3,16 +3,16 @@ require "test_helper"
 class LogTest < ActiveSupport::TestCase
   setup do
     @user = users(:two)
-    @category = categories(:one)
+    @discipline = disciplines(:one)
   end
 
   test "valid log with all fields" do
     log = Log.new(
-      description: "Created category \"Blocking\"",
+      description: "Created discipline \"Blocking\"",
       action: "create",
       method: "POST",
       user: @user,
-      path: "/api/v1/admin/categories",
+      path: "/api/v1/admin/disciplines",
       request_id: "abc123",
       ip_address: "127.0.0.1",
       user_agent: "Test",
@@ -81,8 +81,8 @@ class LogTest < ActiveSupport::TestCase
     Log.delete_all
     log1 = Log.create!(description: "Log 1", action: "create", method: "POST")
     log2 = Log.create!(description: "Log 2", action: "create", method: "POST")
-    LogObject.create!(log: log1, object: @category)
+    LogObject.create!(log: log1, object: @discipline)
     LogObject.create!(log: log2, object: skills(:one))
-    assert_equal [ log1.id ], Log.for_object("Category", @category.id).pluck(:id)
+    assert_equal [ log1.id ], Log.for_object("Discipline", @discipline.id).pluck(:id)
   end
 end

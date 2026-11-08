@@ -32,7 +32,7 @@ Rails.application.routes.draw do
     # Admin Settings CRUD (server-rendered views)
     get "settings", to: "dashboard#index", as: :settings
     resources :skills
-    resources :categories
+    resources :disciplines
     resources :drills
   end
 
@@ -94,7 +94,7 @@ Rails.application.routes.draw do
       get "email-verifications/:token", to: "email_verifications#show"
       post "email-verifications/resend", to: "email_verifications_resend#create"
 
-      resources :categories
+      resources :disciplines
       resources :skills do
         # Videos attached to a Skill; the reference target comes from the
         # nested URL. See VideoReferencesController.
@@ -321,7 +321,7 @@ Rails.application.routes.draw do
       # Coach-authored rubrics outside the club catalogue. `PATCH` only: an
       # in-use custom category may not be deleted, and configuration rows are
       # not offered a delete route at all.
-      resources :category_customs, only: %i[index show create update]
+      resources :discipline_customs, only: %i[index show create update]
 
       # Named rosters (squads/groups) used as reusable participant selections
       # for sessions. Archive-on-delete if used in sessions.
@@ -402,7 +402,7 @@ Rails.application.routes.draw do
 
         # Admin Settings CRUD (JSON for the React SPA)
         resources :skills, only: [ :index, :show, :create, :update, :destroy ]
-        resources :categories, only: [ :index, :show, :create, :update, :destroy ]
+        resources :disciplines, only: [ :index, :show, :create, :update, :destroy ]
         resources :drills, only: [ :index, :show, :create, :update, :destroy ]
 
         # Admin audit logs (read-only)

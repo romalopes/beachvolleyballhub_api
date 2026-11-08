@@ -117,7 +117,7 @@ class CoachProfile < ApplicationRecord
   # the same shape the assessments endpoints serialize.
   def recent_assessments
     assessments.active.ordered
-               .includes(:category, :created_by, :coach_profile, player_profile: :account)
+               .includes(:discipline, :created_by, :coach_profile, player_profile: :account)
                .limit(5)
   end
 

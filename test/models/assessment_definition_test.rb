@@ -57,35 +57,35 @@ class AssessmentDefinitionTest < ActiveSupport::TestCase
     assert_includes definition.errors.attribute_names, :name
   end
 
-  test "the same category may not be configured twice" do
+  test "the same discipline may not be configured twice" do
     duplicate = AssessmentCategory.new(
       assessment_definition: @balanced,
-      category: categories(:assessment_rubric),
+      discipline: disciplines(:assessment_rubric),
       weight: 10,
       position: 9
     )
 
     assert_not duplicate.valid?
-    assert_includes duplicate.errors.attribute_names, :category_id
+    assert_includes duplicate.errors.attribute_names, :discipline_id
   end
 
-  test "the same custom category may not be configured twice" do
+  test "the same custom discipline may not be configured twice" do
     duplicate = AssessmentCategory.new(
       assessment_definition: @pre_season,
-      category_custom: category_customs(:mental_game),
+      discipline_custom: discipline_customs(:mental_game),
       weight: 10,
       position: 9
     )
 
     assert_not duplicate.valid?
-    assert_includes duplicate.errors.attribute_names, :category_custom_id
+    assert_includes duplicate.errors.attribute_names, :discipline_custom_id
   end
 
   test "the database refuses a duplicate source even when validation is skipped" do
     assert_raises(ActiveRecord::RecordNotUnique) do
       AssessmentCategory.insert!({
         assessment_definition_id: @balanced.id,
-        category_id: categories(:assessment_rubric).id,
+        discipline_id: disciplines(:assessment_rubric).id,
         weight: 10,
         position: 9,
         created_at: Time.current,
@@ -104,7 +104,7 @@ class AssessmentDefinitionTest < ActiveSupport::TestCase
     assert_includes @balanced.errors.full_messages.join(" "), "duplicate it to make changes"
   end
 
-  test "an in-use definition may not have its category set changed" do
+  test "an in-use definition may not have its discipline set changed" do
     freeze_with_result
 
     @balanced.assessment_categories_attributes = [

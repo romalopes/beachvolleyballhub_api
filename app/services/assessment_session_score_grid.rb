@@ -1,8 +1,8 @@
 # Persists one coach's score grid for an assessment session atomically.
 #
-# The request names players and configured categories; this service owns every
+# The request names players and configured disciplines; this service owns every
 # conversion and total. It creates or updates the session-scoped draft
-# `Assessment` result and its category rows inside one transaction, so an
+# `Assessment` result and its discipline rows inside one transaction, so an
 # invalid cell anywhere in the grid leaves the previous state untouched.
 # Client-supplied totals or ranks are never accepted.
 class AssessmentSessionScoreGrid
@@ -53,9 +53,9 @@ class AssessmentSessionScoreGrid
       return
     end
 
-    cells = Array(param(row, :category_scores) || param(row, :scores))
+    cells = Array(param(row, :discipline_scores) || param(row, :scores))
     if cells.empty?
-      failures << "#{player_name(participant)} has no category scores supplied"
+      failures << "#{player_name(participant)} has no discipline scores supplied"
       return
     end
 
@@ -71,19 +71,19 @@ class AssessmentSessionScoreGrid
 
     touched = false
     cells.each do |cell|
-      category = category_for(param(cell, :assessment_category_id))
-      unless category
-        failures << "#{player_name(participant)} has a score for a category outside this definition"
+      discipline = discipline_for(param(cell, :assessment_category_id))
+      unless discipline
+        failures << "#{player_name(participant)} has a score for a discipline outside this definition"
         next
       end
 
-      score_row = score_row_for(assessment, category.id)
+      score_row = score_row_for(assessment, discipline.id)
       if blank_rating?(cell)
         touched = true if clear_score_row(assessment, score_row)
         next
       end
 
-      score_row ||= assessment.assessment_category_scores.build(assessment_category: category)
+      score_row ||= assessment.assessment_category_scores.build(assessment_category: discipline)
       touched = true if apply_rating(score_row, cell, participant, failures)
     end
 
@@ -96,19 +96,19 @@ class AssessmentSessionScoreGrid
     end
   end
 
-  def category_for(id)
+  def discipline_for(id)
     return if id.blank?
 
     session.assessment_definition.assessment_categories.find_by(id: id)
   end
 
-  def score_row_for(assessment, category_id)
+  def score_row_for(assessment, discipline_id)
     assessment.assessment_category_scores.find do |row|
-      row.assessment_category_id == category_id && row.criterion_id.nil?
+      row.assessment_category_id == discipline_id && row.criterion_id.nil?
     end
   end
 
-  # A present but empty rating clears an existing cell. Omitted categories are
+  # A present but empty rating clears an existing cell. Omitted disciplines are
   # left alone, which is what makes a partial grid save safe.
   def blank_rating?(cell)
     RATING_KEYS.any? { |key| has_key?(cell, key) } &&

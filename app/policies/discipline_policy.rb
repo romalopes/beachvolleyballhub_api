@@ -1,11 +1,11 @@
-# Authorization for skill categories.
+# Authorization for skill disciplines.
 #
-# Categories are site-wide reference data: reads are public, and only an admin
+# Disciplines are site-wide reference data: reads are public, and only an admin
 # may create, rename or delete one. (The frontend manages them through the
 # admin surface; the public endpoint's mutations are admin-gated.)
-class CategoryPolicy < ApplicationPolicy
+class DisciplinePolicy < ApplicationPolicy
   class Scope < ApplicationPolicy::Scope
-    # Categories are public reference data.
+    # Disciplines are public reference data.
     def resolve = scope.all
   end
 

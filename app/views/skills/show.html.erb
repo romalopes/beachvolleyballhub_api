@@ -4,11 +4,11 @@
       <%= icon("arrow-left", size: 16) %>
       Back to Skills
     <% end %>
-    <span class="section-label"><%= @skill.category&.name %></span>
+    <span class="section-label"><%= @skill.discipline&.name %></span>
     <h1><%= @skill.title %></h1>
     <div class="tags" style="margin-top: 1rem">
       <%= tag_pill(variant: :primary) { "Skill" } %>
-      <% if @skill.category %><%= tag_pill { @skill.category.name } %><% end %>
+      <% if @skill.discipline %><%= tag_pill { @skill.discipline.name } %><% end %>
     </div>
   </div>
 
