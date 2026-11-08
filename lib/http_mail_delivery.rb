@@ -18,9 +18,9 @@ module HttpMailDelivery
   def recipient_emails(addresses) = Array(addresses).filter_map { |email| email.to_s.strip.presence }
 
   def bodies(mail)
-    return [mail.html_part&.body&.decoded, mail.text_part&.body&.decoded] if mail.multipart?
+    return [ mail.html_part&.body&.decoded, mail.text_part&.body&.decoded ] if mail.multipart?
 
-    mail.content_type.to_s.include?("text/html") ? [mail.body.decoded, nil] : [nil, mail.body.decoded]
+    mail.content_type.to_s.include?("text/html") ? [ mail.body.decoded, nil ] : [ nil, mail.body.decoded ]
   end
 
   def attachments(mail)

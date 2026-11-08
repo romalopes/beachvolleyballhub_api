@@ -43,7 +43,7 @@ class Api::V1::Admin::DrillsControllerTest < ActionDispatch::IntegrationTest
       drill: {
         title: "New Drill", setup_instructions: "Instructions", training_stage: "beginning",
         difficulty_level: "beginner", min_players: 2, max_players: 8, ideal_num_players: 4,
-        skill_ids: [skills(:one).id]
+        skill_ids: [ skills(:one).id ]
       }
     }
     assert_response :created
@@ -169,8 +169,8 @@ class Api::V1::Admin::DrillsControllerTest < ActionDispatch::IntegrationTest
         "width" => 0.28, "height" => 0.16,
         "text" => "P1 = Server\nP2 = Receiver",
         "font_size" => 14, "bold" => true, "italic" => false,
-        "align" => "left", "background" => true, "border" => false,
-      },
+        "align" => "left", "background" => true, "border" => false
+      }
     ]
     post "/api/v1/admin/drills", params: {
       drill: {
@@ -196,7 +196,7 @@ class Api::V1::Admin::DrillsControllerTest < ActionDispatch::IntegrationTest
       { "id" => "text_1", "type" => "text",
         # x = 99 is outside the 5×4 grid — the same bounds rule as a player.
         "location" => { "side" => "side_1", "x" => 99, "y" => 1 },
-        "text" => "out of bounds" },
+        "text" => "out of bounds" }
     ]
     post "/api/v1/admin/drills", params: {
       drill: {
@@ -233,7 +233,7 @@ class Api::V1::Admin::DrillsControllerTest < ActionDispatch::IntegrationTest
     invalid_def["steps"][0]["annotations"] = [
       { "id" => "text_1", "type" => "text",
         "location" => { "side" => "side_1", "x" => 2, "y" => 2 },
-        "text" => "   " },
+        "text" => "   " }
     ]
     post "/api/v1/admin/drills", params: {
       drill: {
@@ -302,22 +302,21 @@ class Api::V1::Admin::DrillsControllerTest < ActionDispatch::IntegrationTest
       "version" => 1,
       "view" => { "orientation" => "top_down" },
       "side" => { "grid" => { "columns" => 5, "rows" => 4 } },
-      "participants" => [{ "id" => "P1", "type" => "player" }],
-      "balls" => [{ "id" => "B1", "type" => "volleyball" }],
+      "participants" => [ { "id" => "P1", "type" => "player" } ],
+      "balls" => [ { "id" => "B1", "type" => "volleyball" } ],
       "objects" => [],
       "steps" => [
         {
           "id" => "S1",
-          "participants" => [{ "id" => "P1", "active" => true, "location" => { "side" => "side_1", "x" => 3, "y" => 2 } }],
-          "balls" => [{ "id" => "B1", "active" => true, "location" => { "side" => "side_1", "x" => 3, "y" => 2 } }],
+          "participants" => [ { "id" => "P1", "active" => true, "location" => { "side" => "side_1", "x" => 3, "y" => 2 } } ],
+          "balls" => [ { "id" => "B1", "active" => true, "location" => { "side" => "side_1", "x" => 3, "y" => 2 } } ],
           "objects" => [],
           "actions" => [],
           "participant_movements" => [],
           "ball_movements" => [],
-          "object_movements" => [],
-        },
-      ],
+          "object_movements" => []
+        }
+      ]
     }
   end
 end
-

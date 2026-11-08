@@ -16,7 +16,7 @@ module Api
         # taggings, so this stays a single extra query.
         scope = VideoTag.includes(:video_taggings).ordered
         scope = scope.where("LOWER(video_tags.name) LIKE ?", "%#{search.downcase}%") if search.present?
-        render json: scope, methods: [:video_count]
+        render json: scope, methods: [ :video_count ]
       end
 
       def show
@@ -27,7 +27,7 @@ module Api
         return render json: { error: "Video tag not found" }, status: :not_found unless @tag
 
         authorize @tag
-        render json: @tag, methods: [:video_count]
+        render json: @tag, methods: [ :video_count ]
       end
 
       private

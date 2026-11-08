@@ -38,6 +38,7 @@ class LocationEventAssignmentTest < ActiveSupport::TestCase
       ends_at: 1.day.from_now + 2.hours,
       status: "scheduled",
       visibility: "shared",
+      organisation: organisations(:sydney_club),
       created_by: @proposer.user,
       canonical_location: @proposal
     )

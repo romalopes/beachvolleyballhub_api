@@ -10,7 +10,7 @@ module Api
       def index
         authorize VideoCategory, :index?
         @categories = VideoCategory.ordered.includes(:videos)
-        render json: @categories, methods: [:video_count]
+        render json: @categories, methods: [ :video_count ]
       end
 
       def show
@@ -20,9 +20,8 @@ module Api
         return render json: { error: "Video category not found" }, status: :not_found unless @category
 
         authorize @category
-        render json: @category, methods: [:video_count]
+        render json: @category, methods: [ :video_count ]
       end
     end
   end
 end
-

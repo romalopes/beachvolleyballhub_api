@@ -217,7 +217,12 @@ class Api::V1::GroupsControllerTest < ActionDispatch::IntegrationTest
 
     names = json["data"].map { |g| g["name"] }
     assert_includes names, "U19 squad"
-    assert_equal 1, names.length
+    assert_not_includes names, "Private squad" # owned by another coach
+    # Ownership is a membership: every returned row is one the caller owns
+    # through an active owner membership, however many squads that is.
+    json["data"].each do |row|
+      assert Group.find(row["id"]).owner?(@owner), "#{row["name"]} is not owned by the caller"
+    end
   end
 
   # --- Show ---
@@ -924,5 +929,4 @@ class Api::V1::GroupsControllerTest < ActionDispatch::IntegrationTest
     assert_equal original_name, @u19.reload.name
     assert_equal "active", @u19.status
   end
-
 end

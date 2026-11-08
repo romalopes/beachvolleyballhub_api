@@ -37,7 +37,7 @@ module SessionTestHelper
     return unless request_headers
 
     existing = Array(request_headers["Cookie"])
-    request_headers["Cookie"] = ([@persisted_cookie_header] + existing).uniq.join("; ")
+    request_headers["Cookie"] = ([ @persisted_cookie_header ] + existing).uniq.join("; ")
   end
 
   def clear_persisted_cookie!

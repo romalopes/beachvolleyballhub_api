@@ -1,0 +1,47 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Mass Assignment",
+      "warning_code": 105,
+      "fingerprint": "235d8ca18957562d8cbfd26ebd92591c9db316ab7dc2bdbba28dd22642c5722a",
+      "ignore": true,
+      "note": "Membership management API: keys are whitelisted by strong params and every memberable_type/id is re-validated against the MEMBERABLE_TYPES allowlist in resolve_memberable before any query or write."
+    },
+    {
+      "warning_type": "Mass Assignment",
+      "warning_code": 105,
+      "fingerprint": "2eac73f60c4acbab2f32e6ee5045d0cc817de0c90529fcd67789fb9294e243b2",
+      "ignore": true,
+      "note": "Membership management API: role/status strings are re-validated by OrganisationMembership's inclusion validations before save."
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "4553e29547e4a7dde080ed0ea0d513f53c72c12f15404747245f9b8dcbc1ff76",
+      "ignore": true,
+      "note": "counterpart_column/canonical_column are fixed symbols chosen inside this service, never user input; the interpolation only names table columns."
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "49a1cb75f589453e7c1ad294a7ff416f78d469deaf99e6f95df5912d52fc2357",
+      "ignore": true,
+      "note": "effective_name_sql is assembled from fixed column lists; the user-supplied query is bound as a placeholder and passed through sanitize_sql_like."
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "f62d27cbf7ff046cdf85c4a7012a36bac22a8abb42fbac069178cfb58f5b5ade",
+      "ignore": true,
+      "note": "effective_name_sql is assembled from fixed column lists; the compared names come from the caller's own profiles, not raw user input."
+    },
+    {
+      "warning_type": "Mass Assignment",
+      "warning_code": 105,
+      "fingerprint": "ffb06d424938402ed50ddc7963415562521ea4c3f29e8802cccce452942da32b",
+      "ignore": true,
+      "note": "Participation API: division_ids are re-validated against the tournament's own divisions in TournamentParticipationService#link_or_update_participation before use."
+    }
+  ],
+  "updated": "2026-11-08T02:19:40Z"
+}

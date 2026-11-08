@@ -148,8 +148,8 @@ class AssessmentDefinitionTest < ActiveSupport::TestCase
     assert payload[:weights_balanced]
     assert_not payload[:referenced]
     assert_equal %w[Attack Defense Serve], payload[:assessment_categories].map { |row| row[:label] }
-    assert_equal [40, 30, 30], payload[:assessment_categories].map { |row| row[:weight] }
-    assert_equal [0, 1, 2], payload[:assessment_categories].map { |row| row[:position] }
+    assert_equal [ 40, 30, 30 ], payload[:assessment_categories].map { |row| row[:weight] }
+    assert_equal [ 0, 1, 2 ], payload[:assessment_categories].map { |row| row[:position] }
   end
 
   private

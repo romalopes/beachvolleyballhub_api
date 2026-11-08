@@ -9,7 +9,9 @@ class WeatherApi
   BASE_URL = "https://api.weatherapi.com/v1/forecast.json"
   FORECAST_DAYS = 3
   HOURLY_INTERVAL_HOURS = 3
-  HOURLY_FORECAST_COUNT = 24
+  # The hourly strip covers the next day's worth of hours from now, sampled
+  # every HOURLY_INTERVAL_HOURS — not a fixed number of entries.
+  HOURLY_WINDOW_HOURS = 24
   ATTRIBUTION = { name: "WeatherAPI.com", url: "https://www.weatherapi.com/" }.freeze
 
   def self.fetch_forecast(latitude, longitude, api_key: ENV["WEATHERAPI_API_KEY"], http_class: Net::HTTP, cache: Rails.cache)
@@ -47,7 +49,7 @@ class WeatherApi
 
     current = normalize_current(body["current"])
     daily = days.first(FORECAST_DAYS).map { |day| normalize_day(day) }
-    hourly = normalize_hourly(days, Time.now.to_i)
+    hourly = normalize_hourly(days.first(FORECAST_DAYS), Time.now.to_i)
 
     forecast = {
       forecast: daily,
@@ -96,20 +98,21 @@ class WeatherApi
   end
 
   def self.normalize_hourly(days, current_epoch)
+    horizon = current_epoch + HOURLY_WINDOW_HOURS.hours
     days
       .flat_map { |day| Array(day["hour"]) }
-      .select { |hour| eligible_hour?(hour, current_epoch) }
+      .select { |hour| eligible_hour?(hour, current_epoch, horizon) }
       .sort_by { |hour| hour["time_epoch"] }
-      .first(HOURLY_FORECAST_COUNT)
       .map { |hour| normalize_hour(hour) }
   end
 
-  def self.eligible_hour?(hour, current_epoch)
+  def self.eligible_hour?(hour, current_epoch, horizon)
     return false unless hour.is_a?(Hash) && hour["time_epoch"].is_a?(Numeric)
 
     local_time = hour["time"].to_s
     local_hour = local_time[/\b(\d{2}):\d{2}\z/, 1]
-    hour["time_epoch"] >= current_epoch && local_hour && (local_hour.to_i % HOURLY_INTERVAL_HOURS).zero?
+    hour["time_epoch"].between?(current_epoch, horizon) &&
+      local_hour && (local_hour.to_i % HOURLY_INTERVAL_HOURS).zero?
   end
 
   def self.normalize_hour(hour)

@@ -230,4 +230,3 @@ class Api::V1::Admin::ImpersonationsControllerTest < ActionDispatch::Integration
     assert_response :unauthorized
   end
 end
-

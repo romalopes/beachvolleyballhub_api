@@ -12,7 +12,7 @@ module Api
 
         def index
           @categories = VideoCategory.ordered.includes(:videos)
-          render json: @categories, methods: [:video_count]
+          render json: @categories, methods: [ :video_count ]
         end
 
         def create
@@ -52,7 +52,7 @@ module Api
         def reorder
           return unless reorder_records(VideoCategory)
 
-          render json: VideoCategory.ordered.includes(:videos), methods: [:video_count]
+          render json: VideoCategory.ordered.includes(:videos), methods: [ :video_count ]
         end
 
         private

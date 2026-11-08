@@ -4,22 +4,22 @@ module Api
       class SkillsController < ApplicationController
         include RequestLogging
         before_action :authorize_admin!
-        before_action :set_skill, only: [:show, :update, :destroy]
+        before_action :set_skill, only: [ :show, :update, :destroy ]
 
         def index
           @skills = Skill.includes(:category, :drills).order(:title)
-          render json: @skills, include: { category: { only: [:id, :name, :slug] } }
+          render json: @skills, include: { category: { only: [ :id, :name, :slug ] } }
         end
 
         def show
-          render json: @skill, include: { category: { only: [:id, :name, :slug] } }
+          render json: @skill, include: { category: { only: [ :id, :name, :slug ] } }
         end
 
         def create
           @skill = Skill.new(skill_params.merge(created_by: Current.user))
 
           if @skill.save
-            render json: @skill, status: :created, include: { category: { only: [:id, :name, :slug] } }
+            render json: @skill, status: :created, include: { category: { only: [ :id, :name, :slug ] } }
           else
             render json: { errors: @skill.errors.full_messages }, status: :unprocessable_entity
           end
@@ -27,7 +27,7 @@ module Api
 
         def update
           if @skill.update(skill_params)
-            render json: @skill, include: { category: { only: [:id, :name, :slug] } }
+            render json: @skill, include: { category: { only: [ :id, :name, :slug ] } }
           else
             render json: { errors: @skill.errors.full_messages }, status: :unprocessable_entity
           end

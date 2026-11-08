@@ -1,14 +1,14 @@
 Sentry.init do |config|
-  config.dsn = ENV['SENTRY_DSN']
-  config.breadcrumbs_logger = [:active_support_logger, :http_logger]
+  config.dsn = ENV["SENTRY_DSN"]
+  config.breadcrumbs_logger = [ :active_support_logger, :http_logger ]
 
   # Capture 100% of transactions in dev/staging; lower in high-traffic production
   config.traces_sample_rate = Rails.env.production? ? 0.2 : 1.0
 
   # Filter out predictable or noisy exceptions
   config.excluded_exceptions += [
-    'ActionController::RoutingError',
-    'ActiveRecord::RecordNotFound'
+    "ActionController::RoutingError",
+    "ActiveRecord::RecordNotFound"
   ]
 end
 

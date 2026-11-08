@@ -18,7 +18,7 @@ class LogServiceTest < ActiveSupport::TestCase
       ip_address: "127.0.0.1",
       user_agent: "RSpec",
       status: 201,
-      objects: [@category]
+      objects: [ @category ]
     )
 
     assert log.persisted?
@@ -38,12 +38,12 @@ class LogServiceTest < ActiveSupport::TestCase
       description: "Test",
       action: "create",
       method: "POST",
-      objects: [@category, @skill, @user]
+      objects: [ @category, @skill, @user ]
     )
 
     assert_equal 3, log.log_objects.count
     types = log.log_objects.pluck(:object_type).sort
-    assert_equal ["Category", "Skill", "User"], types
+    assert_equal [ "Category", "Skill", "User" ], types
   end
 
   test "handles nil user" do
@@ -64,7 +64,7 @@ class LogServiceTest < ActiveSupport::TestCase
       description: "Test",
       action: "create",
       method: "POST",
-      objects: [@category, new_skill, nil]
+      objects: [ @category, new_skill, nil ]
     )
 
     assert_equal 1, log.log_objects.count

@@ -130,7 +130,7 @@ class Admin::Accounts::InvitationService
         yield
         SuccessResult.new
       rescue StandardError => e
-        FailureResult.new(errors: [e.message])
+        FailureResult.new(errors: [ e.message ])
       end
     end
   end

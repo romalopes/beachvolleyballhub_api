@@ -26,6 +26,5 @@ module ProfileArchiveLifecycle
     invitations = ClaimInvitation.where(claimable: self, status: "active")
     invitations.where("expires_at <= ?", now).update_all(status: "expired", updated_at: now)
     invitations.where("expires_at > ?", now).update_all(status: "revoked", revoked_at: now, updated_at: now)
-
   end
 end

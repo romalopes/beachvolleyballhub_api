@@ -36,6 +36,7 @@ class TrainingSeriesPreviewTest < ActiveSupport::TestCase
       starts_at: Time.utc(2026, 11, 1, 20, 0),
       ends_at: Time.utc(2026, 11, 1, 21, 0),
       status: "scheduled",
+      organisation: organisations(:sydney_club),
       coach_profile: coach_profiles(:maria_coach)
     )
 
@@ -53,7 +54,8 @@ class TrainingSeriesPreviewTest < ActiveSupport::TestCase
       starts_at: Time.utc(2026, 11, 3, 20, 0),
       ends_at: Time.utc(2026, 11, 3, 21, 0),
       location: "Coogee Beach",
-      status: "scheduled"
+      status: "scheduled",
+      organisation: organisations(:sydney_club)
     )
 
     payload = preview(training_series(:monday_series))
@@ -70,6 +72,7 @@ class TrainingSeriesPreviewTest < ActiveSupport::TestCase
       starts_at: Time.utc(2026, 11, 1, 20, 0),
       ends_at: Time.utc(2026, 11, 1, 21, 0),
       status: "cancelled",
+      organisation: organisations(:sydney_club),
       coach_profile: coach_profiles(:maria_coach)
     )
 

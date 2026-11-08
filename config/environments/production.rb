@@ -25,9 +25,9 @@ Rails.application.configure do
   # config.active_storage.service = :local
   config.active_storage.service = :cloudflare_r2
 
-# Assume all access to the app is happening through a SSL-terminating reverse proxy.
+  # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = ENV["BEHIND_HTTPS_PROXY"] == "true"
-# Skip http-to-https redirect for the default health check endpoint.
+  # Skip http-to-https redirect for the default health check endpoint.
   config.force_ssl = ENV["BEHIND_HTTPS_PROXY"] == "true"
 
   config.action_mailer.perform_deliveries = true

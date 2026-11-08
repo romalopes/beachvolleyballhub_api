@@ -12,6 +12,6 @@ class CreateTournamentFollows < ActiveRecord::Migration[8.1]
 
     # One follow per account per tournament. The index is the real guard
     # against a double-click race; the model validation only reports it nicely.
-    add_index :tournament_follows, [:account_id, :tournament_id], unique: true
+    add_index :tournament_follows, [ :account_id, :tournament_id ], unique: true
   end
 end

@@ -65,7 +65,7 @@ class User < ApplicationRecord
     has_role?(:admin)
   end
 
-    # Users who may create/manage shared content (skills, drills, media and
+  # Users who may create/manage shared content (skills, drills, media and
   # training sessions). Visibility is separate from management: everyone can
   # browse the shared schedule, but only these roles may mutate it.
   def content_manager?

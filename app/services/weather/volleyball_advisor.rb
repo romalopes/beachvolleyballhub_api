@@ -12,7 +12,7 @@ module Weather
   # remaining weights renormalised; a fully unknown assessment scores nil.
   class VolleyballAdvisor
     WEIGHTS = { wind: 0.40, temperature: 0.20, rain: 0.25, uv: 0.05, humidity: 0.10 }.freeze
-    LABELS = [[85, "Excellent"], [70, "Good"], [50, "Fair"], [30, "Poor"], [0, "Unsuitable"]].freeze
+    LABELS = [ [ 85, "Excellent" ], [ 70, "Good" ], [ 50, "Fair" ], [ 30, "Poor" ], [ 0, "Unsuitable" ] ].freeze
 
     class << self
       def assess(current:, rain_chance_percent: nil, weights: nil)
@@ -162,7 +162,7 @@ module Weather
     end
 
     def advice
-      [wind_advice, gust_advice, temperature_advice, rain_advice, uv_advice, humidity_advice].compact
+      [ wind_advice, gust_advice, temperature_advice, rain_advice, uv_advice, humidity_advice ].compact
     end
 
     def wind_advice
@@ -226,7 +226,7 @@ module Weather
     end
 
     def warnings
-      [wind_warning, heat_warning, rain_warning, uv_warning].compact
+      [ wind_warning, heat_warning, rain_warning, uv_warning ].compact
     end
 
     def wind_warning

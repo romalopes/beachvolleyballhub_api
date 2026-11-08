@@ -83,11 +83,11 @@ class TournamentQuery
     if params[:temporal_status].present?
       now = Time.current
       case params[:temporal_status]
-      when 'upcoming'
+      when "upcoming"
         relation = relation.where("tournaments.starts_at > ?", now)
-      when 'ongoing'
+      when "ongoing"
         relation = relation.where("tournaments.starts_at <= ? AND tournaments.ends_at > ?", now, now)
-      when 'completed'
+      when "completed"
         relation = relation.where("tournaments.ends_at <= ?", now)
       end
     end
@@ -135,11 +135,11 @@ class TournamentQuery
       else
         union = kinds.map do |kind|
           case kind
-          when 'created'
+          when "created"
             Tournament.where(created_by_account_id: account_id)
-          when 'participating'
+          when "participating"
             Tournament.where(id: TournamentParticipation.where(account_id: account_id).select(:tournament_id))
-          when 'following'
+          when "following"
             Tournament.where(id: TournamentFollow.where(account_id: account_id).select(:tournament_id))
           end
         end.reduce { |combined, scope| combined.or(scope) }

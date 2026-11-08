@@ -40,13 +40,13 @@ class TournamentDivision < ApplicationRecord
   def strength_order
     if letter_level.present?
       case letter_level
-      when 'AAAA' then 1
-      when 'AAA'  then 2
-      when 'AA'   then 3
-      when 'A'    then 4
-      when 'BBB'  then 5
-      when 'BB'   then 6
-      when 'B'    then 7
+      when "AAAA" then 1
+      when "AAA"  then 2
+      when "AA"   then 3
+      when "A"    then 4
+      when "BBB"  then 5
+      when "BB"   then 6
+      when "B"    then 7
       else 0
       end
     else

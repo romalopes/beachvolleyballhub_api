@@ -27,5 +27,4 @@ class PlayerProfileCandidateFinder
       Candidate.new(player_profile: candidate.profile, match_type: candidate.match_type)
     end
   end
-
 end

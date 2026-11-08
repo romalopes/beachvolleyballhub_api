@@ -58,7 +58,7 @@ class LoginDetailsCollectorTest < ActiveSupport::TestCase
     hash = details.serializable_hash
 
     assert_nothing_raised do
-      ActiveJob::Arguments.serialize([1, hash])
+      ActiveJob::Arguments.serialize([ 1, hash ])
     end
 
     assert hash["browser"] == "Chrome"

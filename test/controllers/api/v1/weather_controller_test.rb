@@ -76,7 +76,7 @@ class Api::V1::WeatherControllerTest < ActionDispatch::IntegrationTest
 
   test "uses the signed-in account weights without changing independent warnings" do
     payload = {
-      forecast: [{ rain_chance_percent: 10 }],
+      forecast: [ { rain_chance_percent: 10 } ],
       hourly: [],
       current: {
         wind_kph: 45.0,
@@ -115,7 +115,7 @@ class Api::V1::WeatherControllerTest < ActionDispatch::IntegrationTest
 
   test "guest weather continues to use default weights" do
     payload = {
-      forecast: [{ rain_chance_percent: 10 }],
+      forecast: [ { rain_chance_percent: 10 } ],
       hourly: [],
       current: { wind_kph: 45.0, temperature_c: 24.0 },
       location: { latitude: 0, longitude: 0, timezone: "UTC" },

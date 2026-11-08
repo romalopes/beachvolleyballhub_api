@@ -21,7 +21,7 @@ class ProfileOwnership
     return false unless profile && user_or_account
 
     account = user_or_account.is_a?(Account) ? user_or_account : user_or_account.account
-    return true if account && [profile.account_id, profile.created_by_account_id].compact.include?(account.id)
+    return true if account && [ profile.account_id, profile.created_by_account_id ].compact.include?(account.id)
 
     user = user_or_account.is_a?(User) ? user_or_account : user_or_account.user
     user && profile.created_by_id == user.id

@@ -9,8 +9,8 @@
 #
 # Render-on-deny helpers return a boolean so actions must guard with
 # `return unless authorize_tournament_management!`. The previous helper rendered
-#403 without halting, which fell through to a second render and surfaced as
-#500 instead of403.
+# 403 without halting, which fell through to a second render and surfaced as
+# 500 instead of403.
 module TournamentManagementAuthorization
   extend ActiveSupport::Concern
 
@@ -50,6 +50,6 @@ module TournamentManagementAuthorization
   # populated) or a service-raised message (errors empty) — render whichever
   # exists so a422 never comes back with an empty error list.
   def invalid_record_errors(exception)
-    exception.record.errors.full_messages.presence || [exception.message]
+    exception.record.errors.full_messages.presence || [ exception.message ]
   end
 end

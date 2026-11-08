@@ -1,15 +1,15 @@
 module Api
   module V1
     class DrillSkillsController < ApplicationController
-      before_action :set_drill_skill, only: [:show, :update, :destroy]
+      before_action :set_drill_skill, only: [ :show, :update, :destroy ]
 
       def index
         @drill_skills = DrillSkill.includes(:drill, :skill).all
-        render json: @drill_skills, include: [:drill, :skill]
+        render json: @drill_skills, include: [ :drill, :skill ]
       end
 
       def show
-        render json: @drill_skill, include: [:drill, :skill]
+        render json: @drill_skill, include: [ :drill, :skill ]
       end
 
       def create

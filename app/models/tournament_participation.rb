@@ -1,7 +1,7 @@
 class TournamentParticipation < ApplicationRecord
   belongs_to :account
   belongs_to :tournament
-  has_many :participation_divisions, class_name: 'TournamentParticipationDivision', dependent: :destroy
+  has_many :participation_divisions, class_name: "TournamentParticipationDivision", dependent: :destroy
 
   # String-backed on purpose: `role` is a string column, so the enum values are
   # the labels — integer values would persist as "0"/"1"/… and never match the

@@ -325,7 +325,6 @@ module Api
           source.stringify_keys.slice(*allowed.map(&:to_s))
         end
       end
-
     end
   end
 end

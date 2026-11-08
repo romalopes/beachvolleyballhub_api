@@ -588,16 +588,16 @@ module Api
       def leave
         account = Current.user&.account
         if account.nil?
-          return render json: { errors: ["Your account is not ready."] }, status: :unprocessable_entity
+          return render json: { errors: [ "Your account is not ready." ] }, status: :unprocessable_entity
         end
 
         if @organisation.archived?
-          return render json: { errors: ["Cannot leave an archived organisation."] }, status: :unprocessable_entity
+          return render json: { errors: [ "Cannot leave an archived organisation." ] }, status: :unprocessable_entity
         end
 
         membership = @organisation.organisation_memberships.active.find_by(account: account)
         if !membership
-          return render json: { errors: ["You are not an active member of this organisation."] }, status: :not_found
+          return render json: { errors: [ "You are not an active member of this organisation." ] }, status: :not_found
         end
 
         if membership.owner?
@@ -607,7 +607,7 @@ module Api
                                   .where.not(id: membership.id)
                                   .exists?
           unless other_owner
-            return render json: { errors: ["Cannot leave organisation as the sole owner."] }, status: :unprocessable_entity
+            return render json: { errors: [ "Cannot leave organisation as the sole owner." ] }, status: :unprocessable_entity
           end
         end
 

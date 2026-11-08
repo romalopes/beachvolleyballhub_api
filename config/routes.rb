@@ -145,7 +145,7 @@ Rails.application.routes.draw do
         end
         resources :courts, only: %i[index create update destroy]
       end
-      resources :tournaments, only: [:index, :show, :create, :update, :destroy] do
+      resources :tournaments, only: [ :index, :show, :create, :update, :destroy ] do
         member do
           patch :archive
           patch :publish
@@ -159,8 +159,8 @@ Rails.application.routes.draw do
         collection do
           get :options
         end
-        resources :divisions, only: [:create, :update, :destroy], controller: :tournament_divisions
-        resources :watch_links, only: [:create, :update, :destroy], controller: :tournament_watch_links
+        resources :divisions, only: [ :create, :update, :destroy ], controller: :tournament_divisions
+        resources :watch_links, only: [ :create, :update, :destroy ], controller: :tournament_watch_links
       end
       # A read-only account page for the profile catalogues. Editing continues
       # to use the existing singleton `/account` endpoint.

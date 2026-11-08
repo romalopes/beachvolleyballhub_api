@@ -4,7 +4,7 @@ module Api
       class CategoriesController < ApplicationController
         include RequestLogging
         before_action :authorize_admin!
-        before_action :set_category, only: [:show, :update, :destroy]
+        before_action :set_category, only: [ :show, :update, :destroy ]
 
         def index
           @categories = Category.includes(:skills).order(:name)

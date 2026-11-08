@@ -31,9 +31,9 @@ module Api
         account = Current.user&.account
         own_claims = if account
                        PlayerClaim.where(claimant_account: account)
-                     else
+        else
                        PlayerClaim.none
-                     end
+        end
         own_claims = own_claims.order(created_at: :desc)
         review_claims = if Current.user&.admin?
                           PlayerClaim.pending.order(:created_at)

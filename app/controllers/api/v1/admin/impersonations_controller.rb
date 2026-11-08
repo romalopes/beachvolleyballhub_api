@@ -79,7 +79,7 @@ module Api
             ip_address: request.remote_ip,
             user_agent: request.user_agent,
             status: response.status,
-            objects: [target]
+            objects: [ target ]
           )
         rescue StandardError => e
           Rails.logger.error("Impersonation logging failed: #{e.message}")
