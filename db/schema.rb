@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_10_191000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -120,7 +120,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
     t.index ["training_session_id"], name: "index_analyses_on_training_session_id"
     t.check_constraint "status::text <> 'archived'::text OR archived_at IS NOT NULL", name: "analyses_archived_at"
     t.check_constraint "status::text <> 'published'::text OR published_at IS NOT NULL", name: "analyses_published_at"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'published'::character varying, 'archived'::character varying]::text[])", name: "analyses_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'published'::character varying::text, 'archived'::character varying::text])", name: "analyses_status"
   end
 
   create_table "analysis_annotations", force: :cascade do |t|
@@ -185,7 +185,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
     t.index ["analysis_id"], name: "index_analysis_videos_on_analysis_id"
     t.index ["video_id"], name: "index_analysis_videos_on_video_id"
     t.check_constraint "source_type::text = 'external'::text AND video_id IS NOT NULL OR source_type::text = 'upload'::text AND video_id IS NULL", name: "analysis_videos_source"
-    t.check_constraint "source_type::text = ANY (ARRAY['external'::character varying, 'upload'::character varying]::text[])", name: "analysis_videos_source_type"
+    t.check_constraint "source_type::text = ANY (ARRAY['external'::character varying::text, 'upload'::character varying::text])", name: "analysis_videos_source_type"
   end
 
   create_table "api_idempotency_keys", force: :cascade do |t|
@@ -406,7 +406,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
     t.check_constraint "(latitude IS NULL) = (longitude IS NULL)", name: "courts_coordinates_pair"
     t.check_constraint "latitude IS NULL OR latitude >= '-90'::integer::numeric AND latitude <= 90::numeric", name: "courts_latitude_range"
     t.check_constraint "longitude IS NULL OR longitude >= '-180'::integer::numeric AND longitude <= 180::numeric", name: "courts_longitude_range"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying]::text[])", name: "courts_status"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'archived'::character varying::text])", name: "courts_status"
   end
 
   create_table "criteria", force: :cascade do |t|
@@ -571,11 +571,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
     t.index ["status", "verification_status"], name: "index_locations_on_status_and_verification_status"
     t.index ["verified_by_account_id"], name: "index_locations_on_verified_by_account_id"
     t.check_constraint "(latitude IS NULL) = (longitude IS NULL)", name: "locations_coordinates_pair"
-    t.check_constraint "geocoding_status::text = ANY (ARRAY['not_requested'::character varying, 'pending'::character varying, 'resolved'::character varying, 'failed'::character varying, 'manual'::character varying]::text[])", name: "locations_geocoding_status"
+    t.check_constraint "geocoding_status::text = ANY (ARRAY['not_requested'::character varying::text, 'pending'::character varying::text, 'resolved'::character varying::text, 'failed'::character varying::text, 'manual'::character varying::text])", name: "locations_geocoding_status"
     t.check_constraint "latitude IS NULL OR latitude >= '-90'::integer::numeric AND latitude <= 90::numeric", name: "locations_latitude_range"
     t.check_constraint "longitude IS NULL OR longitude >= '-180'::integer::numeric AND longitude <= 180::numeric", name: "locations_longitude_range"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying, 'merged'::character varying]::text[])", name: "locations_status"
-    t.check_constraint "verification_status::text = ANY (ARRAY['proposed'::character varying, 'verified'::character varying, 'rejected'::character varying]::text[])", name: "locations_verification_status"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'archived'::character varying::text, 'merged'::character varying::text])", name: "locations_status"
+    t.check_constraint "verification_status::text = ANY (ARRAY['proposed'::character varying::text, 'verified'::character varying::text, 'rejected'::character varying::text])", name: "locations_verification_status"
   end
 
   create_table "log_objects", force: :cascade do |t|
@@ -617,7 +617,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_notification_preferences_on_account_id", unique: true
-    t.check_constraint "email_cadence::text = ANY (ARRAY['immediate'::character varying, 'daily'::character varying, 'weekly'::character varying, 'none'::character varying]::text[])", name: "notification_preferences_email_cadence"
+    t.check_constraint "email_cadence::text = ANY (ARRAY['immediate'::character varying::text, 'daily'::character varying::text, 'weekly'::character varying::text, 'none'::character varying::text])", name: "notification_preferences_email_cadence"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -886,7 +886,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
     t.index ["tournament_id"], name: "index_tournament_divisions_on_tournament_id"
     t.check_constraint "division_number IS NULL OR division_number > 0", name: "division_number_positive"
     t.check_constraint "letter_level IS NOT NULL AND division_number IS NULL OR letter_level IS NULL AND division_number IS NOT NULL", name: "division_level_or_number"
-    t.check_constraint "letter_level IS NULL OR (letter_level::text = ANY (ARRAY['B'::character varying, 'BB'::character varying, 'BBB'::character varying, 'A'::character varying, 'AA'::character varying, 'AAA'::character varying, 'AAAA'::character varying]::text[]))", name: "valid_letter_level"
+    t.check_constraint "letter_level IS NULL OR (letter_level::text = ANY (ARRAY['B'::character varying::text, 'BB'::character varying::text, 'BBB'::character varying::text, 'A'::character varying::text, 'AA'::character varying::text, 'AAA'::character varying::text, 'AAAA'::character varying::text]))", name: "valid_letter_level"
   end
 
   create_table "tournament_follows", force: :cascade do |t|
@@ -964,8 +964,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
     t.index ["publication_state"], name: "index_tournaments_on_publication_state"
     t.index ["starts_at"], name: "index_tournaments_on_starts_at"
     t.check_constraint "ends_at > starts_at", name: "ends_after_starts"
-    t.check_constraint "publication_state::text = ANY (ARRAY['draft'::character varying, 'active'::character varying, 'cancelled'::character varying, 'archived'::character varying]::text[])", name: "valid_publication_state"
-    t.check_constraint "scope::text = ANY (ARRAY['club'::character varying, 'state'::character varying, 'national'::character varying, 'international'::character varying, 'other'::character varying]::text[])", name: "valid_scope"
+    t.check_constraint "publication_state::text = ANY (ARRAY['draft'::character varying::text, 'active'::character varying::text, 'cancelled'::character varying::text, 'archived'::character varying::text])", name: "valid_publication_state"
+    t.check_constraint "scope::text = ANY (ARRAY['club'::character varying::text, 'state'::character varying::text, 'national'::character varying::text, 'international'::character varying::text, 'other'::character varying::text])", name: "valid_scope"
   end
 
   create_table "training_focuses", force: :cascade do |t|
@@ -1015,7 +1015,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
     t.check_constraint "duration_minutes > 0", name: "training_series_duration_positive"
     t.check_constraint "ends_on >= starts_on", name: "training_series_ends_on_after_starts_on"
     t.check_constraint "frequency::text = 'weekly'::text", name: "training_series_frequency"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'stopped'::character varying]::text[])", name: "training_series_status"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'stopped'::character varying::text])", name: "training_series_status"
     t.check_constraint "weekdays <@ ARRAY['mon'::character varying, 'tue'::character varying, 'wed'::character varying, 'thu'::character varying, 'fri'::character varying, 'sat'::character varying, 'sun'::character varying]", name: "training_series_weekdays_valid"
   end
 
@@ -1122,8 +1122,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
     t.index ["status"], name: "index_training_templates_on_status"
     t.check_constraint "capacity IS NULL OR capacity > 0", name: "training_templates_capacity_positive"
     t.check_constraint "duration_minutes > 0", name: "training_templates_duration_positive"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying]::text[])", name: "training_templates_status"
-    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying, 'private'::character varying]::text[])", name: "training_templates_visibility"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'archived'::character varying::text])", name: "training_templates_status"
+    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying::text, 'private'::character varying::text])", name: "training_templates_visibility"
   end
 
   create_table "user_roles", force: :cascade do |t|
@@ -1241,6 +1241,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
     t.check_constraint "temperature_weight >= 0 AND temperature_weight <= 100", name: "weather_advisor_preferences_temperature_weight_range"
     t.check_constraint "uv_weight >= 0 AND uv_weight <= 100", name: "weather_advisor_preferences_uv_weight_range"
     t.check_constraint "wind_weight >= 0 AND wind_weight <= 100", name: "weather_advisor_preferences_wind_weight_range"
+  end
+
+  create_table "weather_share_snapshots", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "public_token", null: false
+    t.decimal "latitude", precision: 10, scale: 6, null: false
+    t.decimal "longitude", precision: 10, scale: 6, null: false
+    t.string "location_name", null: false
+    t.datetime "forecast_target_time"
+    t.string "timezone"
+    t.jsonb "weather_data", null: false
+    t.integer "volleyball_score"
+    t.string "volleyball_label"
+    t.jsonb "volleyball_warnings", default: []
+    t.jsonb "volleyball_advice", default: []
+    t.boolean "volleyball_safety_override", default: false
+    t.datetime "expires_at"
+    t.datetime "revoked_at"
+    t.string "image_url"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_weather_share_snapshots_on_account_id_and_created_at"
+    t.index ["account_id"], name: "index_weather_share_snapshots_on_account_id"
+    t.index ["expires_at"], name: "index_weather_share_snapshots_on_expires_at"
+    t.index ["public_token"], name: "index_weather_share_snapshots_on_public_token", unique: true
+    t.index ["revoked_at"], name: "index_weather_share_snapshots_on_revoked_at"
   end
 
   add_foreign_key "account_addresses", "accounts"
@@ -1391,4 +1417,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_000004) do
   add_foreign_key "videos", "users", column: "created_by_id"
   add_foreign_key "videos", "video_categories", on_delete: :nullify
   add_foreign_key "weather_advisor_preferences", "accounts"
+  add_foreign_key "weather_share_snapshots", "accounts"
 end

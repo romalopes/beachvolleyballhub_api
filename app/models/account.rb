@@ -12,6 +12,7 @@ class Account < ApplicationRecord
   has_many :organisations, through: :organisation_memberships
   has_many :groups, through: :group_memberships
   has_many :tournament_follows, dependent: :destroy
+    has_many :weather_share_snapshots, dependent: :destroy
 
   # In-app notifications addressed to this account, and its channel switches.
   # A preference row is optional: its absence means the column defaults.

@@ -67,6 +67,13 @@ Rails.application.routes.draw do
       # Weather endpoint
       get "weather", to: "weather#show"
 
+      # Weather share endpoints
+      resources :weather_shares, only: [:create, :destroy], param: :public_token do
+        member do
+          get :metadata
+        end
+      end
+
       # Geocoding endpoint (SPA home search resolves free-text queries to
       # coordinates so the weather forecast can follow the searched place)
       get "geocode", to: "geocoding#show"
