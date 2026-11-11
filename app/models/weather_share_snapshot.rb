@@ -36,7 +36,7 @@ class WeatherShareSnapshot < ApplicationRecord
 
   def public_url
     return nil unless active?
-    "#{ENV.fetch('FRONTEND_URL', 'http://localhost:5174')}/weather/#{public_token}"
+    "#{frontend_url}/weather/#{public_token}"
   end
 
   def image_url
@@ -46,7 +46,7 @@ class WeatherShareSnapshot < ApplicationRecord
 
     Rails.application.routes.url_helpers.rails_blob_url(
       image_blob,
-      host: ENV.fetch("FRONTEND_URL", "http://localhost:5174")
+      host: frontend_url
     )
   end
 
@@ -73,5 +73,11 @@ class WeatherShareSnapshot < ApplicationRecord
 
   def set_default_expiry
     self.expires_at ||= DEFAULT_EXPIRY_DAYS.days.from_now
+  end
+
+  def frontend_url
+    ENV.fetch("FRONTEND_URL") do
+      Rails.env.production? ? "https://beachvolleyballhub.com" : "http://localhost:5174"
+    end.chomp("/")
   end
 end

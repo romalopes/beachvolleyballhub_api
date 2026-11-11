@@ -81,6 +81,19 @@ class WeatherShareSnapshotTest < ActiveSupport::TestCase
     assert_equal expected, snapshot.public_url
   end
 
+  test "public_url removes a trailing slash from frontend URL" do
+    snapshot = create_snapshot!
+
+    original_frontend_url = ENV["FRONTEND_URL"]
+    ENV["FRONTEND_URL"] = "https://example.com/"
+
+    begin
+      assert_equal "https://example.com/weather/#{snapshot.public_token}", snapshot.public_url
+    ensure
+      ENV["FRONTEND_URL"] = original_frontend_url
+    end
+  end
+
   test "public_url returns nil for expired snapshot" do
     snapshot = create_snapshot!(expires_at: 1.day.ago)
 

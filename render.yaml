@@ -20,7 +20,7 @@ services:
       - key: ALLOWED_HOSTS
         sync: false
       - key: FRONTEND_URL
-        sync: false
+        value: https://beachvolleyballhub.com
       - key: APP_HOST
         sync: false
       - key: MIGRATE_ON_BOOT
@@ -62,7 +62,7 @@ services:
       - key: MIGRATE_ON_BOOT
         value: "false"
       - key: FRONTEND_URL
-        sync: false
+        value: https://beachvolleyballhub.com
       - key: APP_HOST
         sync: false
       - key: MAIL_TRANSPORT
