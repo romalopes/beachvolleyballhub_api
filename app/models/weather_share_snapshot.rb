@@ -2,6 +2,7 @@ class WeatherShareSnapshot < ApplicationRecord
   DEFAULT_EXPIRY_DAYS = 7
 
   belongs_to :account
+  belongs_to :image_blob, class_name: "ActiveStorage::Blob", optional: true
 
   scope :active, -> { where(revoked_at: nil).where("expires_at IS NULL OR expires_at > ?", Time.current) }
   scope :expired, -> { where("expires_at IS NOT NULL AND expires_at <= ?", Time.current) }
@@ -40,7 +41,13 @@ class WeatherShareSnapshot < ApplicationRecord
 
   def image_url
     return nil unless active?
-    self[:image_url]
+    return self[:image_url] if self[:image_url].present?
+    return nil unless image_blob.present?
+
+    Rails.application.routes.url_helpers.rails_blob_url(
+      image_blob,
+      host: ENV.fetch("FRONTEND_URL", "http://localhost:5174")
+    )
   end
 
   def volleyball_assessment

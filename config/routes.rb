@@ -435,4 +435,8 @@ Rails.application.routes.draw do
       patch "account/password", to: "accounts#update_password"
     end
   end
+
+  # Public weather share page (no auth, serves HTML with OG metadata)
+  # This route must be accessible at the frontend domain for WhatsApp previews
+  get "weather/:public_token", to: "public/weather_shares#show", as: :public_weather_share
 end

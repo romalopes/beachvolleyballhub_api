@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Primary Meta Tags -->
+  <title><%= snapshot_metadata[:title] %></title>
+  <meta name="description" content="<%= snapshot_metadata[:description] %>">
+  <meta name="theme-color" content="#0066cc">
+
+  <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
+  <meta property="og:type" content="<%= snapshot_metadata[:type] %>">
+  <meta property="og:url" content="<%= snapshot_metadata[:url] %>">
+  <meta property="og:title" content="<%= snapshot_metadata[:title] %>">
+  <meta property="og:description" content="<%= snapshot_metadata[:description] %>">
+  <meta property="og:image" content="<%= snapshot_metadata[:image] %>">
+  <meta property="og:image:secure_url" content="<%= snapshot_metadata[:image] %>">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="<%= snapshot_metadata[:site_name] %>">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="<%= snapshot_metadata[:twitter_card] %>">
+  <meta name="twitter:url" content="<%= snapshot_metadata[:url] %>">
+  <meta name="twitter:title" content="<%= snapshot_metadata[:title] %>">
+  <meta name="twitter:description" content="<%= snapshot_metadata[:description] %>">
+  <meta name="twitter:image" content="<%= snapshot_metadata[:image] %>">
+  <meta name="twitter:image:alt" content="<%= snapshot_metadata[:title] %>">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="<%= snapshot_metadata[:url] %>">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <!-- Preload image for faster WhatsApp preview -->
+  <link rel="preload" as="image" href="<%= snapshot_metadata[:image] %>">
+</head>
+<body>
+  <!-- App shell - React will hydrate this -->
+  <div id="root">
+    <!-- Server-rendered preview content for crawlers and non-JS users -->
+    <div class="public-share-preview" style="display: none;">
+      <div class="preview-card">
+        <div class="preview-header">
+          <svg class="preview-logo" viewBox="0 0 120 120" width="48" height="48" aria-hidden="true">
+            <circle cx="60" cy="60" r="58" fill="#0066cc" />
+            <text x="60" y="72" text-anchor="middle" font-size="50" font-weight="bold" fill="white" font-family="system-ui, sans-serif">🏐</text>
+          </svg>
+          <h1>BeachVolleyballHub</h1>
+        </div>
+
+        <div class="preview-location">
+          <span aria-hidden="true">📍</span>
+          <span><%= @snapshot.location_name %></span>
+        </div>
+
+        <% if @snapshot.image_url.present? %>
+        <div class="preview-image">
+          <img src="<%= @snapshot.image_url %>" alt="<%= snapshot_metadata[:title] %>" width="1200" height="630">
+        </div>
+        <% end %>
+
+        <div class="preview-details">
+          <div class="preview-score">
+            <span class="preview-label"><%= @snapshot.volleyball_label %></span>
+            <span class="preview-value"><%= @snapshot.volleyball_score %>/100 for beach volleyball</span>
+          </div>
+
+          <% if @snapshot.volleyball_warnings.any? %>
+          <div class="preview-warnings">
+            <% @snapshot.volleyball_warnings.each do |warning| %>
+              <p role="alert">⚠️ <%= warning %></p>
+            <% end %>
+          </div>
+          <% end %>
+
+          <% if @snapshot.volleyball_advice.any? %>
+          <ul class="preview-advice">
+            <% @snapshot.volleyball_advice.each do |advice| %>
+              <li>💡 <%= advice %></li>
+            <% end %>
+          </ul>
+          <% end %>
+        </div>
+
+        <div class="preview-footer">
+          <a href="<%= @snapshot.public_url %>" class="preview-link">View full report</a>
+          <p class="preview-attribution">
+            Weather data: <a href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a>
+            · Official warnings: <a href="https://www.bom.gov.au/" target="_blank" rel="noopener noreferrer">BOM</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load React app -->
+  <script type="module" src="/src/main.tsx"></script>
+  <script>
+    // Show preview content immediately for crawlers/non-JS
+    document.querySelector('.public-share-preview')?.style.setProperty('display', 'block');
+  </script>
+</body>
+</html>

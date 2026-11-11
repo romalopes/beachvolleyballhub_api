@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_10_191000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_10_203259) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1262,9 +1262,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_191000) do
     t.string "image_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "image_blob_id"
     t.index ["account_id", "created_at"], name: "index_weather_share_snapshots_on_account_id_and_created_at"
     t.index ["account_id"], name: "index_weather_share_snapshots_on_account_id"
     t.index ["expires_at"], name: "index_weather_share_snapshots_on_expires_at"
+    t.index ["image_blob_id"], name: "index_weather_share_snapshots_on_image_blob_id"
     t.index ["public_token"], name: "index_weather_share_snapshots_on_public_token", unique: true
     t.index ["revoked_at"], name: "index_weather_share_snapshots_on_revoked_at"
   end
@@ -1418,4 +1420,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_191000) do
   add_foreign_key "videos", "video_categories", on_delete: :nullify
   add_foreign_key "weather_advisor_preferences", "accounts"
   add_foreign_key "weather_share_snapshots", "accounts"
+  add_foreign_key "weather_share_snapshots", "active_storage_blobs", column: "image_blob_id"
 end

@@ -48,8 +48,7 @@ module Api
         )
 
         if snapshot.save
-          # TODO: Phase 3/4 - Trigger image generation job
-          # WeatherShareImageGeneratorJob.perform_later(snapshot)
+          WeatherShareImageGeneratorJob.perform_later(snapshot)
 
           render json: {
             public_token: snapshot.public_token,
