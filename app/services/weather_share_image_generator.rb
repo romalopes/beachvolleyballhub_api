@@ -2,7 +2,7 @@ require "net/http"
 require "json"
 
 class WeatherShareImageGenerator
-  RENDERER_URL = ENV.fetch("WEATHER_SHARE_RENDERER_URL", "http://localhost:3001")
+  RENDERER_URL = ENV.fetch("WEATHER_SHARE_RENDERER_URL", nil)
   STORAGE_SERVICE = ENV.fetch("WEATHER_SHARE_IMAGE_STORAGE_SERVICE", "cloudflare_r2")
   PUBLIC_IMAGE_HOST = ENV.fetch("WEATHER_SHARE_PUBLIC_IMAGE_HOST", nil)
 
@@ -16,6 +16,7 @@ class WeatherShareImageGenerator
 
   def generate
     return false unless @snapshot.active?
+    return false unless RENDERER_URL.present?
 
     output_path = Rails.root.join("tmp", "weather-shares", "#{@snapshot.public_token}.png")
     FileUtils.mkdir_p(output_path.dirname)
