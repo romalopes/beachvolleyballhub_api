@@ -24,7 +24,7 @@ services:
       - key: APP_HOST
         sync: false
       - key: MIGRATE_ON_BOOT
-        value: "true"
+        value: "false"
       - key: GEOCODING_ENABLED
         value: "true"
       - key: GEOCODING_PROVIDER

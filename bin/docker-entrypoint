@@ -7,23 +7,17 @@
 #   bundle exec rails db:migrate db:migrate:cache db:migrate:queue db:migrate:cable
 # once per deploy BEFORE new web processes start.
 #
-# Safety net: also run explicit migrates (all 4 DBs) at container boot by
-# default in production. This heals Docker deploys where the pre-deploy step
-# was skipped or forgotten — e.g. a manual Render Dashboard service that
-# ignores render.yaml (the cause of
-# `PG::UndefinedTable: solid_cache_entries` 500s on every rate_limit endpoint,
-# e.g. POST /api/v1/sessions).
+# Boot migrations are disabled by default. Render's `preDeployCommand` is the
+# single migration owner and runs once per deploy before web/worker containers
+# start. This avoids concurrent migration locks when Render restarts or scales
+# more than one container.
 #
-# NOTE: explicit `db:migrate*` (not `db:prepare`) on purpose — `db:prepare`
-# would `db:seed` a database whose schema_migrations is empty, which is wrong
-# for an existing production database that is merely missing secondary tables.
-#
-# Concurrency warning: with >1 web instance or separate worker containers,
-# concurrent boots can race on migrations. In that topology set
-# MIGRATE_ON_BOOT=false and rely SOLELY on preDeployCommand.
+# For a manual one-off Docker deployment that has no release/pre-deploy step,
+# set MIGRATE_ON_BOOT=true explicitly. Do not enable it on a multi-instance
+# Render service.
 
-if [ "${RAILS_ENV:-}" = "production" ] && [ "${MIGRATE_ON_BOOT:-true}" != "false" ]; then
-  echo "[docker-entrypoint] MIGRATE_ON_BOOT=${MIGRATE_ON_BOOT:-<unset, defaulting to true>}: running primary + cache + queue + cable migrates..."
+if [ "${RAILS_ENV:-}" = "production" ] && [ "${MIGRATE_ON_BOOT:-false}" = "true" ]; then
+  echo "[docker-entrypoint] MIGRATE_ON_BOOT=true: running primary + cache + queue + cable migrates..."
   if [ -z "${DATABASE_URL:-}" ]; then
     echo "[docker-entrypoint] WARNING: DATABASE_URL is unset — migrations will fail. Set it in Render Dashboard -> Environment."
   else
@@ -40,7 +34,7 @@ if [ "${RAILS_ENV:-}" = "production" ] && [ "${MIGRATE_ON_BOOT:-true}" != "false
   ./bin/rails db:migrate:cable
   echo "[docker-entrypoint] all migrates done."
 else
-  echo "[docker-entrypoint] skipping boot migrates (RAILS_ENV=${RAILS_ENV:-<unset>} MIGRATE_ON_BOOT=${MIGRATE_ON_BOOT:-<unset>})."
+  echo "[docker-entrypoint] skipping boot migrates (RAILS_ENV=${RAILS_ENV:-<unset>} MIGRATE_ON_BOOT=${MIGRATE_ON_BOOT:-false})."
 fi
 
 exec "${@}"
