@@ -43,11 +43,12 @@
     .preview-temperature { font-size: 32px; font-weight: 700; color: #1e293b; }
     .preview-condition { font-size: 16px; color: #475569; font-weight: 500; }
     .preview-weather-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 24px; }
-    .preview-weather-metric { background: #f8fafc; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .preview-weather-metric { background: #f8fafc; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+    .preview-metric-top { display: flex; align-items: center; gap: 8px; }
     .preview-metric-icon { font-size: 20px; }
-    .preview-metric-label { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-    .preview-metric-value { font-size: 18px; font-weight: 600; color: #1e293b; }
-    .preview-metric-gust { font-size: 13px; color: #ef4444; font-weight: 600; }
+    .preview-metric-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .preview-metric-value { font-size: 16px; font-weight: 600; color: #1e293b; }
+    .preview-metric-gust { font-size: 12px; color: #ef4444; font-weight: 600; }
     .preview-image { margin: 24px 0; text-align: center; }
     .preview-image img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     .preview-details { margin-top: 24px; }
@@ -74,7 +75,7 @@
   <meta property="og:image" content="<%= snapshot_metadata[:image] %>">
   <meta property="og:image:secure_url" content="<%= snapshot_metadata[:image] %>">
   <meta property="og:image:type" content="image/png">
-  <meta property="og:image:width" content="1200">
+  <meta property="og:image:width" content="960">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="<%= snapshot_metadata[:site_name] %>">
   <meta property="og:locale" content="en_US">
@@ -139,8 +140,10 @@
 
           <div class="preview-weather-metrics">
             <div class="preview-weather-metric">
-              <span class="preview-metric-icon" aria-hidden="true">💨</span>
-              <span class="preview-metric-label">Wind</span>
+              <div class="preview-metric-top">
+                <span class="preview-metric-icon" aria-hidden="true">💨</span>
+                <span class="preview-metric-label">Wind</span>
+              </div>
               <span class="preview-metric-value">
                 <%= wind.present? ? "#{wind.round} km/h" : "–" %>
                 <%= wind_dir.present? ? " #{wind_dir}" : "" %>
@@ -151,20 +154,26 @@
             </div>
 
             <div class="preview-weather-metric">
-              <span class="preview-metric-icon" aria-hidden="true">🌧️</span>
-              <span class="preview-metric-label">Rain</span>
+              <div class="preview-metric-top">
+                <span class="preview-metric-icon" aria-hidden="true">🌧️</span>
+                <span class="preview-metric-label">Rain</span>
+              </div>
               <span class="preview-metric-value"><%= rain_chance.present? ? "#{rain_chance.round}%" : "–" %></span>
             </div>
 
             <div class="preview-weather-metric">
-              <span class="preview-metric-icon" aria-hidden="true">☀️</span>
-              <span class="preview-metric-label">UV Index</span>
+              <div class="preview-metric-top">
+                <span class="preview-metric-icon" aria-hidden="true">☀️</span>
+                <span class="preview-metric-label">UV Index</span>
+              </div>
               <span class="preview-metric-value"><%= uv.present? ? uv.round(1) : "–" %></span>
             </div>
 
             <div class="preview-weather-metric">
-              <span class="preview-metric-icon" aria-hidden="true">💧</span>
-              <span class="preview-metric-label">Humidity</span>
+              <div class="preview-metric-top">
+                <span class="preview-metric-icon" aria-hidden="true">💧</span>
+                <span class="preview-metric-label">Humidity</span>
+              </div>
               <span class="preview-metric-value"><%= humidity.present? ? "#{humidity.round}%" : "–" %></span>
             </div>
           </div>
