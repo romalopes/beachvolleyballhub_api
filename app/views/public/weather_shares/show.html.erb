@@ -137,7 +137,7 @@
                   <%= wind_dir.present? ? " #{wind_dir}" : "" %>
                 </span>
                 <% if gust.present? && wind.present? && gust > wind && gust - wind > 15 %>
-                  <span class="preview-metric-gust">Gusts #{gust.round} km/h</span>
+                  <span class="preview-metric-gust">Gusts <%= gust.round %> km/h</span>
                 <% end %>
               </div>
               <div class="preview-weather-metric">
