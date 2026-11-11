@@ -1,229 +1,208 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Primary Meta Tags -->
-  <title><%= snapshot_metadata[:title] %></title>
-  <meta name="description" content="<%= snapshot_metadata[:description] %>">
-  <meta name="theme-color" content="#0066cc">
-
-  <!-- Favicon / Tab Icon -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/ball.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ball.png">
-  <link rel="apple-touch-icon" href="/ball.png">
-  <link rel="manifest" href="/manifest.json">
-
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f8fafc;
-      color: #1e293b;
-      line-height: 1.5;
-    }
-    .public-share-preview { display: none; }
-    .preview-card {
-      max-width: 640px;
-      margin: 40px auto;
-      background: white;
-      border-radius: 16px;
-      padding: 32px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-    }
-    .preview-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-    .preview-logo { width: 48px; height: 48px; flex-shrink: 0; }
-    .preview-header h1 { font-size: 22px; font-weight: 700; color: #0066cc; margin: 0; }
-    .preview-location { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; font-size: 16px; color: #475569; }
-    .preview-weather-main { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
-    .preview-weather-icon { width: 64px; height: 64px; flex-shrink: 0; }
-    .preview-weather-temp { display: flex; flex-direction: column; gap: 4px; }
-    .preview-temperature { font-size: 32px; font-weight: 700; color: #1e293b; }
-    .preview-condition { font-size: 16px; color: #475569; font-weight: 500; }
-    .preview-weather-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 24px; }
-    .preview-weather-metric { background: #f8fafc; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
-    .preview-metric-top { display: flex; align-items: center; gap: 8px; }
-    .preview-metric-icon { font-size: 20px; }
-    .preview-metric-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-    .preview-metric-value { font-size: 16px; font-weight: 600; color: #1e293b; }
-    .preview-metric-gust { font-size: 12px; color: #ef4444; font-weight: 600; }
-    .preview-image { margin: 24px 0; text-align: center; }
-    .preview-image img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .preview-details { margin-top: 24px; }
-    .preview-score { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
-    .preview-label { font-size: 20px; font-weight: 700; color: #1e293b; }
-    .preview-value { font-size: 18px; color: #475569; }
-    .preview-warnings { margin-bottom: 16px; }
-    .preview-warnings p { font-size: 16px; color: #ef4444; font-weight: 600; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px; }
-    .preview-advice { margin: 0; padding-left: 24px; list-style: none; }
-    .preview-advice li { font-size: 16px; color: #475569; margin-bottom: 8px; position: relative; }
-    .preview-advice li::before { content: '💡 '; }
-    .preview-footer { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b; }
-    .preview-footer a { color: #0066cc; text-decoration: none; font-weight: 600; }
-    .preview-footer a:hover { text-decoration: underline; }
-    .preview-attribution a { color: #0066cc; text-decoration: none; }
-    .preview-attribution a:hover { text-decoration: underline; }
-  </style>
-
-  <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
-  <meta property="og:type" content="<%= snapshot_metadata[:type] %>">
-  <meta property="og:url" content="<%= snapshot_metadata[:url] %>">
-  <meta property="og:title" content="<%= snapshot_metadata[:title] %>">
-  <meta property="og:description" content="<%= snapshot_metadata[:description] %>">
-  <meta property="og:image" content="<%= snapshot_metadata[:image] %>">
-  <meta property="og:image:secure_url" content="<%= snapshot_metadata[:image] %>">
-  <meta property="og:image:type" content="image/png">
-  <meta property="og:image:width" content="960">
-  <meta property="og:image:height" content="630">
-  <meta property="og:site_name" content="<%= snapshot_metadata[:site_name] %>">
-  <meta property="og:locale" content="en_US">
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="<%= snapshot_metadata[:twitter_card] %>">
-  <meta name="twitter:url" content="<%= snapshot_metadata[:url] %>">
-  <meta name="twitter:title" content="<%= snapshot_metadata[:title] %>">
-  <meta name="twitter:description" content="<%= snapshot_metadata[:description] %>">
-  <meta name="twitter:image" content="<%= snapshot_metadata[:image] %>">
-  <meta name="twitter:image:alt" content="<%= snapshot_metadata[:title] %>">
-
-  <!-- Canonical URL -->
-  <link rel="canonical" href="<%= snapshot_metadata[:url] %>">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-  <!-- Preload image for faster WhatsApp preview -->
-  <link rel="preload" as="image" href="<%= snapshot_metadata[:image] %>">
-</head>
-<body>
-  <!-- App shell - React will hydrate this -->
-  <div id="root">
-    <!-- Server-rendered preview content for crawlers and non-JS users -->
-    <div class="public-share-preview" style="display: none;">
-      <div class="preview-card">
-        <div class="preview-header">
-          <img src="/ball.png" class="preview-logo" width="48" height="48" aria-hidden="true">
-          <h1>BeachVolleyballHub</h1>
-        </div>
-
-        <div class="preview-location">
-          <span aria-hidden="true">📍</span>
-          <span><%= @snapshot.location_name %></span>
-        </div>
-
-        <!-- Weather conditions -->
-        <% current = @snapshot.weather_data["current"] || {} %>
-        <% forecast = (@snapshot.weather_data["forecast"] || []).first %>
-        <% rain_chance = current["rain_chance_percent"] || forecast&.dig("rain_chance_percent") %>
-        <% temp = current["feels_like_c"] || current["temperature_c"] || forecast&.dig("average_temp_c") %>
-        <% condition = current["condition"] || forecast&.dig("condition") %>
-        <% icon_url = current["icon_url"] || forecast&.dig("icon_url") %>
-        <% wind = current["wind_kph"] || forecast&.dig("max_wind_kph") %>
-        <% wind_dir = current["wind_direction"] || forecast&.dig("max_wind_direction") %>
-        <% gust = current["wind_gust_kph"] %>
-        <% humidity = current["humidity_percent"] %>
-        <% uv = current["uv_index"] %>
-
-        <div class="preview-weather">
-          <div class="preview-weather-main">
-            <% if icon_url.present? %>
-            <img src="<%= icon_url %>" alt="" class="preview-weather-icon" width="64" height="64">
-            <% end %>
-            <div class="preview-weather-temp">
-              <span class="preview-temperature"><%= temp.present? ? "#{temp.round}°C" : "–" %></span>
-              <span class="preview-condition"><%= condition.presence || "Unknown" %></span>
-            </div>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Primary Meta Tags -->
+    <title><%= snapshot_metadata[:title] %></title>
+    <meta name="description" content="<%= snapshot_metadata[:description] %>">
+    <meta name="theme-color" content="#0066cc">
+    <!-- Favicon / Tab Icon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/ball.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/ball.png">
+    <link rel="apple-touch-icon" href="/ball.png">
+    <link rel="manifest" href="/manifest.json">
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #f8fafc;
+        color: #1e293b;
+        line-height: 1.5;
+      }
+      .public-share-preview { display: none; }
+      .preview-card {
+        max-width: 640px;
+        margin: 40px auto;
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      }
+      .preview-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+      .preview-logo { width: 48px; height: 48px; flex-shrink: 0; }
+      .preview-header h1 { font-size: 22px; font-weight: 700; color: #0066cc; margin: 0; }
+      .preview-location { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; font-size: 16px; color: #475569; }
+      .preview-weather-main { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
+      .preview-weather-icon { width: 64px; height: 64px; flex-shrink: 0; }
+      .preview-weather-temp { display: flex; flex-direction: column; gap: 4px; }
+      .preview-temperature { font-size: 32px; font-weight: 700; color: #1e293b; }
+      .preview-condition { font-size: 16px; color: #475569; font-weight: 500; }
+      .preview-weather-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 24px; }
+      .preview-weather-metric { background: #f8fafc; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+      .preview-metric-top { display: flex; align-items: center; gap: 8px; }
+      .preview-metric-icon { font-size: 20px; }
+      .preview-metric-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+      .preview-metric-value { font-size: 16px; font-weight: 600; color: #1e293b; }
+      .preview-metric-gust { font-size: 12px; color: #ef4444; font-weight: 600; }
+      .preview-image { margin: 24px 0; text-align: center; }
+      .preview-image img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+      .preview-details { margin-top: 24px; }
+      .preview-score { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
+      .preview-label { font-size: 20px; font-weight: 700; color: #1e293b; }
+      .preview-value { font-size: 18px; color: #475569; }
+      .preview-warnings { margin-bottom: 16px; }
+      .preview-warnings p { font-size: 16px; color: #ef4444; font-weight: 600; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px; }
+      .preview-advice { margin: 0; padding-left: 24px; list-style: none; }
+      .preview-advice li { font-size: 16px; color: #475569; margin-bottom: 8px; position: relative; }
+      .preview-advice li::before { content: '💡 '; }
+      .preview-footer { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b; }
+      .preview-footer a { color: #0066cc; text-decoration: none; font-weight: 600; }
+      .preview-footer a:hover { text-decoration: underline; }
+      .preview-attribution a { color: #0066cc; text-decoration: none; }
+      .preview-attribution a:hover { text-decoration: underline; }
+    </style>
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
+    <meta property="og:type" content="<%= snapshot_metadata[:type] %>">
+    <meta property="og:url" content="<%= snapshot_metadata[:url] %>">
+    <meta property="og:title" content="<%= snapshot_metadata[:title] %>">
+    <meta property="og:description" content="<%= snapshot_metadata[:description] %>">
+    <meta property="og:image" content="<%= snapshot_metadata[:image] %>">
+    <meta property="og:image:secure_url" content="<%= snapshot_metadata[:image] %>">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="672">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="<%= snapshot_metadata[:site_name] %>">
+    <meta property="og:locale" content="en_US">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="<%= snapshot_metadata[:twitter_card] %>">
+    <meta name="twitter:url" content="<%= snapshot_metadata[:url] %>">
+    <meta name="twitter:title" content="<%= snapshot_metadata[:title] %>">
+    <meta name="twitter:description" content="<%= snapshot_metadata[:description] %>">
+    <meta name="twitter:image" content="<%= snapshot_metadata[:image] %>">
+    <meta name="twitter:image:alt" content="<%= snapshot_metadata[:title] %>">
+    <!-- Canonical URL -->
+    <link rel="canonical" href="<%= snapshot_metadata[:url] %>">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <!-- Preload image for faster WhatsApp preview -->
+    <link rel="preload" as="image" href="<%= snapshot_metadata[:image] %>">
+  </head>
+  <body>
+    <!-- App shell - React will hydrate this -->
+    <div id="root">
+      <!-- Server-rendered preview content for crawlers and non-JS users -->
+      <div class="public-share-preview" style="display: none;">
+        <div class="preview-card">
+          <div class="preview-header">
+            <img src="/ball.png" class="preview-logo" width="48" height="48" aria-hidden="true">
+            <h1>BeachVolleyballHub</h1>
           </div>
-
-          <div class="preview-weather-metrics">
-            <div class="preview-weather-metric">
-              <div class="preview-metric-top">
-                <span class="preview-metric-icon" aria-hidden="true">💨</span>
-                <span class="preview-metric-label">Wind</span>
-              </div>
-              <span class="preview-metric-value">
-                <%= wind.present? ? "#{wind.round} km/h" : "–" %>
-                <%= wind_dir.present? ? " #{wind_dir}" : "" %>
-              </span>
-              <% if gust.present? && wind.present? && gust > wind && gust - wind > 15 %>
-              <span class="preview-metric-gust">Gusts #{gust.round} km/h</span>
+          <div class="preview-location">
+            <span aria-hidden="true">📍</span>
+            <span><%= @snapshot.location_name %></span>
+          </div>
+          <!-- Weather conditions -->
+          <% current = @snapshot.weather_data["current"] || {} %>
+          <% forecast = (@snapshot.weather_data["forecast"] || []).first %>
+          <% rain_chance = current["rain_chance_percent"] || forecast&.dig("rain_chance_percent") %>
+          <% temp = current["feels_like_c"] || current["temperature_c"] || forecast&.dig("average_temp_c") %>
+          <% condition = current["condition"] || forecast&.dig("condition") %>
+          <% icon_url = current["icon_url"] || forecast&.dig("icon_url") %>
+          <% wind = current["wind_kph"] || forecast&.dig("max_wind_kph") %>
+          <% wind_dir = current["wind_direction"] || forecast&.dig("max_wind_direction") %>
+          <% gust = current["wind_gust_kph"] %>
+          <% humidity = current["humidity_percent"] %>
+          <% uv = current["uv_index"] %>
+          <div class="preview-weather">
+            <div class="preview-weather-main">
+              <% if icon_url.present? %>
+                <img src="<%= icon_url %>" alt="" class="preview-weather-icon" width="64" height="64">
               <% end %>
-            </div>
-
-            <div class="preview-weather-metric">
-              <div class="preview-metric-top">
-                <span class="preview-metric-icon" aria-hidden="true">🌧️</span>
-                <span class="preview-metric-label">Rain</span>
+              <div class="preview-weather-temp">
+                <span class="preview-temperature"><%= temp.present? ? "#{temp.round}°C" : "–" %></span>
+                <span class="preview-condition"><%= condition.presence || "Unknown" %></span>
               </div>
-              <span class="preview-metric-value"><%= rain_chance.present? ? "#{rain_chance.round}%" : "–" %></span>
             </div>
-
-            <div class="preview-weather-metric">
-              <div class="preview-metric-top">
-                <span class="preview-metric-icon" aria-hidden="true">☀️</span>
-                <span class="preview-metric-label">UV Index</span>
+            <div class="preview-weather-metrics">
+              <div class="preview-weather-metric">
+                <div class="preview-metric-top">
+                  <span class="preview-metric-icon" aria-hidden="true">💨</span>
+                  <span class="preview-metric-label">Wind</span>
+                </div>
+                <span class="preview-metric-value">
+                  <%= wind.present? ? "#{wind.round} km/h" : "–" %>
+                  <%= wind_dir.present? ? " #{wind_dir}" : "" %>
+                </span>
+                <% if gust.present? && wind.present? && gust > wind && gust - wind > 15 %>
+                  <span class="preview-metric-gust">Gusts #{gust.round} km/h</span>
+                <% end %>
               </div>
-              <span class="preview-metric-value"><%= uv.present? ? uv.round(1) : "–" %></span>
-            </div>
-
-            <div class="preview-weather-metric">
-              <div class="preview-metric-top">
-                <span class="preview-metric-icon" aria-hidden="true">💧</span>
-                <span class="preview-metric-label">Humidity</span>
+              <div class="preview-weather-metric">
+                <div class="preview-metric-top">
+                  <span class="preview-metric-icon" aria-hidden="true">🌧️</span>
+                  <span class="preview-metric-label">Rain</span>
+                </div>
+                <span class="preview-metric-value"><%= rain_chance.present? ? "#{rain_chance.round}%" : "–" %></span>
               </div>
-              <span class="preview-metric-value"><%= humidity.present? ? "#{humidity.round}%" : "–" %></span>
+              <div class="preview-weather-metric">
+                <div class="preview-metric-top">
+                  <span class="preview-metric-icon" aria-hidden="true">☀️</span>
+                  <span class="preview-metric-label">UV Index</span>
+                </div>
+                <span class="preview-metric-value"><%= uv.present? ? uv.round(1) : "–" %></span>
+              </div>
+              <div class="preview-weather-metric">
+                <div class="preview-metric-top">
+                  <span class="preview-metric-icon" aria-hidden="true">💧</span>
+                  <span class="preview-metric-label">Humidity</span>
+                </div>
+                <span class="preview-metric-value"><%= humidity.present? ? "#{humidity.round}%" : "–" %></span>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div class="preview-details">
-          <div class="preview-score">
-            <span class="preview-label"><%= @snapshot.volleyball_label %></span>
-            <span class="preview-value"><%= @snapshot.volleyball_score %>/100 for beach volleyball</span>
-          </div>
-
-          <% if @snapshot.volleyball_warnings.any? %>
-          <div class="preview-warnings">
-            <% @snapshot.volleyball_warnings.each do |warning| %>
-              <p role="alert">⚠️ <%= warning %></p>
+          <div class="preview-details">
+            <div class="preview-score">
+              <span class="preview-label"><%= @snapshot.volleyball_label %></span>
+              <span class="preview-value"><%= @snapshot.volleyball_score %>/100 for beach volleyball</span>
+            </div>
+            <% if @snapshot.volleyball_warnings.any? %>
+              <div class="preview-warnings">
+                <% @snapshot.volleyball_warnings.each do |warning| %>
+                  <p role="alert">⚠️ <%= warning %></p>
+                <% end %>
+              </div>
+            <% end %>
+            <% if @snapshot.volleyball_advice.any? %>
+              <ul class="preview-advice">
+                <% @snapshot.volleyball_advice.each do |advice| %>
+                  <li>💡 <%= advice %></li>
+                <% end %>
+              </ul>
             <% end %>
           </div>
+          <% if @snapshot.image_url.present? %>
+            <div class="preview-image">
+              <img src="<%= @snapshot.image_url %>" alt="<%= snapshot_metadata[:title] %>" width="1200" height="630">
+            </div>
           <% end %>
-
-          <% if @snapshot.volleyball_advice.any? %>
-          <ul class="preview-advice">
-            <% @snapshot.volleyball_advice.each do |advice| %>
-              <li>💡 <%= advice %></li>
-            <% end %>
-          </ul>
-          <% end %>
-        </div>
-
-        <% if @snapshot.image_url.present? %>
-        <div class="preview-image">
-          <img src="<%= @snapshot.image_url %>" alt="<%= snapshot_metadata[:title] %>" width="1200" height="630">
-        </div>
-        <% end %>
-
-        <div class="preview-footer">
-          <a href="<%= @snapshot.public_url %>" class="preview-link">View full report</a>
-          <p class="preview-attribution">
-            Weather data: <a href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a>
-            · Official warnings: <a href="https://www.bom.gov.au/" target="_blank" rel="noopener noreferrer">BOM</a>
-          </p>
+          <div class="preview-footer">
+            <a href="<%= @snapshot.public_url %>" class="preview-link">View full report</a>
+            <p class="preview-attribution">
+              Weather data: <a href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a>
+              · Official warnings: <a href="https://www.bom.gov.au/" target="_blank" rel="noopener noreferrer">BOM</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Load React app -->
-  <script type="module" src="/src/main.tsx"></script>
-  <script>
-    // Show preview content immediately for crawlers/non-JS
-    document.querySelector('.public-share-preview')?.style.setProperty('display', 'block');
-  </script>
-</body>
+    <!-- Load React app -->
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Show preview content immediately for crawlers/non-JS
+      document.querySelector('.public-share-preview')?.style.setProperty('display', 'block');
+    </script>
+  </body>
 </html>
