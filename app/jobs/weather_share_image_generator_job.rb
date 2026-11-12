@@ -3,8 +3,7 @@ class WeatherShareImageGeneratorJob < ApplicationJob
 
   retry_on StandardError, wait: :exponentially_longer, attempts: 3
 
-  def perform(snapshot_id)
-    snapshot = WeatherShareSnapshot.find_by(id: snapshot_id)
+  def perform(snapshot)
     return unless snapshot&.active?
 
     WeatherShareImageGenerator.generate_for(snapshot)
