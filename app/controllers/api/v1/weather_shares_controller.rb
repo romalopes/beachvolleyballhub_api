@@ -91,6 +91,8 @@ module Api
           return
         end
 
+        weather_data = @snapshot.weather_data || {}
+
         render json: {
           public_token: @snapshot.public_token,
           location_name: @snapshot.location_name,
@@ -98,6 +100,8 @@ module Api
           longitude: @snapshot.longitude,
           forecast_target_time: @snapshot.forecast_target_time&.iso8601,
           timezone: @snapshot.timezone,
+          current: weather_data["current"] || weather_data[:current] || {},
+          forecast: weather_data["forecast"] || weather_data[:forecast] || [],
           volleyball: @snapshot.volleyball_assessment,
           image_url: @snapshot.image_url,
           canonical_url: @snapshot.public_url,
