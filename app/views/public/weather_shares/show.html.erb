@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Primary Meta Tags -->
-    <title><%= snapshot_metadata[:title] %></title>
+    <% metadata = snapshot_metadata %>
+    <title><%= metadata[:title] %></title>
     <meta name="description" content="<%= snapshot_metadata[:description] %>">
     <meta name="theme-color" content="#0066cc">
     <!-- Favicon / Tab Icon -->
@@ -34,6 +35,8 @@
       .preview-logo { width: 48px; height: 48px; flex-shrink: 0; }
       .preview-header h1 { font-size: 22px; font-weight: 700; color: #0066cc; margin: 0; }
       .preview-location { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; font-size: 16px; color: #475569; }
+      .preview-time { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+      .preview-time-label { display: inline-block; font-size: 13px; font-weight: 500; color: #475569; background: #f1f5f9; padding: 6px 12px; border-radius: 20px; }
       .preview-weather-main { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
       .preview-weather-icon { width: 64px; height: 64px; flex-shrink: 0; }
       .preview-weather-temp { display: flex; flex-direction: column; gap: 4px; }
@@ -105,6 +108,18 @@
             <span aria-hidden="true">📍</span>
             <span><%= @snapshot.location_name %></span>
           </div>
+          <% if @snapshot.forecast_target_time.present? %>
+            <div class="preview-time">
+              <span class="preview-time-label">
+                <% time = @snapshot.forecast_target_time.in_time_zone(@snapshot.timezone) %>
+                <%= "Forecast for #{time.strftime('%a %d %b, %H:%M').to_s}" %>
+              </span>
+            </div>
+          <% else %>
+            <div class="preview-time">
+              <span class="preview-time-label">Current conditions</span>
+            </div>
+          <% end %>
           <!-- Weather conditions -->
           <% current = @snapshot.weather_data["current"] || {} %>
           <% forecast = (@snapshot.weather_data["forecast"] || []).first %>

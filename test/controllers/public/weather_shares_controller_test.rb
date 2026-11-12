@@ -49,6 +49,18 @@ class Public::WeatherSharesControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "85/100"
   end
 
+  test "show formats selected forecast time in the snapshot timezone" do
+    @snapshot.update!(
+      forecast_target_time: Time.iso8601("2026-11-12T08:00:00Z"),
+      timezone: "Australia/Sydney"
+    )
+
+    get "/weather/#{@snapshot.public_token}"
+
+    assert_response :success
+    assert_includes response.body, "Forecast for Thu 12 Nov, 19:00"
+  end
+
   test "show returns 404 for expired snapshot" do
     @snapshot.update!(expires_at: 1.day.ago)
 
