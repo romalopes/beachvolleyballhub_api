@@ -9,15 +9,17 @@ class WeatherApi
   BASE_URL = "https://api.weatherapi.com/v1/forecast.json"
   FORECAST_DAYS = 3
   HOURLY_INTERVAL_HOURS = 3
-  # The hourly strip covers the next day's worth of hours from now, sampled
-  # every HOURLY_INTERVAL_HOURS — not a fixed number of entries.
-  HOURLY_WINDOW_HOURS = 24
+  # The hourly entries cover the whole forecast window (every provider day from
+  # now onwards), sampled every HOURLY_INTERVAL_HOURS — not a fixed number of
+  # entries. This lets the UI offer the advisor for any time in the three-day
+  # forecast the provider returns.
+  HOURLY_WINDOW_HOURS = FORECAST_DAYS * 24
   ATTRIBUTION = { name: "WeatherAPI.com", url: "https://www.weatherapi.com/" }.freeze
 
   def self.fetch_forecast(latitude, longitude, api_key: ENV["WEATHERAPI_API_KEY"], http_class: Net::HTTP, cache: Rails.cache)
     raise ConfigurationError, "WEATHERAPI_API_KEY is not configured" if api_key.blank?
 
-    cache_key = "weather/v3/#{latitude.round(2)},#{longitude.round(2)}/days-#{FORECAST_DAYS}"
+    cache_key = "weather/v4/#{latitude.round(2)},#{longitude.round(2)}/days-#{FORECAST_DAYS}"
     cached = cache&.read(cache_key)
     return cached if cached
 
@@ -115,6 +117,9 @@ class WeatherApi
       local_hour && (local_hour.to_i % HOURLY_INTERVAL_HOURS).zero?
   end
 
+  # Hourly entries carry the same measurements the volleyball advisor needs for
+  # the current conditions (plus rain chance), so a selected future time can be
+  # assessed without another provider call.
   def self.normalize_hour(hour)
     condition = hour["condition"].is_a?(Hash) ? hour["condition"] : {}
 
@@ -124,11 +129,16 @@ class WeatherApi
       temperature_c: hour["temp_c"],
       feels_like_c: hour["feelslike_c"],
       condition: condition["text"],
+      condition_code: condition["code"],
       icon_url: normalize_icon_url(condition["icon"]),
       rain_chance_percent: hour["chance_of_rain"],
       wind_kph: hour["wind_kph"],
       wind_gust_kph: hour["gust_kph"],
-      wind_direction: hour["wind_dir"]
+      wind_degree: hour["wind_degree"],
+      wind_direction: hour["wind_dir"],
+      humidity_percent: hour["humidity"],
+      uv_index: hour["uv"],
+      precipitation_mm: hour["precip_mm"]
     }
   end
 

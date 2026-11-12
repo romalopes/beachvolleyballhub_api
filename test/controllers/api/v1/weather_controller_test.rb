@@ -70,8 +70,77 @@ class Api::V1::WeatherControllerTest < ActionDispatch::IntegrationTest
         rain_chance_percent: payload[:forecast].first[:rain_chance_percent]
       ).to_json
     )
+    expected["hourly"] = expected["hourly"].each_with_index.map do |hour, index|
+      source_hour = payload[:hourly][index]
+      hour.merge(
+        "volleyball" => JSON.parse(
+          Weather::VolleyballAdvisor.assess(
+            current: source_hour,
+            rain_chance_percent: source_hour[:rain_chance_percent]
+          ).to_json
+        )
+      )
+    end
     assert_equal expected, body
     assert_equal 78, payload.dig(:volleyball, :score), "the shared provider payload must not be mutated"
+    assert_equal 93, body.dig("hourly", 0, "volleyball", "score"),
+      "each forecast hour carries its own advisor assessment"
+  end
+
+  test "assesses every forecast hour with the signed-in account weights" do
+    payload = {
+      forecast: [ { rain_chance_percent: 10 } ],
+      hourly: [
+        {
+          time: "2026-11-02 09:00",
+          time_epoch: 1_793_107_200,
+          temperature_c: 24.0,
+          feels_like_c: 24.0,
+          condition: "Sunny",
+          icon_url: "https://cdn.weatherapi.com/hour.png",
+          rain_chance_percent: 10,
+          wind_kph: 45.0,
+          wind_gust_kph: 50.0,
+          wind_direction: "NW",
+          humidity_percent: 50,
+          uv_index: 2.0,
+          precipitation_mm: 0.0
+        }
+      ],
+      current: {
+        wind_kph: 5.0,
+        wind_gust_kph: 6.0,
+        temperature_c: 24.0,
+        feels_like_c: 24.0,
+        humidity_percent: 50,
+        uv_index: 2.0,
+        precipitation_mm: 0.0
+      },
+      location: { latitude: 0, longitude: 0, timezone: "UTC" },
+      updated_at: "2026-11-02T00:00:00Z",
+      stale: false,
+      volleyball: nil,
+      attribution: { name: "WeatherAPI.com", url: "https://www.weatherapi.com/" }
+    }
+    accounts(:one).create_weather_advisor_preference!(
+      wind_weight: 0,
+      temperature_weight: 25,
+      rain_weight: 25,
+      uv_weight: 25,
+      humidity_weight: 25
+    )
+    sign_in_as(users(:five))
+
+    with_weather_response(payload) do
+      get "/api/v1/weather", params: { lat: 0, lon: 0 }
+    end
+
+    assert_response :success
+    hourly_assessment = JSON.parse(response.body).dig("hourly", 0, "volleyball")
+    assert_equal 100, hourly_assessment.fetch("score"),
+      "the wind weight is zero, so the dangerous gusts must not lower the score"
+    assert_includes hourly_assessment.fetch("warnings"),
+      "Dangerous gusts: postpone play and secure equipment."
   end
 
   test "uses the signed-in account weights without changing independent warnings" do

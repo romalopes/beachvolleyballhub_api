@@ -24,13 +24,21 @@ module Api
         # Fetch weather data for the snapshot
         forecast = WeatherApi.fetch_forecast(latitude, longitude).deep_dup
 
-        # Use the forecast target time if provided, otherwise use current
+        # Use the forecast target time if provided, otherwise use current.
+        # Hourly entries carry the same measurements as `current`, so the
+        # selected time becomes the snapshot's current conditions.
+        selected_hour = nil
         if forecast_target_time
-          forecast[:current] = forecast[:hourly]&.find { |h| h[:time_epoch] == forecast_target_time.to_i } || forecast[:current]
+          selected_hour = find_forecast_hour(forecast, forecast_target_time)
+          forecast[:current] = selected_hour if selected_hour
         end
 
-        # Calculate volleyball assessment
-        volleyball = personalized_assessment(forecast)
+        # Calculate volleyball assessment, preferring the selected hour's own
+        # rain chance over the first day's when a time was chosen.
+        volleyball = personalized_assessment(
+          forecast,
+          rain_chance_percent: selected_hour&.then { |hour| hour[:rain_chance_percent] || hour["rain_chance_percent"] }
+        )
 
         # Build the snapshot
         snapshot = Current.user.account.weather_share_snapshots.build(
@@ -131,14 +139,26 @@ module Api
         nil
       end
 
-      def personalized_assessment(forecast)
-        preference = Current.user&.account&.weather_advisor_preference
+      # The timestamps the UI sends come from `WeatherForecastHour#time_epoch`,
+      # so match on that epoch exactly instead of comparing formatted strings.
+      def find_forecast_hour(forecast, target_time)
+        hourly = forecast[:hourly] || forecast["hourly"]
+        return nil unless hourly.is_a?(Array)
+
+        hourly.find do |hour|
+          (hour[:time_epoch] || hour["time_epoch"]).to_i == target_time.to_i
+        end
+      end
+
+      def personalized_assessment(forecast, rain_chance_percent: nil)
+        daily_rain_chance = Array(forecast[:forecast] || forecast["forecast"]).first&.then do |day|
+          day[:rain_chance_percent] || day["rain_chance_percent"]
+        end
+
         Weather::VolleyballAdvisor.assess(
           current: forecast[:current] || forecast["current"],
-          rain_chance_percent: Array(forecast[:forecast] || forecast["forecast"]).first&.then do |day|
-            day[:rain_chance_percent] || day["rain_chance_percent"]
-          end,
-          weights: preference&.weights
+          rain_chance_percent: rain_chance_percent || daily_rain_chance,
+          weights: Current.user&.account&.weather_advisor_preference&.weights
         )
       end
     end

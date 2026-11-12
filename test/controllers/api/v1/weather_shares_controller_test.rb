@@ -102,6 +102,80 @@ test "create accepts optional forecast_target_time" do
     assert_includes JSON.parse(response.body)["error"], "forecast_target_time must be a valid ISO8601 timestamp"
   end
 
+  test "create snapshots the selected forecast hour and its advisor" do
+    sign_in_as(@owner)
+    payload = default_weather_payload
+    payload[:hourly] = [
+      {
+        time: "2026-10-27 21:00",
+        time_epoch: 1_793_118_000,
+        temperature_c: 30.0,
+        feels_like_c: 34.0,
+        condition: "Sunny",
+        icon_url: "https://cdn.weatherapi.com/hour.png",
+        rain_chance_percent: 90,
+        wind_kph: 45.0,
+        wind_gust_kph: 55.0,
+        wind_direction: "NW",
+        humidity_percent: 90,
+        uv_index: 12.0,
+        precipitation_mm: 2.0
+      }
+    ]
+
+    with_weather_response(payload) do
+      post "/api/v1/weather_shares", params: {
+        lat: -33.8688,
+        lon: 151.2093,
+        location_name: "Bondi Beach",
+        forecast_target_time: Time.zone.at(1_793_118_000).iso8601
+      }, as: :json
+    end
+
+    assert_response :created
+    snapshot = WeatherShareSnapshot.find_by!(
+      public_token: JSON.parse(response.body)["public_token"]
+    )
+    snapshotted_current = snapshot.weather_data["current"]
+
+    assert_equal 1_793_118_000, snapshot.forecast_target_time.to_i
+    assert_equal 1_793_118_000, snapshotted_current["time_epoch"]
+    assert_equal 45.0, snapshotted_current["wind_kph"]
+    assert_equal 12.0, snapshotted_current["uv_index"]
+    assert_equal 90, snapshotted_current["rain_chance_percent"]
+
+    expected = Weather::VolleyballAdvisor.assess(
+      current: payload[:hourly].first,
+      rain_chance_percent: payload[:hourly].first[:rain_chance_percent]
+    )
+    assert_equal expected[:score], snapshot.volleyball_score
+    assert_equal expected[:label], snapshot.volleyball_label
+    assert_includes snapshot.volleyball_warnings, "Dangerous gusts: postpone play and secure equipment."
+    assert_includes snapshot.volleyball_warnings, "Extreme UV: limit time in direct sun."
+  end
+
+  test "create falls back to current conditions when the target hour is unavailable" do
+    sign_in_as(@owner)
+
+    with_weather_response do
+      post "/api/v1/weather_shares", params: {
+        lat: -33.8688,
+        lon: 151.2093,
+        location_name: "Bondi Beach",
+        forecast_target_time: Time.zone.at(1_700_000_000).iso8601
+      }, as: :json
+    end
+
+    assert_response :created
+    snapshot = WeatherShareSnapshot.find_by!(
+      public_token: JSON.parse(response.body)["public_token"]
+    )
+
+    assert_equal 23.0, snapshot.weather_data["current"]["temperature_c"]
+    assert_nil snapshot.weather_data["current"]["time_epoch"]
+    assert_empty snapshot.volleyball_warnings
+  end
+
   test "destroy requires authentication" do
     snapshot = @owner.account.weather_share_snapshots.create!(
       latitude: -33.8688,

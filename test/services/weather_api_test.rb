@@ -48,12 +48,15 @@ class WeatherApiTest < ActiveSupport::TestCase
     assert_equal 24.0, result[:forecast].first[:max_wind_kph]
     assert_equal "NW", result[:forecast].first[:max_wind_direction]
     assert_equal "https://cdn.weatherapi.com/icon.png", result[:forecast].first[:icon_url]
-    assert_equal 8, result[:hourly].length
+    assert_equal 18, result[:hourly].length
     assert_equal "2026-10-27 18:00", result[:hourly].first[:time]
-    assert_equal "2026-10-28 15:00", result[:hourly].last[:time]
+    assert_equal "2026-10-29 21:00", result[:hourly].last[:time]
     assert_equal "https://cdn.weatherapi.com/hour.png", result[:hourly].first[:icon_url]
     assert_equal "NE", result[:hourly].first[:wind_direction]
     assert_equal 30.0, result[:hourly].first[:wind_gust_kph]
+    assert_equal 62, result[:hourly].first[:humidity_percent]
+    assert_equal 6.0, result[:hourly].first[:uv_index]
+    assert_equal 0.2, result[:hourly].first[:precipitation_mm]
     assert_equal 21.5, result[:current][:temperature_c]
     assert_equal 27.0, result[:current][:wind_gust_kph]
     assert_equal "https://cdn.weatherapi.com/current.png", result[:current][:icon_url]
@@ -202,7 +205,11 @@ class WeatherApiTest < ActiveSupport::TestCase
       chance_of_rain: 20,
       wind_kph: wind_kph,
       gust_kph: 30.0,
+      wind_degree: 45,
       wind_dir: wind_dir,
+      humidity: 62,
+      uv: 6.0,
+      precip_mm: 0.2,
       condition: { text: "Partly cloudy", icon: "//cdn.weatherapi.com/hour.png" }
     }
   end
