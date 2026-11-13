@@ -53,7 +53,12 @@
       .preview-image img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
       .preview-details { margin-top: 24px; }
       .preview-score { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
-      .preview-label { font-size: 20px; font-weight: 700; color: #1e293b; }
+      .preview-label { font-size: 20px; font-weight: 700; }
+      .preview-label--excellent { color: #16a34a; }
+      .preview-label--good { color: #16a34a; }
+      .preview-label--fair { color: #eab308; }
+      .preview-label--poor { color: #f97316; }
+      .preview-label--unsuitable { color: #ef4444; }
       .preview-value { font-size: 18px; color: #475569; }
       .preview-warnings { margin-bottom: 16px; }
       .preview-warnings p { font-size: 16px; color: #ef4444; font-weight: 600; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px; }
@@ -181,7 +186,7 @@
           </div>
           <div class="preview-details">
             <div class="preview-score">
-              <span class="preview-label"><%= @snapshot.volleyball_label %></span>
+              <span class="preview-label preview-label--<%= @snapshot.volleyball_label.downcase %>"><%= @snapshot.volleyball_label %></span>
               <span class="preview-value"><%= @snapshot.volleyball_score %>/100 for beach volleyball</span>
             </div>
             <% if @snapshot.volleyball_warnings.any? %>
