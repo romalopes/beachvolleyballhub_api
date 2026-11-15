@@ -394,4 +394,8 @@ puts "Seeded #{VideoTag.count} video tags"
 # user = User.find_or_create_by!(email: "6H7VX@example.com") { |u| u.password = "password" }
 # user.add_role(:admin)
 
+# Subscription plans and feature catalogue (IDENTITY-116). Idempotent: see the
+# file for the rules on what a reseed will and will not overwrite.
+load Rails.root.join("db/seeds/subscriptions.rb")
+
 puts "Seeding complete"

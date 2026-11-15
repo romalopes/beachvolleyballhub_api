@@ -20,6 +20,17 @@ class Account < ApplicationRecord
   has_one :notification_preference, dependent: :destroy
   has_one :weather_advisor_preference, dependent: :destroy
 
+  # Billing (IDENTITY-116). A personal Account is the billable owner of Player and
+  # Coach subscriptions. Billing records are deliberately *not* cascaded from the
+  # account: a paying customer's invoices and lifecycle history must never vanish
+  # because a profile row was deleted.
+  has_one :billing_customer, as: :billable, class_name: "BillingCustomer",
+                             dependent: :restrict_with_error
+  has_one :billing_subscription, as: :billable, class_name: "BillingSubscription",
+                                 dependent: :restrict_with_error
+  has_many :subscription_histories, as: :billable, class_name: "SubscriptionHistory",
+                                    dependent: :restrict_with_error
+
   accepts_nested_attributes_for :account_address, reject_if: :all_blank
 
   %i[first_name last_name email phone date_of_birth].each do |field|

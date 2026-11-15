@@ -56,6 +56,10 @@ gem "sentry-rails"
 
 gem "rack-attack"
 
+# Billing: Stripe Checkout, Customer Portal, Billing subscriptions and signed
+# webhooks (IDENTITY-116). Server-side only — never expose these keys to the SPA.
+gem "stripe", "~> 15.0"
+
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

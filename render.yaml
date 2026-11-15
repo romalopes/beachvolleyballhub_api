@@ -37,6 +37,28 @@ services:
         value: "3"
       - key: GEOCODING_READ_TIMEOUT
         value: "5"
+      # Subscription billing (IDENTITY-116). Secrets and Price IDs are set in the
+      # Render dashboard (sync: false) and never committed. APP_FRONTEND_URL falls
+      # back to FRONTEND_URL when omitted.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PLAYER_YEARLY_PRICE_ID
+        sync: false
+      - key: STRIPE_COACH_YEARLY_PRICE_ID
+        sync: false
+      - key: STRIPE_CLUB_YEARLY_PRICE_ID
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: APP_FRONTEND_URL
+        value: https://beachvolleyballhub.com
+      - key: BILLING_GRACE_PERIOD_DAYS
+        value: "7"
+      # Turn on only after the premium operations and catalogue are approved.
+      - key: BILLING_ENFORCEMENT_ENABLED
+        value: "false"
 
   # Solid Queue does not run in the Puma process. This continuously running
   # worker consumes every queue configured in config/queue.yml, including the
@@ -103,3 +125,16 @@ services:
         value: "3"
       - key: GEOCODING_READ_TIMEOUT
         value: "5"
+      # Billing reconciliation (IDENTITY-116) runs from this worker and calls
+      # Stripe, so it needs the secret key and the Price mapping.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PLAYER_YEARLY_PRICE_ID
+        sync: false
+      - key: STRIPE_COACH_YEARLY_PRICE_ID
+        sync: false
+      - key: STRIPE_CLUB_YEARLY_PRICE_ID
+        sync: false
+      - key: BILLING_GRACE_PERIOD_DAYS
+        value: "7"
+

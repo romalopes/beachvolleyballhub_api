@@ -11,6 +11,7 @@ module Api
     class TrainingSeriesController < ApplicationController
       include Pagination
       include RecurringTrainingAuthorization
+      include SubscriptionEntitlement
 
       SERIES_ATTRIBUTES = %i[
         id training_template_id organisation_id created_by_id frequency interval
@@ -27,6 +28,10 @@ module Api
       ].freeze
 
       before_action :authorize_training_series_access!
+      # Premium: advanced training planning (Coach plan). Enforced only when the
+      # deployment turns BILLING_ENFORCEMENT_ENABLED on — see the concern.
+      before_action -> { require_subscription_feature!("advanced_training_planning", owner: :personal) },
+                    only: %i[preview create bulk_cancel bulk_delete stop cancel_future update_future split]
       before_action :validate_index_filters!, only: :index
       before_action :validate_session_filters!, only: :sessions
       before_action :set_training_series, only: %i[

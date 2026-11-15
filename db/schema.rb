@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_10_203259) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -328,6 +328,88 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_203259) do
     t.check_constraint "score IS NULL OR score >= 0 AND score <= 100", name: "assessments_score_range"
     t.check_constraint "status::text = 'draft'::text OR score IS NOT NULL AND (assessment_definition_id IS NOT NULL OR reported_value IS NOT NULL)", name: "assessments_published_requires_score"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'active'::character varying::text, 'withdrawn'::character varying::text])", name: "assessments_status"
+  end
+
+  create_table "billing_checkout_sessions", force: :cascade do |t|
+    t.string "billable_type", null: false
+    t.bigint "billable_id", null: false
+    t.bigint "subscription_id", null: false
+    t.string "stripe_checkout_session_id", null: false
+    t.string "stripe_customer_id"
+    t.string "status", default: "open", null: false
+    t.text "url"
+    t.datetime "expires_at"
+    t.datetime "completed_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["billable_type", "billable_id", "created_at"], name: "index_billing_checkout_sessions_on_owner_and_time"
+    t.index ["stripe_checkout_session_id"], name: "index_billing_checkout_sessions_on_stripe_checkout_session_id", unique: true
+    t.index ["subscription_id"], name: "index_billing_checkout_sessions_on_subscription_id"
+    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying, 'Organisation'::character varying]::text[])", name: "billing_checkout_sessions_billable_type"
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'completed'::character varying, 'expired'::character varying, 'canceled'::character varying]::text[])", name: "billing_checkout_sessions_status"
+  end
+
+  create_table "billing_customers", force: :cascade do |t|
+    t.string "billable_type", null: false
+    t.bigint "billable_id", null: false
+    t.string "stripe_customer_id", null: false
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["billable_type", "billable_id"], name: "index_billing_customers_on_owner", unique: true
+    t.index ["stripe_customer_id"], name: "index_billing_customers_on_stripe_customer_id", unique: true
+    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying, 'Organisation'::character varying]::text[])", name: "billing_customers_billable_type"
+  end
+
+  create_table "billing_events", force: :cascade do |t|
+    t.string "stripe_event_id", null: false
+    t.string "event_type", null: false
+    t.string "stripe_object_id"
+    t.string "status", default: "received", null: false
+    t.integer "attempts", default: 0, null: false
+    t.text "error_message"
+    t.datetime "stripe_created_at"
+    t.datetime "received_at"
+    t.datetime "processed_at"
+    t.jsonb "payload", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_type", "created_at"], name: "index_billing_events_on_event_type_and_created_at"
+    t.index ["status"], name: "index_billing_events_on_status"
+    t.index ["stripe_event_id"], name: "index_billing_events_on_stripe_event_id", unique: true
+    t.check_constraint "status::text = ANY (ARRAY['received'::character varying, 'processed'::character varying, 'failed'::character varying, 'skipped'::character varying]::text[])", name: "billing_events_status"
+  end
+
+  create_table "billing_subscriptions", force: :cascade do |t|
+    t.string "billable_type", null: false
+    t.bigint "billable_id", null: false
+    t.bigint "subscription_id", null: false
+    t.string "status", default: "incomplete", null: false
+    t.string "stripe_customer_id"
+    t.string "stripe_subscription_id"
+    t.string "stripe_price_id"
+    t.datetime "current_period_start"
+    t.datetime "current_period_end"
+    t.boolean "cancel_at_period_end", default: false, null: false
+    t.datetime "canceled_at"
+    t.datetime "ended_at"
+    t.datetime "trial_ends_at"
+    t.datetime "grace_period_ends_at"
+    t.bigint "pending_subscription_id"
+    t.datetime "pending_change_requested_at"
+    t.datetime "pending_change_effective_at"
+    t.datetime "last_synced_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["billable_type", "billable_id"], name: "index_billing_subscriptions_on_owner", unique: true
+    t.index ["pending_subscription_id"], name: "index_billing_subscriptions_on_pending_subscription_id"
+    t.index ["status"], name: "index_billing_subscriptions_on_status"
+    t.index ["stripe_subscription_id"], name: "index_billing_subscriptions_on_stripe_subscription_id", unique: true
+    t.index ["subscription_id"], name: "index_billing_subscriptions_on_subscription_id"
+    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying, 'Organisation'::character varying]::text[])", name: "billing_subscriptions_billable_type"
+    t.check_constraint "status::text = ANY (ARRAY['incomplete'::character varying, 'incomplete_expired'::character varying, 'trialing'::character varying, 'active'::character varying, 'past_due'::character varying, 'canceled'::character varying, 'unpaid'::character varying, 'paused'::character varying]::text[])", name: "billing_subscriptions_status"
   end
 
   create_table "claim_invitations", force: :cascade do |t|
@@ -871,6 +953,77 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_203259) do
     t.index ["visibility"], name: "index_skills_on_visibility"
   end
 
+  create_table "subscription_features", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.text "description"
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active", "position"], name: "index_subscription_features_on_active_and_position"
+    t.index ["slug"], name: "index_subscription_features_on_slug", unique: true
+  end
+
+  create_table "subscription_histories", force: :cascade do |t|
+    t.string "billable_type", null: false
+    t.bigint "billable_id", null: false
+    t.bigint "subscription_id", null: false
+    t.bigint "previous_subscription_id"
+    t.string "status", null: false
+    t.string "source", null: false
+    t.string "stripe_subscription_id"
+    t.string "stripe_price_id"
+    t.datetime "started_at"
+    t.datetime "ended_at"
+    t.datetime "canceled_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["billable_type", "billable_id", "created_at"], name: "index_subscription_histories_on_owner_and_time"
+    t.index ["subscription_id"], name: "index_subscription_histories_on_subscription_id"
+    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying, 'Organisation'::character varying]::text[])", name: "subscription_histories_billable_type"
+  end
+
+  create_table "subscription_subscription_features", force: :cascade do |t|
+    t.bigint "subscription_id", null: false
+    t.bigint "subscription_feature_id", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["subscription_feature_id"], name: "idx_on_subscription_feature_id_3c98fc1405"
+    t.index ["subscription_id", "position"], name: "index_subscription_features_on_plan_and_position"
+    t.index ["subscription_id", "subscription_feature_id"], name: "index_subscription_features_unique_pair", unique: true
+    t.index ["subscription_id"], name: "index_subscription_subscription_features_on_subscription_id"
+  end
+
+  create_table "subscriptions", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.text "description"
+    t.boolean "active", default: true, null: false
+    t.boolean "visible", default: true, null: false
+    t.boolean "popular", default: false, null: false
+    t.boolean "is_default", default: false, null: false
+    t.integer "position", default: 0, null: false
+    t.string "currency", default: "AUD", null: false
+    t.integer "yearly_price_cents", default: 0, null: false
+    t.string "owner_scope", default: "personal", null: false
+    t.integer "included_users"
+    t.integer "history_limit"
+    t.string "stripe_price_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active", "visible", "position"], name: "index_subscriptions_on_active_and_visible_and_position"
+    t.index ["is_default"], name: "index_subscriptions_single_default", unique: true, where: "is_default"
+    t.index ["slug"], name: "index_subscriptions_on_slug", unique: true
+    t.check_constraint "char_length(currency::text) = 3", name: "subscriptions_currency_iso4217"
+    t.check_constraint "history_limit IS NULL OR history_limit >= 0", name: "subscriptions_history_limit_non_negative"
+    t.check_constraint "included_users IS NULL OR included_users >= 0", name: "subscriptions_included_users_non_negative"
+    t.check_constraint "owner_scope::text = ANY (ARRAY['personal'::character varying, 'organisation'::character varying, 'both'::character varying]::text[])", name: "subscriptions_owner_scope"
+    t.check_constraint "yearly_price_cents >= 0", name: "subscriptions_price_non_negative"
+  end
+
   create_table "tournament_divisions", force: :cascade do |t|
     t.bigint "tournament_id", null: false
     t.string "letter_level"
@@ -1316,6 +1469,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_203259) do
   add_foreign_key "assessments", "player_profiles"
   add_foreign_key "assessments", "training_sessions", on_delete: :nullify
   add_foreign_key "assessments", "users", column: "created_by_id"
+  add_foreign_key "billing_checkout_sessions", "subscriptions"
+  add_foreign_key "billing_subscriptions", "subscriptions"
+  add_foreign_key "billing_subscriptions", "subscriptions", column: "pending_subscription_id"
   add_foreign_key "claim_invitations", "users", column: "invited_by_id"
   add_foreign_key "claim_invitations", "users", column: "used_by_id"
   add_foreign_key "coach_profiles", "accounts", column: "created_by_account_id"
@@ -1374,6 +1530,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_203259) do
   add_foreign_key "sessions", "users", column: "impersonated_user_id"
   add_foreign_key "skills", "disciplines"
   add_foreign_key "skills", "users", column: "created_by_id"
+  add_foreign_key "subscription_histories", "subscriptions"
+  add_foreign_key "subscription_histories", "subscriptions", column: "previous_subscription_id"
+  add_foreign_key "subscription_subscription_features", "subscription_features", on_delete: :cascade
+  add_foreign_key "subscription_subscription_features", "subscriptions", on_delete: :cascade
   add_foreign_key "tournament_divisions", "tournaments"
   add_foreign_key "tournament_follows", "accounts"
   add_foreign_key "tournament_follows", "tournaments"

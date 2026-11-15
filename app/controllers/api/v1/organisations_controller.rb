@@ -15,6 +15,7 @@ module Api
     class OrganisationsController < ApplicationController
       include ContentAuthorization
       include Pagination
+      include SubscriptionEntitlement
 
       NEARBY_DEFAULT_RADIUS_KM = 25.0
       NEARBY_MAX_RADIUS_KM = 100.0
@@ -47,6 +48,12 @@ module Api
       # organisation in as an argument the method does not take.
       before_action :require_organisation_membership_manager!,
                     only: %i[member_candidates create_member update_member]
+      # Premium organisation features (IDENTITY-116, Phase 8). `set_organisation`
+      # runs first, so `@organisation` is the owner context. Opt-in per environment.
+      before_action -> { require_subscription_feature!("organisation_management", owner: :organisation) },
+                    only: %i[update archive restore logo]
+      before_action -> { require_subscription_feature!("club_reporting", owner: :organisation) },
+                    only: %i[coaches]
       # `leave` is self-service and must bypass the membership-manager gate.
 
       # Public read-only discovery deliberately does not reuse the authenticated

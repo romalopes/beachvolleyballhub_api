@@ -39,6 +39,26 @@ Rails.application.routes.draw do
   # API routes
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
+      # Subscription catalogue and billing (IDENTITY-116)
+      #
+      # The catalogue is public: the pricing page must render for visitors. Every
+      # billing action is authenticated and owner-scoped inside the controller.
+      resources :subscriptions, only: :index
+
+      namespace :billing do
+        resource :status, only: :show, controller: "status"
+        resource :checkout, only: :create, controller: "checkouts"
+        resource :portal, only: :create, controller: "portals"
+        resources :history, only: :index, controller: "histories"
+        post "change_subscription", to: "changes#create", as: :change_subscription
+      end
+
+      # Stripe server-to-server webhook. Signature verification is the
+      # authentication; the controller opts out of user auth and the test gate.
+      namespace :webhooks do
+        post "stripe", to: "stripe#create"
+      end
+
       # Auth endpoints (JSON for the React SPA)
       post "registrations", to: "registrations#create"
       post "sessions", to: "sessions#create"
@@ -429,6 +449,18 @@ Rails.application.routes.draw do
 
         # Tail of the application's Rails log file
         resources :system_logs, only: [ :index ], defaults: { format: :json }
+
+        # Subscription and Stripe billing administration (IDENTITY-116).
+        # Plan/feature CRUD is non-destructive for anything with history, and
+        # manual assignments require an audit reason.
+        resources :subscriptions, only: [ :index, :show, :create, :update, :destroy ] do
+          member { put :features }
+        end
+        resources :subscription_features, only: [ :index, :create, :update, :destroy ]
+        post "billing/assignments", to: "billing_assignments#create"
+        get "billing/subscriptions", to: "billing_records#index"
+        get "billing/events", to: "billing_records#events"
+        get "billing/diagnostics", to: "billing_records#diagnostics"
       end
 
       resource :account, only: %i[show update], controller: "accounts"

@@ -1,0 +1,47 @@
+# Plan → feature associations (IDENTITY-116). Counts mirror the approved
+# catalogue: Player 1, Coach 3, Club 5. Higher plans inherit the lower plan's
+# features explicitly (Club lists all five).
+player_profile:
+  subscription: player
+  subscription_feature: enhanced_player_profile
+  position: 0
+
+coach_profile:
+  subscription: coach
+  subscription_feature: enhanced_player_profile
+  position: 0
+
+coach_planning:
+  subscription: coach
+  subscription_feature: advanced_training_planning
+  position: 1
+
+coach_assessments:
+  subscription: coach
+  subscription_feature: advanced_assessments
+  position: 2
+
+club_profile:
+  subscription: club
+  subscription_feature: enhanced_player_profile
+  position: 0
+
+club_planning:
+  subscription: club
+  subscription_feature: advanced_training_planning
+  position: 1
+
+club_assessments:
+  subscription: club
+  subscription_feature: advanced_assessments
+  position: 2
+
+club_management:
+  subscription: club
+  subscription_feature: organisation_management
+  position: 3
+
+club_reporting:
+  subscription: club
+  subscription_feature: club_reporting
+  position: 4

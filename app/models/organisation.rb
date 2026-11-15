@@ -82,6 +82,17 @@ class Organisation < ApplicationRecord
            inverse_of: :organisation
   has_many :members, through: :active_memberships, source: :account
 
+  # Billing (IDENTITY-116). The club itself is the billable owner of a Club
+  # subscription: the Stripe Customer belongs to the organisation, not to whichever
+  # owner/administrator happened to start Checkout. As with Account, billing rows are
+  # never cascaded away with the organisation.
+  has_one :billing_customer, as: :billable, class_name: "BillingCustomer",
+                             dependent: :restrict_with_error
+  has_one :billing_subscription, as: :billable, class_name: "BillingSubscription",
+                                 dependent: :restrict_with_error
+  has_many :subscription_histories, as: :billable, class_name: "SubscriptionHistory",
+                                    dependent: :restrict_with_error
+
   has_many :child_organisations,
            class_name: "Organisation",
            foreign_key: :parent_organisation_id,

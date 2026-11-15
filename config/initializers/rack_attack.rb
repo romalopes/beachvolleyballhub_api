@@ -35,6 +35,29 @@ Rack::Attack.safelist('health check') do |req|
   req.path == '/health' || req.path == '/health/detailed'
 end
 
+# Stripe webhooks are server-to-server and signed. They must never be throttled
+# or challenged: a rate-limited webhook means a payment that never activates.
+# Signature verification, not rate limiting, is the protection here
+# (IDENTITY-116, Phase 10).
+Rack::Attack.safelist('stripe webhook') do |req|
+  req.path == '/api/v1/webhooks/stripe'
+end
+
+# Billing session creation is expensive (Stripe API call) and user-initiated, so
+# it gets a tighter limit than the general request throttle. Checkout, Portal and
+# plan changes are the endpoints a script could hammer to create sessions.
+BILLING_THROTTLED_PATHS = %w[
+  /api/v1/billing/checkout
+  /api/v1/billing/portal
+  /api/v1/billing/change_subscription
+].freeze
+
+Rack::Attack.throttle('billing session creation', limit: 10, period: 1.minute) do |req|
+  next unless req.post? && BILLING_THROTTLED_PATHS.include?(req.path)
+
+  req.env['HTTP_AUTHORIZATION'].presence || req.ip
+end
+
 # Whitelist specific IPs (e.g., internal services, CI/CD)
 # Note: 'whitelist' is deprecated in Rack::Attack 6.x; using conditional skip instead
 # or see https://github.com/rack/rack-attack/blob/master/lib/rack/attack/utils.rb

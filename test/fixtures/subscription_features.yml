@@ -1,0 +1,43 @@
+# Subscription feature catalogue (IDENTITY-116). Slugs are the stable identity the
+# API enforces; names are display only.
+enhanced_player_profile:
+  name: Enhanced personal player profile
+  slug: enhanced_player_profile
+  description: A richer public player profile.
+  active: true
+  position: 0
+
+advanced_training_planning:
+  name: Advanced training planning
+  slug: advanced_training_planning
+  description: Templates, recurring series and bulk schedule changes.
+  active: true
+  position: 1
+
+advanced_assessments:
+  name: Advanced assessments and player development
+  slug: advanced_assessments
+  description: Assessment sessions, scoring and publishing.
+  active: true
+  position: 2
+
+organisation_management:
+  name: Organisation management
+  slug: organisation_management
+  description: Manage club details, branding and lifecycle.
+  active: true
+  position: 3
+
+club_reporting:
+  name: Club-level reporting and management
+  slug: club_reporting
+  description: Club-level coach and roster reporting.
+  active: true
+  position: 4
+
+retired_feature:
+  name: Retired capability
+  slug: retired_capability
+  description: Kept for history.
+  active: false
+  position: 9

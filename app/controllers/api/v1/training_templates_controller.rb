@@ -9,6 +9,7 @@ module Api
     class TrainingTemplatesController < ApplicationController
       include Pagination
       include RecurringTrainingAuthorization
+      include SubscriptionEntitlement
 
       TEMPLATE_ATTRIBUTES = %i[
         id name description organisation_id group_id coach_profile_id location
@@ -17,6 +18,9 @@ module Api
       ].freeze
 
       before_action :set_training_template, only: %i[show update archive restore clone]
+      # Premium: advanced training planning (Coach plan). Opt-in per environment.
+      before_action -> { require_subscription_feature!("advanced_training_planning", owner: :personal) },
+                    only: %i[create update archive restore clone]
       after_action :verify_authorized
 
       def index

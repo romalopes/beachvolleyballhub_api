@@ -1,5 +1,6 @@
 class Api::V1::AssessmentSessionsController < ApplicationController
   include ContentAuthorization
+  include SubscriptionEntitlement
 
   # The roster's new-player control creates a profile-only record, so it only
   # exposes PlayerProfile attributes. `person` remains permitted in add_players
@@ -13,6 +14,10 @@ class Api::V1::AssessmentSessionsController < ApplicationController
   before_action :set_assessment_session,
                 only: %i[show update destroy add_players remove_players scores publish
                         withdraw restore ranking]
+  # Premium: advanced assessments and player development (Coach plan). Opt-in per
+  # environment via BILLING_ENFORCEMENT_ENABLED.
+  before_action -> { require_subscription_feature!("advanced_assessments", owner: :personal) },
+                only: %i[create update publish restore]
 
   def index
     sessions = AssessmentSession.ordered

@@ -1,0 +1,85 @@
+# Subscription plan catalogue (IDENTITY-116).
+#
+# The prices mirror the seeded production catalogue: annual AUD cents. Stripe
+# Price IDs are test placeholders so webhook/checkout specs can resolve a plan
+# without any real Stripe credentials (environment variables would take
+# precedence in a configured deployment).
+free:
+  name: FREE
+  slug: free
+  description: The default plan assigned to every account.
+  active: true
+  visible: true
+  popular: false
+  is_default: true
+  position: 0
+  currency: AUD
+  yearly_price_cents: 0
+  owner_scope: both
+  included_users: 0
+  history_limit: 0
+
+player:
+  name: Player
+  slug: player
+  description: Enhanced personal player profile.
+  active: true
+  visible: true
+  popular: true
+  is_default: false
+  position: 1
+  currency: AUD
+  yearly_price_cents: 500
+  owner_scope: personal
+  included_users: 0
+  history_limit: 0
+  stripe_price_id: price_player_test
+
+coach:
+  name: Coach
+  slug: coach
+  description: Advanced planning, assessments and player development.
+  active: true
+  visible: true
+  popular: false
+  is_default: false
+  position: 2
+  currency: AUD
+  yearly_price_cents: 1000
+  owner_scope: personal
+  included_users: 0
+  history_limit: 0
+  stripe_price_id: price_coach_test
+
+club:
+  name: Club
+  slug: club
+  description: Organisation management and club-level reporting.
+  active: true
+  visible: true
+  popular: false
+  is_default: false
+  position: 3
+  currency: AUD
+  yearly_price_cents: 5000
+  owner_scope: organisation
+  included_users: 0
+  history_limit: 0
+  stripe_price_id: price_club_test
+
+# Retired plan, used to prove an inactive catalogue entry cannot grant access.
+retired:
+  name: Legacy
+  slug: legacy
+  description: A retired plan kept for history.
+  active: false
+  visible: false
+  popular: false
+  is_default: false
+  position: 9
+  currency: AUD
+  yearly_price_cents: 2000
+  owner_scope: personal
+  included_users: 0
+  history_limit: 0
+  stripe_price_id: price_legacy_test
