@@ -37,7 +37,7 @@ module BeachvolleyballhubApi
     # ordering. The React app mirrors this in
     # beachvolleyballhub/src/constants/versions.ts (APP_VERSION) and the
     # "Backend Version Matches APP_VERSION" health check flags drift.
-    config.health_version = ENV["APP_VERSION"].presence || "0.0.22"
+    config.health_version = ENV["APP_VERSION"].presence || "0.0.23"
 
     initializer "email_delivery.transport", after: "action_mailer.set_configs" do
       ActionMailer::Base.add_delivery_method(:brevo, BrevoDelivery, open_timeout: 10, read_timeout: 10)
