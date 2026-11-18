@@ -1,0 +1,27 @@
+<h1>New contact message</h1>
+
+<p>
+  <strong><%= @contact_message.name %></strong>
+  &lt;<%= @contact_message.email %>&gt;
+</p>
+
+<p>
+  <strong>Category:</strong> <%= @contact_message.contact_type_label %><br>
+  <strong>Subject:</strong> <%= @contact_message.subject %><br>
+  <strong>Received:</strong>
+  <%= @submitted_at.in_time_zone(@time_zone).strftime("%A, %-d %B %Y at %-I:%M %p") %>
+  (<%= @time_zone %>)
+</p>
+
+<%# Plain text, escaped by ERB, with newlines preserved by CSS. Never rendered
+    as trusted HTML. %>
+<div style="white-space: pre-wrap; border-left: 3px solid #D97706; padding-left: 12px;"><%= @contact_message.message %></div>
+
+<p>
+  <a href="<%= @inbox_url %>">Open in Contact Messages</a>
+</p>
+
+<p>
+  Reply to this email to answer the sender directly. Never send passwords,
+  payment details, medical information or private details about minors by email.
+</p>

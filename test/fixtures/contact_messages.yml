@@ -1,0 +1,36 @@
+# Inbox fixtures for the Contact Messages feature (IDENTITY-259).
+#
+# Created oldest-first so the default newest-first ordering is deterministic:
+# unread_general (oldest) -> read_coaching -> archived_feedback (newest).
+unread_general:
+  name: Jordan Smith
+  email: jordan@example.com
+  contact_type: general
+  subject: Question about coaching sessions
+  message: I would like more information about the available sessions.
+  status: unread
+  created_at: <%= 3.days.ago %>
+  updated_at: <%= 3.days.ago %>
+
+read_coaching:
+  name: Priya Nair
+  email: priya@example.com
+  contact_type: coaching
+  subject: Private coaching availability
+  message: Do you run private sessions on weekends?
+  status: read
+  read_at: <%= 2.days.ago %>
+  created_at: <%= 2.days.ago %>
+  updated_at: <%= 2.days.ago %>
+
+archived_feedback:
+  name: Sam Lee
+  email: sam@example.com
+  contact_type: feedback
+  subject: Suggestion for the calendar
+  message: It would be great to filter trainings by suburb.
+  status: archived
+  read_at: <%= 2.days.ago %>
+  archived_at: <%= 1.day.ago %>
+  created_at: <%= 1.day.ago %>
+  updated_at: <%= 1.day.ago %>

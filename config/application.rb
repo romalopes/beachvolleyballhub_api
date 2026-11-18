@@ -11,6 +11,7 @@ require_relative "../lib/brevo_delivery"
 require_relative "../lib/resend_delivery"
 require_relative "../lib/mail_transport"
 require_relative "../lib/mail_sender"
+require_relative "../lib/contact_recipients"
 
 module BeachvolleyballhubApi
   class Application < Rails::Application

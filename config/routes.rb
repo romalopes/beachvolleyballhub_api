@@ -98,6 +98,15 @@ Rails.application.routes.draw do
       # coordinates so the weather forecast can follow the searched place)
       get "geocode", to: "geocoding#show"
 
+      # Public contact form (IDENTITY-259). `create` is anonymous; `options`
+      # publishes the supported categories. The inbox that can read a message
+      # body lives in the `admin` namespace below — never here.
+      resources :contact_messages, only: [ :create ] do
+        collection do
+          get :options
+        end
+      end
+
       # Health diagnostics send-test-email tool (Issue 226): read-only config
       # plus a manual, admin-only POST that delivers a one-off message whose
       # subject/body embed the effectively used transport.
@@ -434,6 +443,15 @@ Rails.application.routes.draw do
 
         # Admin audit logs (read-only)
         resources :logs, only: [ :index, :show ]
+
+        # Internal contact-message inbox (IDENTITY-259). Authorised by
+        # ContactMessagePolicy — the platform-wide `admin` and `curator` roles,
+        # not the admin-area gate, because Curators manage support enquiries.
+        resources :contact_messages, only: [ :index, :show, :update ] do
+          collection do
+            get :unread_count
+          end
+        end
 
         # Admin "Act as User" impersonation
         resource :impersonations, only: %i[create destroy], controller: "impersonations"

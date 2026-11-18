@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -471,6 +471,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_000004) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_contact_details_on_account_id", unique: true
+  end
+
+  create_table "contact_messages", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "email", null: false
+    t.string "contact_type", null: false
+    t.string "subject", null: false
+    t.text "message", null: false
+    t.string "status", default: "unread", null: false
+    t.datetime "read_at"
+    t.datetime "archived_at"
+    t.datetime "emailed_at"
+    t.datetime "notified_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_type"], name: "index_contact_messages_on_contact_type"
+    t.index ["created_at"], name: "index_contact_messages_on_created_at"
+    t.index ["status", "archived_at"], name: "index_contact_messages_on_status_and_archived_at"
+    t.index ["status", "created_at"], name: "index_contact_messages_on_status_and_created_at"
+    t.check_constraint "status::text = ANY (ARRAY['unread'::character varying, 'read'::character varying, 'archived'::character varying]::text[])", name: "contact_messages_status"
   end
 
   create_table "courts", force: :cascade do |t|

@@ -33,6 +33,27 @@ module Notifications
       end
     end
 
+    # A public contact enquiry (IDENTITY-259) is platform-level support work, so
+    # its recipients are the platform Admins and Curators — never every coach and
+    # never organisation members. `event_key` is derived from the message id, so
+    # a retried delivery job cannot notify the same person twice.
+    #
+    # The caller (ContactMessageDeliveryJob) resolves the recipients, because
+    # "who is platform staff" is a query about Users; this rule only describes
+    # the event.
+    def contact_message_received(message, recipients:)
+      Notifications::Publisher.publish(
+        recipients: recipients,
+        event_type: "contact.message.received",
+        event_key: "contact_message:#{message.id}:received",
+        title: "New contact message",
+        message: "#{message.name} sent a #{message.contact_type_label.downcase}: #{message.subject}",
+        notifiable: message,
+        target_path: "/settings/contact-messages/#{message.id}",
+        target_label: message.subject
+      )
+    end
+
     # A pending self-service join request is routed to the people who can approve
     # it (an organisation's active owner/administrators, a group's owner).
     def membership_requested(container, membership, actor:)

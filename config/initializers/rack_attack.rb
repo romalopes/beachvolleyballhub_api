@@ -58,6 +58,32 @@ Rack::Attack.throttle('billing session creation', limit: 10, period: 1.minute) d
   req.env['HTTP_AUTHORIZATION'].presence || req.ip
 end
 
+# Public contact form (IDENTITY-259).
+#
+# A layered defence, not a single gate: Rack::Attack bounds the volume, Cloudflare
+# Turnstile proves the client is human, and the honeypot catches naive bots.
+#
+# Limits are deliberately low because the endpoint is anonymous, and configurable
+# because a shared club/venue NAT is a legitimate client. `req.ip` is only the
+# forwarded address when the trusted-proxy configuration resolves it — see
+# config/environments/production.rb.
+CONTACT_FORM_PATH = '/api/v1/contact_messages'
+
+CONTACT_BURST_LIMIT = Integer(ENV.fetch('CONTACT_RATE_LIMIT_PER_10_MINUTES', '5'))
+CONTACT_DAILY_LIMIT = Integer(ENV.fetch('CONTACT_RATE_LIMIT_PER_DAY', '20'))
+
+Rack::Attack.throttle('contact form per 10 minutes', limit: CONTACT_BURST_LIMIT, period: 10.minutes) do |req|
+  next unless req.post? && req.path == CONTACT_FORM_PATH
+
+  req.ip
+end
+
+Rack::Attack.throttle('contact form per day', limit: CONTACT_DAILY_LIMIT, period: 1.day) do |req|
+  next unless req.post? && req.path == CONTACT_FORM_PATH
+
+  req.ip
+end
+
 # Whitelist specific IPs (e.g., internal services, CI/CD)
 # Note: 'whitelist' is deprecated in Rack::Attack 6.x; using conditional skip instead
 # or see https://github.com/rack/rack-attack/blob/master/lib/rack/attack/utils.rb

@@ -1,0 +1,14 @@
+New contact message
+
+<%= @contact_message.name %> <<%= @contact_message.email %>>
+
+Category: <%= @contact_message.contact_type_label %>
+Subject: <%= @contact_message.subject %>
+Received: <%= @submitted_at.in_time_zone(@time_zone).strftime("%A, %-d %B %Y at %-I:%M %p") %> (<%= @time_zone %>)
+
+<%= @contact_message.message %>
+
+Open in Contact Messages: <%= @inbox_url %>
+
+Reply to this email to answer the sender directly. Never send passwords,
+payment details, medical information or private details about minors by email.

@@ -59,6 +59,16 @@ services:
       # Turn on only after the premium operations and catalogue are approved.
       - key: BILLING_ENFORCEMENT_ENABLED
         value: "false"
+      # Public contact form (IDENTITY-259). Recipients are a comma-separated
+      # list, deliberately separate from MAIL_REPLY_TO (a Reply-To header).
+      - key: CONTACT_NOTIFICATION_EMAILS
+        sync: false
+      # Cloudflare Turnstile secret for server-side Siteverify. Production fails
+      # closed when it is missing, so the contact form rejects every submission.
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      - key: TURNSTILE_EXPECTED_HOSTNAME
+        sync: false
 
   # Solid Queue does not run in the Puma process. This continuously running
   # worker consumes every queue configured in config/queue.yml, including the
@@ -137,4 +147,9 @@ services:
         sync: false
       - key: BILLING_GRACE_PERIOD_DAYS
         value: "7"
+      # Contact-form delivery (IDENTITY-259) runs here too: the job sends the
+      # notification email and publishes the in-app notification, so the worker
+      # needs the same recipient list and mail configuration as the web service.
+      - key: CONTACT_NOTIFICATION_EMAILS
+        sync: false
 
