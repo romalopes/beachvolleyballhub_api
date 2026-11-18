@@ -37,6 +37,10 @@ services:
         value: "3"
       - key: GEOCODING_READ_TIMEOUT
         value: "5"
+      - key: WEB_CONCURRENCY
+        value: "1" # keep at 2 — 10 workers OOM a starter instance
+      - key: SOLID_QUEUE_IN_PUMA
+        value: "true"
       # Subscription billing (IDENTITY-116). Secrets and Price IDs are set in the
       # Render dashboard (sync: false) and never committed. APP_FRONTEND_URL falls
       # back to FRONTEND_URL when omitted.
@@ -152,4 +156,3 @@ services:
       # needs the same recipient list and mail configuration as the web service.
       - key: CONTACT_NOTIFICATION_EMAILS
         sync: false
-
