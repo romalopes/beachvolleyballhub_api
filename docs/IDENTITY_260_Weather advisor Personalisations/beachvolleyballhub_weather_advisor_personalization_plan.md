@@ -2,13 +2,97 @@
 
 ## Implementation Plan: Configurable Weather Conditions, Tolerances, and Wind Direction
 
-**Status:** Proposed implementation plan\
+**Status:** IMPLEMENTED (2026-11-19) - see completion note below\
 **Scope:** Rails API + React/Vite frontend\
 **Primary backend area:** `Weather::VolleyballAdvisor` (`advisor.rb`)\
 **Project:** BeachVolleyballHub\
 **Implementation principle:** Preserve the existing Weather Advisor
 behavior and weight configuration, then add user-configurable condition
 thresholds and optional wind-direction penalties.
+
+---
+
+## Implementation completion note (2026-11-19)
+
+All phases were implemented and verified. Phase reports live alongside this
+file as `phase-0-audit.md` through `phase-10-rollout-and-deployment.md`.
+
+### Bugs found and fixed during final verification
+
+1. **Strong parameters silently dropped nested objects.** The first
+   controller implementation used `permit(:conditions, :wind_direction_preferences)`.
+   Rails treats plain symbols as scalar permits and filters out nested
+   hashes, so the API returned `200 OK` (weights saved) while logging
+   `Unpermitted parameters: :conditions, :wind_direction_preferences` and
+   discarding both objects. Fixed with the open-hash form:
+
+   ```ruby
+   params.require(:weather_advisor_preference).permit(
+     *WeatherAdvisorPreference::WEIGHT_ATTRIBUTES,
+     conditions: {},
+     wind_direction_preferences: {}
+   )
+   ```
+
+   Regression test: `update persists nested conditions and wind direction
+   preferences` asserts every nested value reaches the database.
+
+2. **Validation crash on non-numeric condition values.** The temperature
+   ordering comparison ran even when a condition value was a non-numeric
+   string, raising `ArgumentError: comparison of String with 40.0 failed`
+   instead of returning a validation error. Fixed by collecting type errors
+   first and running ordering comparisons only when every value is numeric.
+   Regression test: `update rejects invalid nested condition values`.
+
+### Final test status
+
+- Backend weather suite: 39 runs, 149 assertions, 0 failures, 0 errors
+- Frontend weather components: 22 tests passing
+- Frontend build: `tsc -b && vite build` clean
+
+
+
+---
+
+## Implementation completion note (2026-11-19)
+
+All phases were implemented and verified. Phase reports live alongside this
+file as `phase-0-audit.md` through `phase-10-rollout-and-deployment.md`.
+
+### Bugs found and fixed during final verification
+
+1. **Strong parameters silently dropped nested objects.** The first
+   controller implementation used `permit(:conditions, :wind_direction_preferences)`.
+   Rails treats plain symbols as scalar permits and filters out nested
+   hashes, so the API returned `200 OK` (weights saved) while logging
+   `Unpermitted parameters: :conditions, :wind_direction_preferences` and
+   discarding both objects. Fixed with the open-hash form:
+
+   ```ruby
+   params.require(:weather_advisor_preference).permit(
+     *WeatherAdvisorPreference::WEIGHT_ATTRIBUTES,
+     conditions: {},
+     wind_direction_preferences: {}
+   )
+   ```
+
+   Regression test: `update persists nested conditions and wind direction
+   preferences` asserts every nested value reaches the database.
+
+2. **Validation crash on non-numeric condition values.** The temperature
+   ordering comparison ran even when a condition value was a non-numeric
+   string, raising `ArgumentError: comparison of String with 40.0 failed`
+   instead of returning a validation error. Fixed by collecting type errors
+   first and running ordering comparisons only when every value is numeric.
+   Regression test: `update rejects invalid nested condition values`.
+
+### Final test status
+
+- Backend weather suite: 39 runs, 149 assertions, 0 failures, 0 errors
+- Frontend weather components: 22 tests passing
+- Frontend build: `tsc -b && vite build` clean
+
+
 
 ------------------------------------------------------------------------
 

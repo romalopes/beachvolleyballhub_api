@@ -19,6 +19,7 @@ class Account < ApplicationRecord
   has_many :notifications, dependent: :destroy
   has_one :notification_preference, dependent: :destroy
   has_one :weather_advisor_preference, dependent: :destroy
+  has_many :weather_advisor_location_preferences, dependent: :destroy
 
   # Billing (IDENTITY-116). A personal Account is the billable owner of Player and
   # Coach subscriptions. Billing records are deliberately *not* cascaded from the

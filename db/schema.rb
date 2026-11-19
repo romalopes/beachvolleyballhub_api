@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_19_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1398,6 +1398,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_000001) do
     t.index ["visibility"], name: "index_videos_on_visibility"
   end
 
+  create_table "weather_advisor_location_preferences", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "location_id", null: false
+    t.jsonb "wind_direction_preferences", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "location_id"], name: "index_weather_advisor_location_preferences_unique", unique: true
+    t.index ["account_id"], name: "index_weather_advisor_location_preferences_on_account_id"
+    t.index ["location_id"], name: "index_weather_advisor_location_preferences_on_location_id"
+  end
+
   create_table "weather_advisor_preferences", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.integer "wind_weight", default: 40, null: false
@@ -1407,6 +1418,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_000001) do
     t.integer "humidity_weight", default: 10, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "conditions", default: {}, null: false
+    t.jsonb "wind_direction_preferences", default: {}, null: false
     t.index ["account_id"], name: "index_weather_advisor_preferences_on_account_id", unique: true
     t.check_constraint "(wind_weight + temperature_weight + rain_weight + uv_weight + humidity_weight) = 100", name: "weather_advisor_preferences_weights_total"
     t.check_constraint "humidity_weight >= 0 AND humidity_weight <= 100", name: "weather_advisor_preferences_humidity_weight_range"
@@ -1598,6 +1611,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_000001) do
   add_foreign_key "video_taggings", "videos"
   add_foreign_key "videos", "users", column: "created_by_id"
   add_foreign_key "videos", "video_categories", on_delete: :nullify
+  add_foreign_key "weather_advisor_location_preferences", "accounts"
+  add_foreign_key "weather_advisor_location_preferences", "locations"
   add_foreign_key "weather_advisor_preferences", "accounts"
   add_foreign_key "weather_share_snapshots", "accounts"
   add_foreign_key "weather_share_snapshots", "active_storage_blobs", column: "image_blob_id"

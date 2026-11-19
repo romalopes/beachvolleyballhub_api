@@ -26,6 +26,7 @@ class Location < ApplicationRecord
   has_many :training_templates, foreign_key: :location_id, dependent: :restrict_with_error,
              inverse_of: :canonical_location
   has_many :tournaments, dependent: :restrict_with_error
+  has_many :weather_advisor_location_preferences, dependent: :destroy
 
   accepts_nested_attributes_for :aliases, allow_destroy: true
 

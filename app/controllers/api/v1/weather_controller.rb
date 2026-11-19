@@ -23,12 +23,15 @@ module Api
 
       # Each forecast hour gets its own advisor assessment so the UI can show
       # the suitability for any time in the three-day forecast window. The
-      # signed-in account's weights apply here exactly as they do to `current`.
+      # signed-in account's preferences apply here exactly as they do to `current`.
       def hourly_with_assessments(forecast)
         hourly = forecast[:hourly] || forecast["hourly"]
         return [] unless hourly.is_a?(Array)
 
-        weights = current_preference&.weights
+        pref = current_preference
+        weights = pref&.weights
+        conditions = pref&.effective_conditions
+        general_directions = pref&.effective_wind_direction_preferences
         hourly.filter_map do |hour|
           next unless hour.is_a?(Hash)
 
@@ -36,19 +39,24 @@ module Api
             volleyball: Weather::VolleyballAdvisor.assess(
               current: hour,
               rain_chance_percent: hour[:rain_chance_percent] || hour["rain_chance_percent"],
-              weights: weights
+              weights: weights,
+              conditions: conditions,
+              wind_direction_preferences: general_directions
             )
           )
         end
       end
 
       def personalized_assessment(forecast)
+        pref = current_preference
         Weather::VolleyballAdvisor.assess(
           current: forecast[:current] || forecast["current"],
           rain_chance_percent: Array(forecast[:forecast] || forecast["forecast"]).first&.then do |day|
             day[:rain_chance_percent] || day["rain_chance_percent"]
           end,
-          weights: current_preference&.weights
+          weights: pref&.weights,
+          conditions: pref&.effective_conditions,
+          wind_direction_preferences: pref&.effective_wind_direction_preferences
         )
       end
 
