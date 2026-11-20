@@ -37,6 +37,10 @@ services:
         value: "3"
       - key: GEOCODING_READ_TIMEOUT
         value: "5"
+      # Weather API key for WeatherAPI.com (free tier) - required for /api/v1/weather
+      # Set the actual key in Render dashboard (sync: false)
+      - key: WEATHERAPI_API_KEY
+        sync: false
       - key: WEB_CONCURRENCY
         value: "1" # keep at 2 — 10 workers OOM a starter instance
       - key: SOLID_QUEUE_IN_PUMA
@@ -139,6 +143,10 @@ services:
         value: "3"
       - key: GEOCODING_READ_TIMEOUT
         value: "5"
+      # Weather API key for WeatherAPI.com (free tier) - required for /api/v1/weather
+      # Set the actual key in Render dashboard (sync: false)
+      - key: WEATHERAPI_API_KEY
+        sync: false
       # Billing reconciliation (IDENTITY-116) runs from this worker and calls
       # Stripe, so it needs the secret key and the Price mapping.
       - key: STRIPE_SECRET_KEY
