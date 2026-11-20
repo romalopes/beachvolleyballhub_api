@@ -7,6 +7,8 @@ module Api
       rate_limit to: 10, within: 15.minutes, only: :create
 
       def create
+        return unless verify_turnstile(action: "login")
+
         if (user = User.authenticate_by(params.permit(:email_address, :password)))
           # Block login when email verification is required but pending.
           if user.email_verification_pending?
@@ -52,6 +54,32 @@ module Api
 
       def user_payload(user)
         { id: user.id, name: user.name, email_address: user.email_address, roles: user.roles.pluck(:name) }
+      end
+
+      # Verifies the Turnstile token for the login form.
+      # Returns true if verification passes, false if it fails (and renders error).
+      def verify_turnstile(action:)
+        result = TurnstileVerifier.verify(
+          token: params[:turnstile_token],
+          remote_ip: request.remote_ip,
+          expected_action: action
+        )
+
+        if result.invalid?
+          render json: {
+            errors: [ "We could not verify this submission. Please reload the page and try again." ]
+          }, status: :unprocessable_entity
+          return false
+        end
+
+        if result.unavailable?
+          render json: {
+            error: "The login form is temporarily unavailable. Please try again shortly."
+          }, status: :service_unavailable
+          return false
+        end
+
+        true
       end
 
       def log_auth(description, user)

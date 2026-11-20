@@ -1,5 +1,5 @@
 # Server-side Cloudflare Turnstile verification for the public contact form
-# (IDENTITY-259).
+# (IDENTITY-259) and authentication forms (signup, login, forgot password).
 #
 # The widget's client-side "success" callback is never trusted: the SPA forwards
 # the token it received, and this service verifies it against Cloudflare's
@@ -17,9 +17,8 @@
 # request/response contract is unit-testable without network access.
 class TurnstileVerifier
   VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
-  # The SPA renders the widget with this action; Cloudflare echoes it back so a
-  # token minted for a different form cannot be replayed here.
-  EXPECTED_ACTION = "contact"
+  # Default action for the contact form; callers can override per-form.
+  DEFAULT_ACTION = "contact"
   OPEN_TIMEOUT = 5
   READ_TIMEOUT = 5
 
@@ -33,7 +32,7 @@ class TurnstileVerifier
 
   def self.verify(token:, remote_ip: nil, secret: ENV["TURNSTILE_SECRET_KEY"],
                   expected_hostname: ENV["TURNSTILE_EXPECTED_HOSTNAME"].presence,
-                  expected_action: EXPECTED_ACTION,
+                  expected_action: DEFAULT_ACTION,
                   http_class: Net::HTTP,
                   production: Rails.env.production?)
     new(token: token, remote_ip: remote_ip, secret: secret,
@@ -65,7 +64,7 @@ class TurnstileVerifier
     Result.new(status: :valid, errors: [])
   rescue StandardError => e
     # Provider outages and timeouts must not be treated as success.
-    Rails.logger.error("[contact] turnstile verification error: #{e.class}: #{e.message}")
+    Rails.logger.error("[turnstile] verification error: #{e.class}: #{e.message}")
     Result.new(status: :unavailable, errors: [ "verification unavailable" ])
   end
 
@@ -123,7 +122,7 @@ class TurnstileVerifier
   end
 
   def fail_closed(reason)
-    Rails.logger.error("[contact] turnstile unavailable: #{reason}")
+    Rails.logger.error("[turnstile] unavailable: #{reason}")
     Result.new(status: :unavailable, errors: [ "verification unavailable" ])
   end
 

@@ -6,6 +6,8 @@ module Api
       rate_limit to: 10, within: 1.hour, only: :create
 
       def create
+        return unless verify_turnstile(action: "signup")
+
         unless contact_name_present?
           return render json: { errors: [ "First name and last name are required." ] }, status: :unprocessable_entity
         end
@@ -72,7 +74,7 @@ module Api
       end
 
       def registration_params
-        params.require(:user).permit(:first_name, :last_name, :email_address, :password, :password_confirmation)
+        params.require(:user).permit(:first_name, :last_name, :email_address, :password, :password_confirmation, :turnstile_token)
       end
 
       def user_params
@@ -81,6 +83,32 @@ module Api
 
       def contact_name_present?
         registration_params[:first_name].to_s.strip.present? && registration_params[:last_name].to_s.strip.present?
+      end
+
+      # Verifies the Turnstile token for the signup form.
+      # Returns true if verification passes, false if it fails (and renders error).
+      def verify_turnstile(action:)
+        result = TurnstileVerifier.verify(
+          token: params.dig(:user, :turnstile_token),
+          remote_ip: request.remote_ip,
+          expected_action: action
+        )
+
+        if result.invalid?
+          render json: {
+            errors: [ "We could not verify this submission. Please reload the page and try again." ]
+          }, status: :unprocessable_entity
+          return false
+        end
+
+        if result.unavailable?
+          render json: {
+            error: "The signup form is temporarily unavailable. Please try again shortly."
+          }, status: :service_unavailable
+          return false
+        end
+
+        true
       end
     end
   end
