@@ -989,7 +989,7 @@ module Api
       def organisation_params
         params.require(:organisation).permit(
           :name, :slug, :description, :acronym, :organisation_type, :status, :parent_organisation_id,
-          :default_location_id,
+          :default_location_id, :website,
           # The join policy: who a self-service `join` writes for this club. Editing
           # it rides the same gate as editing the record — the club's own officers —
           # rather than admin-only, because "how people join us" is the club's business.

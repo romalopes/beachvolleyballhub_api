@@ -104,6 +104,18 @@ class Organisation < ApplicationRecord
   # upcased, trimmed, and empty rather than a blank string. "FIVB" and "fivb"
   # are the same short form, and a blank one must read as absent.
   normalizes :acronym, with: ->(value) { value.strip.upcase.presence }
+  # People paste "www.fivb.com", but a scheme-less URL in an anchor's href is a
+  # *relative* path to the browser — it would resolve under the current route
+  # (/organisations/www.fivb.com) instead of leaving the app. Store an absolute
+  # URL so the API and every client receive a value that links correctly, while
+  # preserving an explicit scheme (and mailto:/tel:) if one was given.
+  normalizes :website, with: ->(value) {
+    url = value.to_s.strip
+    next nil if url.empty?
+    next url if url.match?(%r{\A[a-z][a-z0-9+.\-]*://}i) || url.start_with?("mailto:", "tel:")
+
+    "https://#{url}"
+  }
 
   validates :name, presence: true,
                    length: { maximum: NAME_MAX_LENGTH },
@@ -396,6 +408,7 @@ class Organisation < ApplicationRecord
       slug: slug,
       description: description,
       acronym: acronym,
+      website: website,
       organisation_type: organisation_type,
       status: status,
       status_label: status_label,

@@ -9,6 +9,8 @@
 # Prices are annual, in cents, AUD. Stripe Price IDs are deliberately not seeded:
 # they are environment configuration (STRIPE_<SLUG>_YEARLY_PRICE_ID), so a test
 # deployment and a live deployment can point at different Stripe accounts.
+# Run with:
+#   bin/rails runner db/seeds/subscriptions.rb
 
 plans = [
   { slug: "free",   name: "FREE",   yearly_price_cents: 0,    is_default: true,  owner_scope: "both",         position: 0, popular: false },

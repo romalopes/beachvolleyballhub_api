@@ -398,4 +398,7 @@ puts "Seeded #{VideoTag.count} video tags"
 # file for the rules on what a reseed will and will not overwrite.
 load Rails.root.join("db/seeds/subscriptions.rb")
 
+# Australian beach volleyball organisations and their beach locations.
+load Rails.root.join("db/seeds/australian_organisations.rb")
+
 puts "Seeding complete"
