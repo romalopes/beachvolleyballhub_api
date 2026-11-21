@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_21_120232) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -32,11 +32,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "token_digest", null: false
     t.string "invitee_email"
     t.string "status", default: "active", null: false
-    t.datetime "expires_at", null: false
-    t.datetime "emailed_at"
-    t.datetime "used_at"
-    t.datetime "revoked_at"
-    t.datetime "declined_at"
+    t.timestamptz "expires_at", null: false
+    t.timestamptz "emailed_at"
+    t.timestamptz "used_at"
+    t.timestamptz "revoked_at"
+    t.timestamptz "declined_at"
     t.bigint "used_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -52,6 +52,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_accounts_on_user_id", unique: true
+    t.index ["user_id"], name: "index_accounts_on_user_id_unique", unique: true
   end
 
   create_table "active_storage_attachments", force: :cascade do |t|
@@ -107,8 +108,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.bigint "group_id"
     t.bigint "training_session_id"
     t.bigint "tournament_id"
-    t.datetime "published_at"
-    t.datetime "archived_at"
+    t.timestamptz "published_at"
+    t.timestamptz "archived_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["assigned_coach_profile_id"], name: "index_analyses_on_assigned_coach_profile_id"
@@ -284,7 +285,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.date "scheduled_on"
     t.string "status", default: "draft", null: false
     t.text "notes"
-    t.datetime "published_at"
+    t.timestamptz "published_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["assessment_definition_id"], name: "index_assessment_sessions_on_assessment_definition_id"
@@ -325,6 +326,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.check_constraint "assessment_definition_id IS NOT NULL OR (score IS NULL) = (reported_value IS NULL)", name: "assessments_score_pair"
     t.check_constraint "assessment_definition_id IS NOT NULL OR discipline_id IS NOT NULL AND custom_discipline IS NULL OR discipline_id IS NULL AND custom_discipline IS NOT NULL", name: "assessments_discipline_xor_custom_discipline"
     t.check_constraint "assessment_definition_id IS NULL OR discipline_id IS NULL AND custom_discipline IS NULL", name: "assessment_definition_xor_rubric"
+    t.check_constraint "reported_value IS NULL OR score IS NULL OR reported_value IS NOT NULL AND scale IS NOT NULL", name: "assessments_reported_value_requires_scale"
+    t.check_constraint "scale IS NULL OR score IS NULL OR scale IS NOT NULL AND reported_value IS NOT NULL", name: "assessments_scale_requires_reported_value"
     t.check_constraint "score IS NULL OR score >= 0 AND score <= 100", name: "assessments_score_range"
     t.check_constraint "status::text = 'draft'::text OR score IS NOT NULL AND (assessment_definition_id IS NOT NULL OR reported_value IS NOT NULL)", name: "assessments_published_requires_score"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'active'::character varying::text, 'withdrawn'::character varying::text])", name: "assessments_status"
@@ -338,8 +341,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "stripe_customer_id"
     t.string "status", default: "open", null: false
     t.text "url"
-    t.datetime "expires_at"
-    t.datetime "completed_at"
+    t.timestamptz "expires_at"
+    t.timestamptz "completed_at"
     t.jsonb "metadata", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -369,9 +372,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "status", default: "received", null: false
     t.integer "attempts", default: 0, null: false
     t.text "error_message"
-    t.datetime "stripe_created_at"
-    t.datetime "received_at"
-    t.datetime "processed_at"
+    t.timestamptz "stripe_created_at"
+    t.timestamptz "received_at"
+    t.timestamptz "processed_at"
     t.jsonb "payload", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -389,17 +392,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "stripe_customer_id"
     t.string "stripe_subscription_id"
     t.string "stripe_price_id"
-    t.datetime "current_period_start"
-    t.datetime "current_period_end"
+    t.timestamptz "current_period_start"
+    t.timestamptz "current_period_end"
     t.boolean "cancel_at_period_end", default: false, null: false
-    t.datetime "canceled_at"
-    t.datetime "ended_at"
-    t.datetime "trial_ends_at"
-    t.datetime "grace_period_ends_at"
+    t.timestamptz "canceled_at"
+    t.timestamptz "ended_at"
+    t.timestamptz "trial_ends_at"
+    t.timestamptz "grace_period_ends_at"
     t.bigint "pending_subscription_id"
-    t.datetime "pending_change_requested_at"
-    t.datetime "pending_change_effective_at"
-    t.datetime "last_synced_at"
+    t.timestamptz "pending_change_requested_at"
+    t.timestamptz "pending_change_effective_at"
+    t.timestamptz "last_synced_at"
     t.jsonb "metadata", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -418,15 +421,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.bigint "invited_by_id", null: false
     t.bigint "used_by_id"
     t.string "invitee_email"
-    t.datetime "emailed_at"
+    t.timestamptz "emailed_at"
     t.string "token_digest", null: false
     t.string "status", default: "active", null: false
-    t.datetime "expires_at", null: false
-    t.datetime "used_at"
-    t.datetime "revoked_at"
+    t.timestamptz "expires_at", null: false
+    t.timestamptz "used_at"
+    t.timestamptz "revoked_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.datetime "declined_at"
+    t.timestamptz "declined_at"
     t.index ["claimable_type", "claimable_id"], name: "index_claim_invitations_on_claimable"
     t.index ["claimable_type", "claimable_id"], name: "index_claim_invitations_one_active_per_subject", unique: true, where: "((status)::text = 'active'::text)"
     t.index ["invited_by_id"], name: "index_claim_invitations_on_invited_by_id"
@@ -443,11 +446,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.datetime "updated_at", null: false
     t.string "visibility", default: "shared", null: false
     t.bigint "created_by_id"
-    t.string "display_name"
+    t.string "display_name", null: false
     t.bigint "created_by_account_id"
-    t.datetime "archived_at"
+    t.timestamptz "archived_at"
     t.bigint "merged_into_profile_id"
-    t.datetime "merged_at"
+    t.timestamptz "merged_at"
     t.bigint "merged_by_account_id"
     t.bigint "account_id"
     t.string "email"
@@ -459,6 +462,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.index ["status"], name: "index_coach_profiles_on_status"
     t.index ["visibility"], name: "index_coach_profiles_on_visibility"
     t.check_constraint "merged_at IS NULL OR merged_into_profile_id IS NOT NULL AND archived_at IS NOT NULL", name: "coach_profiles_merge_state_consistent"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying]::text[])", name: "coach_profiles_status"
+    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying, 'private'::character varying]::text[])", name: "coach_profiles_visibility"
   end
 
   create_table "contact_details", force: :cascade do |t|
@@ -480,10 +485,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "subject", null: false
     t.text "message", null: false
     t.string "status", default: "unread", null: false
-    t.datetime "read_at"
-    t.datetime "archived_at"
-    t.datetime "emailed_at"
-    t.datetime "notified_at"
+    t.timestamptz "read_at"
+    t.timestamptz "archived_at"
+    t.timestamptz "emailed_at"
+    t.timestamptz "notified_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["contact_type"], name: "index_contact_messages_on_contact_type"
@@ -567,8 +572,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.jsonb "definition", default: {}, null: false
     t.string "visibility", default: "shared", null: false
     t.string "status", default: "draft", null: false
-    t.datetime "published_at"
-    t.datetime "approved_at"
+    t.timestamptz "published_at"
+    t.timestamptz "approved_at"
     t.bigint "approved_by_id"
     t.index ["created_by_id"], name: "index_drills_on_created_by_id"
     t.index ["slug"], name: "index_drills_on_slug", unique: true
@@ -587,8 +592,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.datetime "updated_at", null: false
     t.string "role", default: "member", null: false
     t.string "status", default: "active", null: false
-    t.datetime "joined_at"
-    t.datetime "left_at"
+    t.timestamptz "joined_at"
+    t.timestamptz "left_at"
     t.bigint "account_id"
     t.string "memberable_type", null: false
     t.bigint "memberable_id", null: false
@@ -658,8 +663,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "coordinate_source"
     t.bigint "proposed_by_account_id"
     t.bigint "verified_by_account_id"
-    t.datetime "verified_at"
-    t.datetime "archived_at"
+    t.timestamptz "verified_at"
+    t.timestamptz "archived_at"
     t.bigint "merged_into_id"
     t.text "internal_notes"
     t.datetime "created_at", null: false
@@ -734,9 +739,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "target_path"
     t.string "target_label"
     t.jsonb "metadata", default: {}, null: false
-    t.datetime "read_at"
-    t.datetime "emailed_at"
-    t.datetime "email_failed_at"
+    t.timestamptz "read_at"
+    t.timestamptz "emailed_at"
+    t.timestamptz "email_failed_at"
     t.text "email_error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -763,8 +768,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.bigint "organisation_id", null: false
     t.string "role", default: "member", null: false
     t.string "status", default: "pending", null: false
-    t.datetime "joined_at"
-    t.datetime "left_at"
+    t.timestamptz "joined_at"
+    t.timestamptz "left_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "account_id"
@@ -811,7 +816,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
   create_table "player_claims", force: :cascade do |t|
     t.bigint "player_profile_id"
     t.string "status", default: "pending", null: false
-    t.datetime "reviewed_at"
+    t.timestamptz "reviewed_at"
     t.text "rejection_reason"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -856,11 +861,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.datetime "updated_at", null: false
     t.string "visibility", default: "shared", null: false
     t.bigint "created_by_id"
-    t.string "display_name"
+    t.string "display_name", null: false
     t.bigint "created_by_account_id"
-    t.datetime "archived_at"
+    t.timestamptz "archived_at"
     t.bigint "merged_into_profile_id"
-    t.datetime "merged_at"
+    t.timestamptz "merged_at"
     t.bigint "merged_by_account_id"
     t.bigint "account_id"
     t.string "email"
@@ -872,6 +877,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.index ["status"], name: "index_player_profiles_on_status"
     t.index ["visibility"], name: "index_player_profiles_on_visibility"
     t.check_constraint "merged_at IS NULL OR merged_into_profile_id IS NOT NULL AND archived_at IS NOT NULL", name: "player_profiles_merge_state_consistent"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying]::text[])", name: "player_profiles_status"
+    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying, 'private'::character varying]::text[])", name: "player_profiles_visibility"
   end
 
   create_table "profile_merges", force: :cascade do |t|
@@ -925,8 +932,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.datetime "updated_at", null: false
     t.jsonb "source_warnings", default: [], null: false
     t.string "status", default: "draft", null: false
-    t.datetime "published_at"
-    t.datetime "recalculated_at"
+    t.timestamptz "published_at"
+    t.timestamptz "recalculated_at"
     t.bigint "recalculated_by_id"
     t.index ["assessment_definition_id"], name: "index_ranking_consolidations_on_assessment_definition_id"
     t.index ["created_by_id"], name: "index_ranking_consolidations_on_created_by_id"
@@ -950,7 +957,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "api_token"
-    t.datetime "api_token_expires_at"
+    t.timestamptz "api_token_expires_at"
     t.bigint "impersonated_user_id"
     t.index ["api_token"], name: "index_sessions_on_api_token", unique: true
     t.index ["impersonated_user_id"], name: "index_sessions_on_impersonated_user_id"
@@ -967,7 +974,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "slug"
     t.string "visibility", default: "shared", null: false
     t.string "status", default: "published", null: false
-    t.datetime "published_at"
+    t.timestamptz "published_at"
     t.index ["created_by_id"], name: "index_skills_on_created_by_id"
     t.index ["discipline_id"], name: "index_skills_on_discipline_id"
     t.index ["slug"], name: "index_skills_on_slug", unique: true
@@ -996,9 +1003,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "source", null: false
     t.string "stripe_subscription_id"
     t.string "stripe_price_id"
-    t.datetime "started_at"
-    t.datetime "ended_at"
-    t.datetime "canceled_at"
+    t.timestamptz "started_at"
+    t.timestamptz "ended_at"
+    t.timestamptz "canceled_at"
     t.jsonb "metadata", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -1039,6 +1046,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.index ["active", "visible", "position"], name: "index_subscriptions_on_active_and_visible_and_position"
     t.index ["is_default"], name: "index_subscriptions_single_default", unique: true, where: "is_default"
     t.index ["slug"], name: "index_subscriptions_on_slug", unique: true
+    t.check_constraint "NOT is_default OR yearly_price_cents = 0", name: "subscriptions_default_is_free"
     t.check_constraint "char_length(currency::text) = 3", name: "subscriptions_currency_iso4217"
     t.check_constraint "history_limit IS NULL OR history_limit >= 0", name: "subscriptions_history_limit_non_negative"
     t.check_constraint "included_users IS NULL OR included_users >= 0", name: "subscriptions_included_users_non_negative"
@@ -1103,7 +1111,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "url", null: false
     t.string "provider"
     t.text "description"
-    t.datetime "starts_at"
+    t.timestamptz "starts_at"
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -1117,8 +1125,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.bigint "organisation_id", null: false
     t.string "scope", null: false
     t.string "division_scheme", null: false
-    t.datetime "starts_at", null: false
-    t.datetime "ends_at", null: false
+    t.timestamptz "starts_at", null: false
+    t.timestamptz "ends_at", null: false
     t.string "timezone", null: false
     t.boolean "all_day", default: false, null: false
     t.text "description"
@@ -1174,8 +1182,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "status", default: "active", null: false
     t.date "generated_through"
     t.jsonb "defaults_snapshot", default: {}, null: false
-    t.datetime "last_generated_at"
-    t.datetime "stopped_at"
+    t.timestamptz "last_generated_at"
+    t.timestamptz "stopped_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "stopped_reason"
@@ -1217,7 +1225,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.datetime "cancellation_notified_at"
+    t.timestamptz "cancellation_notified_at"
     t.index ["player_profile_id"], name: "index_training_session_participants_on_player_profile_id"
     t.index ["status"], name: "index_training_session_participants_on_status"
     t.index ["training_session_id", "player_profile_id"], name: "index_training_session_participants_on_session_and_player", unique: true
@@ -1231,8 +1239,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.bigint "created_by_id"
     t.string "title", null: false
     t.text "description"
-    t.datetime "starts_at", null: false
-    t.datetime "ends_at", null: false
+    t.timestamptz "starts_at", null: false
+    t.timestamptz "ends_at", null: false
     t.string "status", default: "draft", null: false
     t.string "visibility", default: "shared", null: false
     t.bigint "training_series_id"
@@ -1245,10 +1253,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "level"
     t.string "location_detail"
     t.string "recurrence_key"
-    t.datetime "original_starts_at"
+    t.timestamptz "original_starts_at"
     t.jsonb "override_fields", default: {}, null: false
     t.text "cancellation_reason"
-    t.datetime "cancelled_at"
+    t.timestamptz "cancelled_at"
     t.bigint "location_id"
     t.bigint "court_id"
     t.index ["cancelled_by_id"], name: "index_training_sessions_on_cancelled_by_id"
@@ -1267,6 +1275,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.index ["visibility"], name: "index_training_sessions_on_visibility"
     t.check_constraint "capacity IS NULL OR capacity > 0", name: "training_sessions_capacity_positive"
     t.check_constraint "ends_at > starts_at", name: "training_sessions_ends_at_after_starts_at"
+    t.check_constraint "starts_at IS NULL OR ends_at IS NULL OR ends_at > starts_at", name: "training_sessions_ends_after_starts"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'scheduled'::character varying::text, 'cancelled'::character varying::text, 'completed'::character varying::text])", name: "training_sessions_status"
     t.check_constraint "training_series_id IS NULL OR recurrence_key IS NOT NULL", name: "training_sessions_series_requires_recurrence_key"
   end
@@ -1316,9 +1325,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.string "password_digest", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.datetime "email_verified_at"
+    t.timestamptz "email_verified_at"
     t.string "email_verification_token_digest"
-    t.datetime "email_verification_sent_at"
+    t.timestamptz "email_verification_sent_at"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
     t.index ["email_verification_token_digest"], name: "index_users_on_email_verification_token_digest"
   end
@@ -1335,6 +1344,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.index ["name"], name: "index_video_categories_on_name", unique: true
     t.index ["position"], name: "index_video_categories_on_position"
     t.index ["slug"], name: "index_video_categories_on_slug", unique: true
+    t.check_constraint "\"position\" >= 0", name: "video_categories_position_nonnegative"
   end
 
   create_table "video_references", force: :cascade do |t|
@@ -1374,6 +1384,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.index "lower((name)::text)", name: "index_video_tags_on_lower_name", unique: true
     t.index ["name"], name: "index_video_tags_on_name", unique: true
     t.index ["position"], name: "index_video_tags_on_position"
+    t.check_constraint "\"position\" >= 0", name: "video_tags_position_nonnegative"
   end
 
   create_table "videos", force: :cascade do |t|
@@ -1391,7 +1402,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.bigint "video_category_id"
     t.string "visibility", default: "shared", null: false
     t.string "status", default: "published", null: false
-    t.datetime "published_at"
+    t.timestamptz "published_at"
     t.index ["created_by_id"], name: "index_videos_on_created_by_id"
     t.index ["provider", "provider_video_id"], name: "index_videos_on_provider_and_provider_video_id", unique: true, where: "(provider_video_id IS NOT NULL)"
     t.index ["provider"], name: "index_videos_on_provider"
@@ -1437,7 +1448,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.decimal "latitude", precision: 10, scale: 6, null: false
     t.decimal "longitude", precision: 10, scale: 6, null: false
     t.string "location_name", null: false
-    t.datetime "forecast_target_time"
+    t.timestamptz "forecast_target_time"
     t.string "timezone"
     t.jsonb "weather_data", null: false
     t.integer "volleyball_score"
@@ -1445,8 +1456,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_000001) do
     t.jsonb "volleyball_warnings", default: []
     t.jsonb "volleyball_advice", default: []
     t.boolean "volleyball_safety_override", default: false
-    t.datetime "expires_at"
-    t.datetime "revoked_at"
+    t.timestamptz "expires_at"
+    t.timestamptz "revoked_at"
     t.string "image_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

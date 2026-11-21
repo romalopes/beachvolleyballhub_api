@@ -95,6 +95,8 @@ production:
     # hosted providers require SSL; this makes the requirement explicit in
     # Rails configuration rather than relying on provider defaults.
     sslmode: require
+    max_connections: <%= ENV.fetch("RAILS_MAX_THREADS", 3) %>
+
   cache:
     <<: *primary_production
     url: <%= ENV["DATABASE_URL"] %>
