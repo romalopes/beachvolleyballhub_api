@@ -16,7 +16,9 @@ end
 
 # Custom throttled responder (Rack::Attack 6.x: throttled_responder instead of throttled_response)
 Rack::Attack.throttled_responder = lambda do |env|
-  retry_after = (env['rack.attack.match_data']&.retry_after || 1).to_s
+  match_data = env['rack.attack.match_data'] || {}
+  now = match_data[:epoch_time] || Time.now.to_i
+  retry_after = (match_data[:period] - (now % match_data[:period])).to_s
   [
     429,
     {

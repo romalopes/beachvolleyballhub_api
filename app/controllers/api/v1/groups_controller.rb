@@ -39,7 +39,7 @@ module Api
         groups = joinable_group_scope(groups) if joinable_index?
 
         if params[:q].present?
-          term = "%#{params[:q]}%"
+          term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q].to_s)}%"
           groups = groups.where("groups.name ILIKE :t OR groups.description ILIKE :t", t: term)
         end
 

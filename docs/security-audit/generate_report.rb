@@ -275,6 +275,20 @@ CATEGORY_BLURB = {
   "Configuration / Deployment" => "CORS, TLS/cookies and feature gates that are environment dependent."
 }.freeze
 
+# Remediation status after the fix pass (2026-11-21). Keyed by finding id.
+# status: resolved | mitigated | accepted-risk
+REMEDIATION = {
+  "SEC-01" => ["resolved",   "Writes now require auth + `require_content_creator!` + `authorize drill, :update?`; anonymous writes return 401 (tests added)."],
+  "SEC-02" => ["mitigated",  "Client already degrades without the key; added `KEY_RESTRICTIONS.md` + `.env.example` hardening note. GCP restriction/rotation is an ops sign-off."],
+  "SEC-03" => ["resolved",   "Deleted the unrouted `AcceptInvitationsController`."],
+  "SEC-04" => ["resolved",   "localhost/LAN origins moved inside the `Rails.env.development?` guard (LAN via `DEV_CORS_ORIGINS`)."],
+  "SEC-05" => ["resolved",   "`force_ssl = true` unconditionally in production (+ `/up` excluded) and session cookie sets `secure: true` in production."],
+  "SEC-06" => ["mitigated",  "Bearer TTL shortened/parametrised (`API_SESSION_TTL_DAYS`, default 7) and trade-off documented; HttpOnly-cookie migration scheduled."],
+  "SEC-07" => ["resolved",   "Legacy Skills HTML index/show now use `published_and_shared` (tests added)."],
+  "SEC-08" => ["resolved",   "Groups search escapes LIKE wildcards with `sanitize_sql_like` (test added)."],
+  "SEC-09" => ["mitigated",  "Production boot warning when `TEST_ACCESS_PASSWORD` is unset."]
+}.freeze
+
 
 
 # ---------------------------------------------------------------------------
@@ -355,6 +369,21 @@ MD
 
 File.write(MD_PATH, md)
 puts "wrote #{MD_PATH} (part 1: cover + summary)"
+
+
+md << "\n## Remediation status (fix pass #{AUDIT_DATE})\n\n"
+md << "| ID | Status | Change |\n|---|---|---|\n"
+FINDINGS.each do |f|
+  status, note = REMEDIATION.fetch(f[:id], ["open", "—"])
+  badge = case status
+          when "resolved" then "✅ resolved"
+          when "mitigated" then "🟡 mitigated"
+          when "accepted-risk" then "⚪ accepted-risk"
+          else "🔴 open"
+          end
+  md << "| #{f[:id]} | #{badge} | #{note} |\n"
+end
+md << "\n"
 
 
 md << "\n## Strong points (what is protected, with evidence)\n\n"

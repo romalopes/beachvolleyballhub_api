@@ -77,6 +77,23 @@ module Api
           end
         end
 
+        # POST /api/v1/admin/users/:id/send_invitation
+        # Emails password-setup instructions to an unverified user so they can
+        # set their own password. This is the admin counterpart of the public
+        # forgot-password flow — no Turnstile gate, because the caller is an
+        # authenticated admin acting from the admin user-detail page.
+        def send_invitation
+          @user = User.find(params[:user_id])
+
+          if @user.email_verified?
+            return render json: { error: "User's email is already verified" },
+                          status: :unprocessable_entity
+          end
+
+          PasswordsMailer.reset_password_instructions(@user).deliver_later
+          head :no_content
+        end
+
         # DELETE /api/v1/admin/users/:id
         def destroy
           @user = User.find(params[:id])

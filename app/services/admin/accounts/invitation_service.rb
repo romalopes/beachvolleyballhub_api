@@ -2,83 +2,50 @@ class Admin::Accounts::InvitationService
   class Error < StandardError; end
 
   def self.call(inviter:, first_name:, last_name:, email:, send_invitation:)
-    # Run all operations in a transaction
+    return FailureResult.new(errors: [ "Email is required to send an invitation" ]) if email.blank?
+
     ActiveRecord::Base.transaction do
-      # Case 1: Create user + account + contact + invitation + send email
-      if email.present? && send_invitation
-        # Create User without password - invitee will set their own
-        user = User.create!(
-          email: email,
+      # The invitee gets a random unusable password (users.password_digest is
+      # NOT NULL); they set their own when they accept the invitation.
+      user = User.create!(
+        email_address: email,
+        password: SecureRandom.hex(32)
+      )
+
+      # ContactDetail is built (not created) so the Account association sets
+      # contact_details.account_id before the row is inserted.
+      account = Account.create!(
+        user: user,
+        contact_detail: ContactDetail.new(
           first_name: first_name,
           last_name: last_name,
-          is_verified: false,
-          password_digest: nil
+          email: email
         )
+      )
 
-        # Create Account linked to User
-        account = Account.create!(
-          user: user,
-          contact_detail: ContactDetail.create!(
-            first_name: first_name,
-            last_name: last_name,
-            email: email
-          )
-        )
-
-        # Create AccountInvitation
+      invitation = nil
+      if send_invitation
+        # The raw token only exists here — the database stores its SHA-256
+        # digest, so the raw token must be handed to the mailer directly.
+        raw_token = SecureRandom.urlsafe_base64(32)
         invitation = AccountInvitation.create!(
-          token_digest: AccountInvitation.generate_token_digest,
+          token_digest: Digest::SHA256.hexdigest(raw_token),
           invitee_email: email,
-          inviter_id: inviter.id,
+          invited_by_id: inviter.id,
           status: "active",
-          expires_at: 7.days.from_now
+          expires_at: 7.days.from_now,
+          emailed_at: Time.current
         )
 
-        # Send invitation email
-        AccountInvitationsMailer.invitation(invitation, invitation.token).deliver_later
-
-        # Return result with invitation
-        SuccessResult.new(invitation: invitation, user: user, account: account)
-      # Case 2: Create user + account + contact without invitation
-      elsif email.present? && !send_invitation
-        user = User.create!(
-          email: email,
-          first_name: first_name,
-          last_name: last_name,
-          is_verified: false,
-          password_digest: nil
-        )
-
-        account = Account.create!(
-          user: user,
-          contact_detail: ContactDetail.create!(
-            first_name: first_name,
-            last_name: last_name,
-            email: email
-          )
-        )
-
-        SuccessResult.new(invitation: nil, user: user, account: account)
-      # Case 3: Create user + account + contact without email
-      else
-        user = User.create!(
-          first_name: first_name,
-          last_name: last_name,
-          is_verified: false,
-          password_digest: nil
-        )
-
-        account = Account.create!(
-          user: user,
-          contact_detail: ContactDetail.create!(
-            first_name: first_name,
-            last_name: last_name
-          )
-        )
-
-        SuccessResult.new(invitation: nil, user: user, account: account)
+        AccountInvitationsMailer.invitation(invitation, raw_token).deliver_later
       end
+
+      SuccessResult.new(invitation: invitation, user: user, account: account)
     end
+  rescue ActiveRecord::RecordInvalid => e
+    FailureResult.new(errors: e.record.errors.full_messages)
+  rescue StandardError => e
+    FailureResult.new(errors: [ e.message ])
   end
 
   # Result object for the service call

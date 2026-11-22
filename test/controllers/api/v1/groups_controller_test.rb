@@ -196,6 +196,20 @@ class Api::V1::GroupsControllerTest < ActionDispatch::IntegrationTest
     assert_includes names, "U19 squad"
     assert_not_includes names, "Private squad"
   end
+  test "index escapes SQL LIKE wildcards in the search query" do
+    # SEC-08: a bare "%" must be treated literally, not as a match-everything
+    # wildcard. With escaping, no fixture group contains a literal "%", so the
+    # result is empty rather than the whole catalogue.
+    sign_in_as(@admin)
+    get api_v1_groups_path, params: { q: "%" }
+    assert_response :success
+
+    names = json["data"].map { |g| g["name"] }
+    assert_not_includes names, "U19 squad"
+    assert_not_includes names, "Private squad"
+  end
+
+
 
   test "index filters by status" do
     @u19.update!(status: "archived")

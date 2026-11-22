@@ -9,18 +9,18 @@ class Admin::Accounts::InvitationsController < ApplicationController
       :first_name, :last_name, :email, :send_invitation
     )
 
-    Admin::Accounts::InvitationService.call(
+    result = Admin::Accounts::InvitationService.call(
       inviter: current_user,
       first_name: invitation_params[:first_name],
       last_name: invitation_params[:last_name],
       email: invitation_params[:email],
       send_invitation: invitation_params[:send_invitation] == "1"
-    ) do |result|
-      if result.success?
-        render json: result.invitation, status: :created
-      else
-        render json: { errors: result.errors }, status: :unprocessable_entity
-      end
+    )
+
+    if result.success?
+      render json: result.invitation&.summary, status: :created
+    else
+      render json: { errors: result.errors }, status: :unprocessable_entity
     end
   end
 

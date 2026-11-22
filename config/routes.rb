@@ -434,6 +434,12 @@ Rails.application.routes.draw do
         resources :users, only: [ :index, :show, :destroy, :create ] do
           post "roles", to: "users#add_role", as: :add_role
           delete "roles/:role", to: "users#remove_role", as: :remove_role
+          post "send_invitation", to: "users#send_invitation", as: :send_invitation
+        end
+
+        # Admin account invitations
+        resource :account, only: [] do
+          post "invitation", to: "accounts/invitations#create"
         end
 
         # Admin Settings CRUD (JSON for the React SPA)

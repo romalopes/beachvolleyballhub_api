@@ -27,8 +27,11 @@ Rails.application.configure do
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = ENV["BEHIND_HTTPS_PROXY"] == "true"
-  # Skip http-to-https redirect for the default health check endpoint.
-  config.force_ssl = ENV["BEHIND_HTTPS_PROXY"] == "true"
+  # Always enforce HTTPS in production (redirect + secure cookies + HSTS). The
+  # health-check probe is excluded so platform liveness checks over plain HTTP
+  # still succeed. See SEC-05 in docs/security-audit/audity-security-report.md.
+  config.force_ssl = true
+  config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true

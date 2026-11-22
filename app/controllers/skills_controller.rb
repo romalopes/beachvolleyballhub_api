@@ -3,14 +3,16 @@ class SkillsController < ApplicationController
 
   def index
     @disciplines = Discipline.order(:name)
-    @skills = Skill.includes(:discipline).order(:title)
+    # Public HTML view: only published, shared skills (matches SkillPolicy#show?).
+    @skills = Skill.published_and_shared.includes(:discipline).order(:title)
   end
 
   def show
-    @skill = Skill.includes(:discipline).find_by(slug: params[:id]) || Skill.includes(:discipline).find_by(id: params[:id])
+    @skill = Skill.published_and_shared.includes(:discipline).find_by(slug: params[:id]) ||
+             Skill.published_and_shared.includes(:discipline).find_by(id: params[:id])
     return render_not_found unless @skill
 
-    @related_drills = @skill.drills.includes(skills: :discipline).order(:title)
+    @related_drills = @skill.drills.published_and_shared.includes(skills: :discipline).order(:title)
   end
 
   private

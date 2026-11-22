@@ -62,7 +62,7 @@ module Authentication
     def start_new_session_for(user)
       user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip).tap do |session|
         Current.session = session
-        cookies.signed.permanent[:session_id] = { value: session.id, httponly: true, same_site: :lax }
+        cookies.signed.permanent[:session_id] = { value: session.id, httponly: true, same_site: :lax, secure: Rails.env.production? }
       end
 
       # Security notification after a successful login. Captured at
@@ -71,12 +71,17 @@ module Authentication
       LoginNotificationService.notify(user, request: request)
     end
 
+    # Default bearer-token lifetime. Shorter than the cookie session because the
+    # bearer token is held in the SPA's localStorage (SEC-06), where any future
+    # XSS could read it. Configurable via API_SESSION_TTL_DAYS.
+    API_SESSION_TTL = ENV.fetch("API_SESSION_TTL_DAYS", "7").to_i.clamp(1, 90).days
+
     def start_api_session_for(user)
       session = user.sessions.create!(
         user_agent: request.user_agent,
         ip_address: request.remote_ip,
         api_token: SecureRandom.hex(32),
-        api_token_expires_at: 30.days.from_now
+        api_token_expires_at: API_SESSION_TTL.from_now
       )
 
       # Security notification after a successful API login. Captured at
