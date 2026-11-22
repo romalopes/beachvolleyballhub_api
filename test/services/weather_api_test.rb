@@ -167,6 +167,65 @@ class WeatherApiTest < ActiveSupport::TestCase
     assert_equal "provider returned HTTP 429", error.message
   end
 
+  test "serves the stale fallback when the provider fails" do
+    cache = ActiveSupport::Cache::MemoryStore.new
+    stale = {
+      forecast: [ { date: "2026-10-27" } ],
+      hourly: [],
+      current: nil,
+      location: { latitude: 0.0, longitude: 0.0 },
+      updated_at: "2026-10-27T05:00:00Z",
+      stale: false,
+      volleyball: {},
+      attribution: { name: "WeatherAPI.com", url: "https://www.weatherapi.com/" }
+    }
+    cache.write("weather/stale/v4/0,0/days-3", stale, expires_in: 1.hour)
+
+    http = fake_http(FakeResponse.new("500", "{}"))
+
+    result = WeatherApi.fetch_forecast(0, 0, api_key: "secret", http_class: http, cache: cache)
+
+    assert_equal true, result[:stale]
+    assert_equal [ "2026-10-27" ], result[:forecast].map { |day| day[:date] }
+  end
+
+  test "writes a stale fallback copy on success" do
+    cache = ActiveSupport::Cache::MemoryStore.new
+    response = FakeResponse.new("200", JSON.generate(
+      forecast: {
+        forecastday: [
+          {
+            date: "2026-10-27",
+            day: {
+              maxtemp_c: 26,
+              mintemp_c: 16,
+              avgtemp_c: 21,
+              condition: { text: "Sunny", icon: "//cdn.weatherapi.com/icon.png" }
+            }
+          }
+        ]
+      }
+    ))
+
+    WeatherApi.fetch_forecast(-33.9, 151.2, api_key: "secret", http_class: fake_http(response), cache: cache)
+
+    assert_not_nil cache.read("weather/stale/v4/-33.9,151.2/days-3")
+  end
+
+  test "maps unexpected network failures to a ProviderError" do
+    http = Class.new do
+      define_singleton_method(:start) do |*_args, **_kwargs, &_block|
+        raise Errno::EHOSTUNREACH, "Host is unreachable"
+      end
+    end
+
+    error = assert_raises(WeatherApi::ProviderError) do
+      WeatherApi.fetch_forecast(0, 0, api_key: "secret", http_class: http, cache: nil)
+    end
+
+    assert_match(/EHOSTUNREACH/, error.message)
+  end
+
   private
 
   def forecast_hours(day)

@@ -17,6 +17,11 @@ module Api
       rescue WeatherApi::ProviderError => error
         Rails.logger.warn("WeatherAPI request failed: #{error.message}")
         render json: { error: "Weather forecast is temporarily unavailable" }, status: :bad_gateway
+      rescue StandardError => error
+        # Advisor/normalisation errors on unexpected payloads must not surface
+        # as 500s — degrade to the same "temporarily unavailable" contract.
+        Rails.logger.error("Weather forecast failed: #{error.class}: #{error.message}")
+        render json: { error: "Weather forecast is temporarily unavailable" }, status: :bad_gateway
       end
 
       private

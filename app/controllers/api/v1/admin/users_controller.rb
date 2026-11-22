@@ -90,7 +90,7 @@ module Api
                           status: :unprocessable_entity
           end
 
-          PasswordsMailer.reset_password_instructions(@user).deliver_later
+          PasswordsMailer.invitation(@user).deliver_later
           head :no_content
         end
 

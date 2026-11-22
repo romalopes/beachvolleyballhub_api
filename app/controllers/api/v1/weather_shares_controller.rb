@@ -73,6 +73,9 @@ module Api
       rescue WeatherApi::ProviderError => error
         Rails.logger.warn("WeatherAPI request failed: #{error.message}")
         render json: { error: "Weather forecast is temporarily unavailable" }, status: :bad_gateway
+      rescue StandardError => error
+        Rails.logger.error("Weather share forecast failed: #{error.class}: #{error.message}")
+        render json: { error: "Weather forecast is temporarily unavailable" }, status: :bad_gateway
       end
 
       # DELETE /api/v1/weather_shares/:public_token

@@ -1,0 +1,9 @@
+Hello <%= @user.email_address %>!
+
+You have been invited to join BVBhub — the Beach Volleyball Project. To activate your account, choose a password using the link below.
+
+<%= "#{ENV.fetch("FRONTEND_URL", "http://localhost:5174")}/reset-password?token=#{@user.password_reset_token}" %>
+
+This link will expire in <%= distance_of_time_in_words(0, @user.password_reset_token_expires_in) %>. Once you have set your password, you can sign in with your email address and the password you chose.
+
+If you weren't expecting this invitation, you can safely ignore this email — nothing will change until you use the link above.

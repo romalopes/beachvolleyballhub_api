@@ -23,6 +23,29 @@ class WeatherApi
     cached = cache&.read(cache_key)
     return cached if cached
 
+    forecast = provider_forecast(latitude, longitude, api_key: api_key, http_class: http_class)
+    ttl = ENV.fetch("WEATHER_CACHE_TTL_SECONDS", 900).to_i
+    cache&.write(cache_key, forecast, expires_in: ttl.seconds) if ttl.positive?
+    # A long-lived "stale" copy is the fallback for provider outages and
+    # rate-limit windows: better a 15-minute-old forecast than an error.
+    cache&.write(stale_key(cache_key), forecast, expires_in: stale_ttl.seconds) if stale_ttl.positive?
+    forecast
+  rescue ConfigurationError
+    raise
+  rescue StandardError => error
+    # Network failures the rescue list below cannot enumerate exhaustively
+    # (SSL errors, Errno::ETIMEDOUT, EHOSTUNREACH, EOFError, ...) previously
+    # escaped as 500s. Serve the last known forecast when we have one.
+    stale = cache&.read(stale_key(cache_key))
+    return stale.merge(stale: true) if stale
+
+    raise error if error.is_a?(ProviderError)
+    raise ProviderError, "provider request failed: #{error.class}: #{error.message}"
+  end
+
+  # Raw provider call + response normalisation. Kept separate from
+  # `fetch_forecast` so the cache/stale-fallback policy lives in one place.
+  def self.provider_forecast(latitude, longitude, api_key:, http_class:)
     uri = URI(BASE_URL)
     uri.query = URI.encode_www_form(
       key: api_key,
@@ -53,7 +76,7 @@ class WeatherApi
     daily = days.first(FORECAST_DAYS).map { |day| normalize_day(day) }
     hourly = normalize_hourly(days.first(FORECAST_DAYS), Time.now.to_i)
 
-    forecast = {
+    {
       forecast: daily,
       hourly: hourly,
       current: current,
@@ -66,14 +89,18 @@ class WeatherApi
       ),
       attribution: ATTRIBUTION
     }
-    ttl = ENV.fetch("WEATHER_CACHE_TTL_SECONDS", 900).to_i
-    cache&.write(cache_key, forecast, expires_in: ttl.seconds) if ttl.positive?
-
-    forecast
   rescue JSON::ParserError, KeyError, TypeError, ArgumentError
     raise ProviderError, "provider returned a malformed response"
   rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, Errno::ECONNRESET, Errno::ECONNREFUSED => error
     raise ProviderError, "provider request failed: #{error.class}"
+  end
+
+  def self.stale_key(cache_key)
+    cache_key.sub("weather/v4/", "weather/stale/v4/")
+  end
+
+  def self.stale_ttl
+    ENV.fetch("WEATHER_STALE_TTL_SECONDS", 86_400).to_i
   end
 
   def self.normalize_day(day)
@@ -178,5 +205,6 @@ class WeatherApi
   end
 
   private_class_method :normalize_day, :normalize_hourly, :eligible_hour?, :normalize_hour,
-    :normalize_current, :normalize_location, :normalize_icon_url
+    :normalize_current, :normalize_location, :normalize_icon_url,
+    :provider_forecast, :stale_key, :stale_ttl
 end
