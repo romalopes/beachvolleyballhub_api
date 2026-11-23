@@ -86,6 +86,20 @@ Rack::Attack.throttle('contact form per day', limit: CONTACT_DAILY_LIMIT, period
   req.ip
 end
 
+# Guest conversation replies (IDENTITY-265).
+#
+# The endpoint is anonymous (the token is the credential) and every accepted
+# message sends one email to the crew, so a script with a leaked/guessed link
+# must not be able to turn it into a mail cannon. Ten per hour is generous for a
+# real conversation and cheap to enforce.
+GUEST_ANALYSIS_MESSAGE_PATH = %r{\A/api/v1/analysis_requests/guest_access/[^/]+/messages\z}
+
+Rack::Attack.throttle('guest analysis message', limit: 10, period: 1.hour) do |req|
+  next unless req.post? && req.path.match?(GUEST_ANALYSIS_MESSAGE_PATH)
+
+  req.ip
+end
+
 # Whitelist specific IPs (e.g., internal services, CI/CD)
 # Note: 'whitelist' is deprecated in Rack::Attack 6.x; using conditional skip instead
 # or see https://github.com/rack/rack-attack/blob/master/lib/rack/attack/utils.rb

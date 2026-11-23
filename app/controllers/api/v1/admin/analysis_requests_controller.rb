@@ -95,6 +95,10 @@ module Api
             end
           end
           data[:account_id] = request.account_id
+          # Staff triage needs the submitter's contact details.
+          data[:guest_name] = request.guest_name
+          data[:guest_email] = request.guest_email
+          data[:submitter_email] = request.account&.email.presence || request.guest_email
           data
         end
 

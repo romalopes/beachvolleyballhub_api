@@ -409,10 +409,12 @@ Rails.application.routes.draw do
           post :quote
           post :assign_coach
           post :mark_invoice_sent
+          post :email_invoice
           post :mark_paid
           post :start_work
           post :complete
           post :cancel
+          post :internal_notes, action: :add_internal_note
         end
         member do
           post :link_assessment_session
@@ -426,6 +428,12 @@ Rails.application.routes.draw do
           end
         end
       end
+
+      # Guest reply path: the token is the credential, so it cannot sit under
+      # the authenticated resource above.
+      post "analysis_requests/guest_access/:token/messages",
+           to: "analysis_request_messages#guest_create",
+           as: :guest_analysis_request_messages
 
       resources :analysis_packages, only: [:index]
 
@@ -526,6 +534,14 @@ Rails.application.routes.draw do
             post :quote
             post :assign_coach
             post :internal_notes, action: :add_internal_note
+          end
+        end
+
+        # Invoice ledger (IDENTITY-265). Sending the PDF invoice is the only
+        # write: issuing/paying stays on the request workflow above.
+        resources :analysis_request_invoices, path: "invoices", only: [ :index, :show ] do
+          member do
+            post :email
           end
         end
 

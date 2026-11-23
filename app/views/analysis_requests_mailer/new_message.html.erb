@@ -1,0 +1,20 @@
+<p>Hi <%= @message.from_submitter? ? "there" : (@request.account&.first_name.presence || @request.guest_name.to_s.split(" ").first.presence || "there") %>,</p>
+
+<p>
+  <strong><%= @author_name %></strong> wrote about analysis request
+  <%= @request.reference %> — <%= @request.title %>:
+</p>
+
+<%= simple_format(@body) %>
+
+<% if @message.from_submitter? %>
+  <p>Reply to this email to reach the submitter directly.</p>
+  <p><a href="<%= @staff_url %>">Open the request</a></p>
+<% elsif @guest_access_url %>
+  <p><a href="<%= @guest_access_url %>">Reply to this message</a></p>
+  <p>Keep this link private: it gives access to your request, videos and messages.</p>
+<% else %>
+  <p><a href="<%= @submitter_url %>">See the conversation</a></p>
+<% end %>
+
+<p>Beach Volleyball Hub</p>

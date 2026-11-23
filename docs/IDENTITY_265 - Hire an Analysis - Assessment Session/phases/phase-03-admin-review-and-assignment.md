@@ -212,14 +212,24 @@ New mailer: `AnalysisRequestsMailer` with `accepted`, `rejected`, `quoted`, `coa
 
 ---
 
+## Delivered Surfaces (frontend, IDENTITY-265 follow-up)
+
+| Surface | Route | Notes |
+|---------|-------|-------|
+| Staff triage inbox | `/admin/analysis-requests` (`AdminAnalysisRequestsPage`) | Reference search + workflow/payment filters; `PlatformStaffRoute` guard; consumes `GET /api/v1/admin/analysis_requests` |
+| Shared request detail | `/analysis-requests/:id` (`AnalysisRequestDetailPage`) | Submitter, coach and staff view. Staff-only panel drives accept / reject / quote / assign coach / invoice sent / paid / start / complete / cancel plus internal notes |
+| Sidebar | `Analysis Requests → Manage Requests` group | Visible to curator + admin only (`platformStaffOnly`) |
+
+Workflow actions were added to **`Api::V1::AnalysisRequestsController`** (the routes already existed but had no actions), so the SPA has one code path for staff and coach transitions. `AnalysisRequestPolicy#cancel?` was added for the cancel transition. Internal notes are exposed on the shared detail serializer only to admin/curator (`staff_viewer?`), and the admin serializer now also carries `guest_name` / `guest_email` / `submitter_email`.
+
 ## Acceptance Criteria
 
-- [ ] Admin list/detail API works with filters & pagination
-- [ ] Accept/Reject/Quote/Assign coach actions work
-- [ ] Notifications + emails sent on each transition
-- [ ] Policy enforcement: submitter cannot accept/reject; coach cannot assign
-- [ ] Internal notes only visible to admin/curator
-- [ ] `bin/rails test` passes
+- [x] Admin list/detail API works with filters & pagination
+- [x] Accept/Reject/Quote/Assign coach actions work (main + admin controllers)
+- [x] In-app notifications emitted on each transition (email remains submission-only — see deviation)
+- [x] Policy enforcement: submitter cannot accept/reject; coach cannot assign
+- [x] Internal notes only visible to admin/curator
+- [x] `bin/rails test` passes (`api/v1/admin/analysis_requests_controller_test.rb` covers forbidden/index/search/internal notes)
 
 ---
 
@@ -227,6 +237,8 @@ New mailer: `AnalysisRequestsMailer` with `accepted`, `rejected`, `quoted`, `coa
 
 | Plan Item | Deviation | Reason |
 |-----------|-----------|--------|
-| Admin UI server-rendered | JSON API for SPA (consistent with repo) | `namespace :admin` in routes already JSON |
+| Admin UI server-rendered | JSON API + React pages (consistent with repo) | `namespace :admin` in routes already JSON |
 | Custom quote UI | Single `quote` action with price_cents | Simpler, matches manual invoicing |
-| **Tests** | `test/controllers/api/v1/admin/analysis_requests_controller_test.rb` |
+| **Tests** | `test/controllers/api/v1/admin/analysis_requests_controller_test.rb` | Was missing; added with the UI |
+| Transition emails | In-app notifications only; `AnalysisRequestsMailer` still sends only submission + guest confirmation | Avoids surprising the submitter mid-triage; revisit if product wants status emails |
+| Separate admin detail page | Staff reuse `/analysis-requests/:id` with a staff-only action panel | One serializer, one page, no duplicated rendering logic |

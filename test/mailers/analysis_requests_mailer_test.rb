@@ -36,6 +36,71 @@ class AnalysisRequestsMailerTest < ActionMailer::TestCase
     value.nil? ? ENV.delete(key) : ENV[key] = value
   end
 
+  test "invoice email attaches the invoice PDF" do
+    invoice = @guest_request.analysis_request_invoices.create!(
+      amount_cents: 4900,
+      currency: "AUD",
+      status: "sent",
+      sent_at: Time.current,
+      external_reference: "BT-9001"
+    )
+
+    email = AnalysisRequestsMailer.invoice_to_submitter(invoice).deliver_now
+
+    assert_equal [ "jane@example.com" ], email.to
+    assert_equal "Invoice #{invoice.number} for analysis request #{@guest_request.reference}",
+                 email.subject
+    assert_match(/INV-\d{4}/, email.text_part.body.to_s)
+    assert_match(/\$49\.00 AUD/, email.text_part.body.to_s)
+    assert_match(/BT-9001/, email.text_part.body.to_s)
+
+    attachment = email.attachments.find { |part| part.filename == "#{invoice.number}.pdf" }
+    assert attachment, "expected #{invoice.number}.pdf to be attached"
+    assert_equal "application/pdf", attachment.mime_type
+    assert attachment.body.decoded.start_with?("%PDF-1.4")
+    assert_includes attachment.body.decoded, "Jane Guest"
+  end
+
+  test "paid invoice email says no action is needed" do
+    invoice = @guest_request.analysis_request_invoices.create!(
+      amount_cents: 4900, currency: "AUD", status: "paid",
+      sent_at: 2.days.ago, paid_at: 1.day.ago
+    )
+
+    email = AnalysisRequestsMailer.invoice_to_submitter(invoice).deliver_now
+
+    assert_match(/already marked as paid/, email.text_part.body.to_s)
+  end
+
+  test "submitter message email goes to the crew and replies to the submitter" do
+    message = @guest_request.analysis_request_messages.create!(
+      body: "Here is the second camera angle.", from_submitter: true
+    )
+
+    email = AnalysisRequestsMailer.new_message(message).deliver_now
+    body = email.text_part.body.to_s
+
+    assert_equal [ "coach@bvb.test", "admin@bvb.test" ], email.to
+    assert_equal [ "jane@example.com" ], email.reply_to
+    assert_includes email.subject, "New message from Jane Guest"
+    assert_includes body, "Here is the second camera angle."
+    assert_includes body, "Open the request: https://bvb.test/analysis-requests/"
+  end
+
+  test "team message email goes to the submitter" do
+    message = @guest_request.analysis_request_messages.create!(
+      body: "We need a clearer angle from the baseline.", internal: false
+    )
+
+    email = AnalysisRequestsMailer.new_message(message).deliver_now
+    body = email.text_part.body.to_s
+
+    assert_equal [ "jane@example.com" ], email.to
+    assert_includes email.subject, "New message about your analysis request (ANL-"
+    assert_includes body, "We need a clearer angle from the baseline."
+    assert_includes body, "The Beach Volleyball Hub team"
+  end
+
   test "crew email goes to every configured recipient" do
     email = AnalysisRequestsMailer.submitted_to_crew(@guest_request).deliver_now
 

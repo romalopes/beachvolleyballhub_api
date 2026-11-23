@@ -1,0 +1,30 @@
+<p>Hi <%= @request.account&.first_name.presence || @request.guest_name.to_s.split(" ").first.presence || "there" %>,</p>
+
+<p>Please find your invoice attached as a PDF.</p>
+
+<p>
+  <strong>Invoice:</strong> <%= @invoice_number %><br>
+  <strong>Analysis request:</strong> <%= @request.reference %> — <%= @request.title %><br>
+  <strong>Package:</strong> <%= @request.package_name %><br>
+  <strong>Amount:</strong> <%= @amount_aud %><br>
+  <strong>Issued:</strong> <%= @issued_on %><br>
+  <strong>Payment reference:</strong> <%= @payment_reference %>
+</p>
+
+<% if @invoice.status == "paid" %>
+  <p>This invoice is already marked as paid — thank you. No further action is needed.</p>
+<% else %>
+  <h2>What happens next</h2>
+  <ol>
+    <li>Pay the amount shown on the invoice, quoting <%= @payment_reference %>.</li>
+    <li>We mark the invoice paid as soon as the transfer clears.</li>
+    <li>Analysis work begins, and we email you when your report is ready.</li>
+  </ol>
+<% end %>
+
+<p>
+  The attachment is a self-contained PDF copy of the invoice.
+  Questions? Reply to this email and the team will help.
+</p>
+
+<p>Beach Volleyball Hub</p>

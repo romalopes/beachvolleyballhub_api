@@ -1,0 +1,19 @@
+# One unpaid invoice and one paid invoice, so filters and totals have data.
+one:
+  analysis_request: one
+  amount_cents: 4900
+  currency: "AUD"
+  status: "sent"
+  sent_at: <%= 40.days.ago %>
+  created_at: <%= 40.days.ago %>
+  external_reference: "BT-1001"
+
+guest_paid:
+  analysis_request: guest_one
+  amount_cents: 9900
+  currency: "AUD"
+  status: "paid"
+  sent_at: <%= 5.days.ago %>
+  paid_at: <%= 4.days.ago %>
+  created_at: <%= 5.days.ago %>
+  external_reference: "BT-1002"

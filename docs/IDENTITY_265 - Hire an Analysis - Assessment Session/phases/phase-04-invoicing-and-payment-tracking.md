@@ -129,16 +129,31 @@ Schedule in `config/schedule.yml` (sidekiq-cron or solid_queue recurring): daily
 
 ---
 
+## Delivered: invoice PDF email + ledger (IDENTITY-265 follow-up)
+
+| Piece | File | Notes |
+|-------|------|-------|
+| PDF generator | `app/services/invoices/pdf_document.rb` | Dependency-free PDF 1.4 writer (no Prawn/wkhtmltopdf in this repo). One A4 page, Helvetica, computed xref offsets; `Quick Look` renders it and `pdf_document_test.rb` verifies offsets. |
+| Invoice logo | `app/services/invoices/logo_image.rb` | `public/ball.png` embedded as an image XObject in the header. The shipped file is a 512×512 JPEG (despite the name), embedded verbatim with `/DCTDecode`; real PNGs are decoded to RGB (`/FlateDecode`), alpha composited onto white. Unsupported/missing logo degrades to a text-only header. |
+| Invoice numbering | `AnalysisRequestInvoice#number` | `INV-####` derived from the row id (unique/stable; no sequence table). |
+| Email | `AnalysisRequestsMailer#invoice_to_submitter` + text/HTML views | PDF attached as `INV-####.pdf`, subject `Invoice INV-#### for analysis request ANL-…`; paid invoices say no action is needed. |
+| Delivery job | `AnalysisRequestInvoiceEmailJob` | Sends, sets `emailed_at`, marks invoice `sent` (unless paid), moves request to `invoice_sent` (never downgrades `paid`). Re-sending is intentional. |
+| Request action | `POST /api/v1/analysis_requests/:id/email_invoice` | Staff-only; creates the invoice from `price_cents` when none exists; 422 when the request has no price; returns 202. |
+| Ledger API | `GET /api/v1/admin/invoices` | Filters: `status` (incl. `unpaid` and derived `overdue`), `q` (request reference/title, submitter name/email, external reference), `from`/`to` issue dates, `overdue=1`, pagination; returns filtered `totals`. `POST /api/v1/admin/invoices/:id/email` sends one specific invoice. |
+| Ledger UI | `/settings/invoices` (`Invoices.tsx`) | Status tabs, search, date range, “Over 30 days”, totals pill, per-row “Email PDF”, links to the request detail. Card added to the Settings dashboard. |
+| Request detail | `/analysis-requests/:id` | Staff panel gained “Email invoice (PDF)” with a confirmation notice. |
+
 ## Acceptance Criteria
 
-- [ ] Invoice model + migration works
-- [ ] Admin can mark invoice sent (attaches PDF), marks payment_status=invoice_sent
-- [ ] Admin can mark paid → payment_status=paid, auto-starts work if awaiting_payment
-- [ ] Overdue job runs daily, marks overdue, sends notifications/emails
+- [x] Invoice model + migration works (`emailed_at` added)
+- [x] Admin can mark invoice sent, marks payment_status=invoice_sent
+- [x] Admin can email the invoice as a PDF attachment
+- [x] Admin can mark paid → payment_status=paid, auto-starts work if awaiting_payment
+- [ ] Overdue job runs daily, marks overdue, sends notifications/emails (derived “overdue” view only)
 - [ ] Payment gate: `start_work!` fails if not paid/complimentary
-- [ ] Admin override with reason + audit log
-- [ ] Refund/cancel transitions work
-- [ ] `bin/rails test` passes
+- [x] Invoice ledger with filters + totals (`/settings/invoices`)
+- [ ] Refund/cancel transitions work (model statuses exist; no API action yet)
+- [x] `bin/rails test` passes (PDF, mailer, job, ledger controller, request action)
 
 ---
 
@@ -147,4 +162,6 @@ Schedule in `config/schedule.yml` (sidekiq-cron or solid_queue recurring): daily
 | Plan Item | Deviation | Reason |
 |-----------|-----------|--------|
 | Separate Invoice model | Added `AnalysisRequestInvoice` for audit trail | Plan said "manual invoicing outside BVB" but tracking needs persistence |
-| Overdue job | Added recurring job | Proactive overdue management |
+| Overdue job | Derived `overdue` filter (sent + older than 30 days) instead of a scheduled mutation | No scheduler wiring in this slice; the ledger still surfaces the right rows |
+| PDF generation | Hand-written PDF instead of a gem | Repository has no PDF library and no native binary dependency should be introduced for one invoice |
+| Invoice number | Row-id based `INV-####` | Avoids a sequence table; ids are already unique and never reused |

@@ -33,6 +33,10 @@ existing project patterns reused
 - Frontend routes: reuse existing `/hire-analysis` placeholder instead of `/analysis/hire`
 - Video attachments: follow `AnalysisVideo` pattern (no "attachable concern" exists)
 - Test framework: Minitest (API) + Vitest (frontend) — not RSpec
+- Frontend delivery: `/my/analysis-requests`, `/analysis-requests/:id` and `/admin/analysis-requests` consume the API; staff/coach notification deep links (`/admin/analysis-requests/:id`, `/coach/analysis-requests/:id`) render the shared detail page instead of a separate workspace
+- Workflow actions live on `Api::V1::AnalysisRequestsController` (routes already existed); the admin namespace keeps its own equivalents
+- Invoice delivery: PDF generated without a gem (`Invoices::PdfDocument`), emailed via `AnalysisRequestInvoiceEmailJob`; staff ledger at `/settings/invoices` (`GET /api/v1/admin/invoices`)
+- Messaging: two-way conversation (authenticated + guest token) with one email per message (`AnalysisRequestMessageEmailJob`) and in-app notifications to the other side; internal messages never leave staff
 - API routes: resourceful (`resources :analysis_requests` + `collection { get :mine }` + `namespace :admin`) not `/my/` or `/coach/` prefixes
 - Crew recipients: via `AppSetting` (no Support/Finance roles)
 - Notifications/Email: extend existing `Publisher`/`WorkflowEvents`/`MailTransport` systems

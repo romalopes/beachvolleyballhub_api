@@ -16,14 +16,14 @@ This folder contains one implementation document per phase. Each document record
 | 00 | Repository reconnaissance & architecture review | ✅ Done | [phase-00-repository-reconnaissance.md](./phase-00-repository-reconnaissance.md) | `bin/rails test` ✅ `npm run test` ✅ |
 | 01 | Domain model, migrations & request creation | ✅ **Done** | [phase-01-domain-model-and-request-creation.md](./phase-01-domain-model-and-request-creation.md) | `bin/rails test test/models/analysis_request_test.rb` ✅ |
 | 02 | Public pricing/packages & submission API | ✅ **Done** | [phase-02-pricing-packages-and-submission-api.md](./phase-02-pricing-packages-and-submission-api.md) | `bin/rails test test/models/analysis_package_test.rb test/controllers/api/v1/analysis_packages_controller_test.rb` ✅ |
-| 03 | Admin/Curator review, accept/reject, quote, coach assignment | ✅ **Done** | [phase-03-admin-review-and-assignment.md](./phase-03-admin-review-and-assignment.md) | Model tests ✅, routes ✅, admin controller ✅ |
-| 04 | Manual invoice/payment tracking & payment gate | ✅ **Done** | [phase-04-invoicing-and-payment-tracking.md](./phase-04-invoicing-and-payment-tracking.md) | Model tests ✅, migrations ✅ |
-| 05 | Request messaging, guest access, email notifications | ✅ **Done** | [phase-05-messaging-guest-access-email.md](./phase-05-messaging-guest-access-email.md) | Model tests ✅, migrations ✅ |
+| 03 | Admin/Curator review, accept/reject, quote, coach assignment | ✅ **Done** | [phase-03-admin-review-and-assignment.md](./phase-03-admin-review-and-assignment.md) | Model tests ✅, routes ✅, admin controller ✅, `/admin/analysis-requests` UI ✅, admin controller tests ✅ |
+| 04 | Manual invoice/payment tracking & payment gate | ✅ **Done** | [phase-04-invoicing-and-payment-tracking.md](./phase-04-invoicing-and-payment-tracking.md) | Model tests ✅, migrations ✅, invoice PDF email ✅ (`/settings/invoices` ledger with filters) ✅ |
+| 05 | Request messaging, guest access, email notifications | ✅ **Done** | [phase-05-messaging-guest-access-email.md](./phase-05-messaging-guest-access-email.md) | Model tests ✅, migrations ✅, two-way messaging API + per-message email/notification ✅, guest replies ✅ |
 | 06 | Notifications bell & event coverage | ✅ **Done** | [phase-06-notifications-bell-and-events.md](./phase-06-notifications-bell-and-events.md) | Workflow events added ✅, syntax OK ✅ |
 | 07 | Guest account creation & request claiming | ✅ **Done** | [phase-07-guest-account-claiming.md](./phase-07-guest-account-claiming.md) | Claim controller ✅, routes ✅ |
 | 08 | Coach workspace & analysis production | ✅ **Done** | [phase-08-coach-workspace.md](./phase-08-coach-workspace.md) | Coach controller ✅, routes ✅ |
 | 09 | Assessment & Assessment Session integration | ✅ **Done** | [phase-09-assessment-integration.md](./phase-09-assessment-integration.md) | Join model ✅, routes ✅, controller actions ✅ |
-| 10 | Deliverables, submitter dashboard & guest polish | ✅ **Done** | [phase-10-deliverables-dashboards-polish.md](./phase-10-deliverables-dashboards-polish.md) | Deliverables model ✅, download route ✅ |
+| 10 | Deliverables, submitter dashboard & guest polish | ✅ **Done** | [phase-10-deliverables-dashboards-polish.md](./phase-10-deliverables-dashboards-polish.md) | Deliverables model ✅, download route ✅, `/my/analysis-requests` + `/analysis-requests/:id` UI ✅ |
 | 11 | Final integration, security review, regression, production readiness | ✅ **Done** | [phase-11-final-integration-security-readiness.md](./phase-11-final-integration-security-readiness.md) | Core model tests ✅, Package tests ✅, API routes ✅, Pre-existing test/lint issues documented |
 
 ## Global Conventions (enforced in every phase)

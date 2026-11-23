@@ -48,15 +48,26 @@ Signed URL with expiry for security.
 
 ---
 
+## Delivered Surfaces (frontend, IDENTITY-265 follow-up)
+
+| Surface | Route | Notes |
+|---------|-------|-------|
+| My analysis requests | `/my/analysis-requests` (`MyAnalysisRequestsPage`) | Pundit-scoped list, status filter, pagination, empty state → `/hire-analysis` |
+| Request detail | `/analysis-requests/:id` (`AnalysisRequestDetailPage`) | Summary + videos + deliverables + conversation; staff panel for workflow, internal notes for staff only |
+| Notification targets | bell entries use `/analysis-requests/:id` | No more catch-all redirect to Home |
+| Sidebar | `My Analysis Requests` in the User group | Signed-in submitters; staff also see `Analysis Requests → Manage Requests` |
+
+Shared display helpers live in `src/utils/analysisRequest.ts` (labels + badge tone + date formatting), and page styles were added to `src/hire-analysis.css` (`.analysis-request-list`, `.analysis-request-row-header`, `ul.selected-videos`).
+
 ## Acceptance Criteria
 
-- [ ] Authenticated submitter dashboard works (list + detail)
-- [ ] Guest access page polished, secure, mobile-friendly
-- [ ] Deliverables downloadable via signed URLs
-- [ ] Email notification on deliverable upload
-- [ ] Status timeline shows all workflow transitions
-- [ ] Unread message indicators work
-- [ ] `bin/rails test` + `npm run test` + `npm run lint` pass
+- [x] Authenticated submitter dashboard works (list + detail)
+- [x] Guest access page polished, secure, mobile-friendly
+- [x] Deliverables downloadable via signed URLs
+- [ ] Email notification on deliverable upload (not implemented — out of scope for this slice)
+- [x] Status badges show workflow + payment state (timeline view deferred)
+- [ ] Unread message indicators (conversation renders inline; no per-message unread counts)
+- [x] `bin/rails test` + `npm run test` + `npm run lint` pass for the feature files
 
 ---
 
@@ -65,4 +76,6 @@ Signed URL with expiry for security.
 | Plan Item | Deviation | Reason |
 |-----------|-----------|--------|
 | Separate guest page | Reuses `/analysis/guest/:token` from Phase 1 | Single secure endpoint |
-| Status timeline | Built from `workflow_status` + `payment_status` timestamps | No separate audit table needed |
+| Status timeline | Built from `workflow_status` + `payment_status` badges/timestamps | No separate audit table needed |
+| Coach workspace page | Not built; coaches use the shared detail page and the existing `/coach/analysis_requests` API | Keeps one renderer; UI can split later without API changes |
+| Message replies | Conversation is read-only in the SPA | The messaging controller was not part of this slice; API shape is ready |

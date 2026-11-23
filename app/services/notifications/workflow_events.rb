@@ -215,14 +215,26 @@ module Notifications
     end
 
     def analysis_request_message_created(message)
+      # Internal notes are staff-only; the model also guards this, but the
+      # publisher must never leak one to the submitter even if called directly.
+      return if message.internal?
+
       request = message.analysis_request
-      recipients = message.from_submitter? ? crew_accounts : [request.account].compact
+      recipients =
+        if message.from_submitter?
+          # The crew plus the assigned coach, who needs to know the submitter
+          # replied.
+          crew_accounts + [ request.assigned_coach_profile&.account ].compact
+        else
+          [ request.account ].compact
+        end
+
       Notifications::Publisher.publish(
         recipients: recipients.uniq,
         event_type: "analysis_request.message",
         event_key: "analysis_request:#{request.id}:message:#{message.id}",
-        title: "New message",
-        message: message.from_submitter? ? "New message from #{message.author_name} on request #{request.reference}" : "Reply from BVB team on request #{request.reference}",
+        title: message.from_submitter? ? "New message" : "New message from the team",
+        message: "New message from #{message.author_name} on request #{request.reference}",
         actor: message.account,
         notifiable: request,
         target_path: "/analysis-requests/#{request.id}",

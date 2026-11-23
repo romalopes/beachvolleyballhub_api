@@ -1,0 +1,17 @@
+Hi <%= @message.from_submitter? ? "there" : (@request.account&.first_name.presence || @request.guest_name.to_s.split(" ").first.presence || "there") %>,
+
+<%= @author_name %> wrote about analysis request <%= @request.reference %> — <%= @request.title %>:
+
+<%= @body %>
+
+<% if @message.from_submitter? -%>
+Reply to this email to reach the submitter directly.
+Open the request: <%= @staff_url %>
+<% elsif @guest_access_url -%>
+Reply to this message: <%= @guest_access_url %>
+Keep this link private: it gives access to your request, videos and messages.
+<% else -%>
+See the conversation: <%= @submitter_url %>
+<% end -%>
+
+Beach Volleyball Hub

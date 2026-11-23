@@ -23,6 +23,20 @@ class AnalysisRequestInvoice < ApplicationRecord
     update!(status: "overdue")
   end
 
+  def mark_emailed!
+    update_columns(emailed_at: Time.current, updated_at: Time.current)
+  end
+
+  # Human-facing identifier; there is no invoice sequence table, and the row id
+  # is already unique and stable, so it is the invoice number.
+  def number
+    "INV-#{id.to_s.rjust(4, '0')}"
+  end
+
+  def emailed?
+    emailed_at.present?
+  end
+
   def amount_aud
     "$#{'%.2f' % (amount_cents / 100.0)} AUD"
   end

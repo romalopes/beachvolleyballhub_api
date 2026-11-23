@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_042523) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_060000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -251,6 +251,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_042523) do
     t.string "external_reference"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "emailed_at"
     t.index ["analysis_request_id"], name: "index_analysis_request_invoices_on_analysis_request_id"
     t.index ["sent_at"], name: "index_analysis_request_invoices_on_sent_at"
     t.index ["status"], name: "index_analysis_request_invoices_on_status"
@@ -267,6 +268,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_042523) do
     t.boolean "internal", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "emailed_at"
     t.index ["account_id"], name: "index_analysis_request_messages_on_account_id"
     t.index ["analysis_request_id", "created_at"], name: "idx_on_analysis_request_id_created_at_32100fc89d"
     t.index ["analysis_request_id"], name: "index_analysis_request_messages_on_analysis_request_id"

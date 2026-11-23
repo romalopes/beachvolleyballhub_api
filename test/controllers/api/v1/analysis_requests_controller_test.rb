@@ -219,6 +219,128 @@ class Api::V1::AnalysisRequestsControllerTest < ActionDispatch::IntegrationTest
     assert_response :no_content
   end
 
+  # --- workflow actions -----------------------------------------------------
+
+  test "staff can accept a request with a price" do
+    @user.add_role(:admin)
+    request = AnalysisRequest.create!(title: "Serve", guest_name: "A", guest_email: "a@example.com")
+
+    post accept_api_v1_analysis_request_path(request),
+         params: { price_cents: 4900 }, headers: @headers, as: :json
+
+    assert_response :success
+    request.reload
+    assert_equal "accepted", request.workflow_status
+    assert_equal 4900, request.price_cents
+  end
+
+  test "a submitter cannot accept their own request" do
+    request = @account.analysis_requests.create!(title: "Mine", guest_name: "Me", guest_email: "me@example.com")
+
+    post accept_api_v1_analysis_request_path(request),
+         params: { price_cents: 100 }, headers: @headers, as: :json
+
+    assert_response :forbidden
+  end
+
+  test "rejecting requires a reason" do
+    @user.add_role(:admin)
+    request = AnalysisRequest.create!(title: "Serve", guest_name: "A", guest_email: "a@example.com")
+
+    post reject_api_v1_analysis_request_path(request), headers: @headers, as: :json
+    assert_response :unprocessable_entity
+
+    post reject_api_v1_analysis_request_path(request),
+         params: { reason: "Footage too short" }, headers: @headers, as: :json
+    assert_response :success
+    assert_equal "rejected", request.reload.workflow_status
+  end
+
+  test "invoice and payment transitions move accepted work to in_progress" do
+    @user.add_role(:admin)
+    request = AnalysisRequest.create!(title: "Serve", guest_name: "A", guest_email: "a@example.com")
+    request.accept!(price_cents: 4900)
+
+    post mark_invoice_sent_api_v1_analysis_request_path(request),
+         params: { external_reference: "INV-1" }, headers: @headers, as: :json
+    assert_response :success
+    assert_equal "invoice_sent", request.reload.payment_status
+
+    post mark_paid_api_v1_analysis_request_path(request), headers: @headers, as: :json
+    assert_response :success
+    request.reload
+    assert_equal "paid", request.payment_status
+    assert_equal "in_progress", request.workflow_status
+  end
+
+  test "internal notes are visible to staff and hidden from the submitter" do
+    # A distinct member account owns the request, so "submitter" is not the
+    # staff user who wrote the note.
+    member_user = User.create!(
+      email_address: "member-#{SecureRandom.hex(4)}@example.com",
+      password: "password123",
+      email_verified_at: Time.current
+    )
+    member_account = member_user.create_account!(first_name: "Mia", last_name: "Member")
+    request = member_account.analysis_requests.create!(
+      title: "My review", description: "Please review"
+    )
+
+    @user.add_role(:admin)
+    post internal_notes_api_v1_analysis_request_path(request),
+         params: { body: "VIP submitter" }, headers: @headers, as: :json
+    assert_response :created
+
+    get api_v1_analysis_request_path(request), headers: @headers
+    notes = response.parsed_body["analysis_request"]["internal_notes"]
+    assert_equal [ "VIP submitter" ], notes.map { |note| note["body"] }
+
+    # The owner sees the request, but never the internal notes.
+    _member_session, member_headers = sign_in_with_api_token(member_user)
+    get api_v1_analysis_request_path(request), headers: member_headers
+    assert_response :success
+    assert_not response.parsed_body["analysis_request"].key?("internal_notes")
+  end
+
+  test "staff can email the invoice as a PDF" do
+    @user.add_role(:admin)
+    request = AnalysisRequest.create!(
+      title: "Serve", guest_name: "A", guest_email: "a@example.com", price_cents: 4900
+    )
+
+    assert_enqueued_with(job: AnalysisRequestInvoiceEmailJob) do
+      post email_invoice_api_v1_analysis_request_path(request), headers: @headers
+    end
+
+    assert_response :accepted
+    invoice = request.reload.analysis_request_invoices.sole
+    assert_equal 4900, invoice.amount_cents
+    assert_equal "pending", invoice.status
+  end
+
+  test "a request without a price cannot be invoiced" do
+    @user.add_role(:admin)
+    request = AnalysisRequest.create!(
+      title: "Serve", guest_name: "A", guest_email: "a@example.com", price_cents: 0
+    )
+
+    assert_no_enqueued_jobs only: AnalysisRequestInvoiceEmailJob do
+      post email_invoice_api_v1_analysis_request_path(request), headers: @headers
+    end
+
+    assert_response :unprocessable_entity
+  end
+
+  test "submitters cannot email invoices" do
+    request = @account.analysis_requests.create!(
+      title: "Mine", guest_name: "Me", guest_email: "me@example.com", price_cents: 4900
+    )
+
+    post email_invoice_api_v1_analysis_request_path(request), headers: @headers
+
+    assert_response :forbidden
+  end
+
   # --- pagination -----------------------------------------------------------
 
   test "index paginates" do

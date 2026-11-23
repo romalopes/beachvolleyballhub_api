@@ -9,7 +9,7 @@ module Api
       # through the id lookup (there is no :id in that route).
       WORKFLOW_ACTIONS = %i[
         accept reject quote assign_coach mark_invoice_sent mark_paid
-        start_work complete cancel add_internal_note
+        start_work complete cancel add_internal_note email_invoice
       ].freeze
 
       before_action :set_analysis_request,
@@ -174,6 +174,28 @@ module Api
         render_workflow_result
       end
 
+      # Emails the latest invoice (creating one when none exists) with a PDF
+      # attachment. Returns 202 because delivery happens in the job.
+      def email_invoice
+        authorize @analysis_request, :mark_invoice_sent?
+
+        if @analysis_request.price_cents.to_i <= 0
+          return render json: { errors: [ "Set a price before emailing an invoice" ] },
+                        status: :unprocessable_entity
+        end
+
+        invoice = @analysis_request.analysis_request_invoices.order(created_at: :desc).first ||
+                  @analysis_request.analysis_request_invoices.create!(
+                    amount_cents: @analysis_request.price_cents,
+                    currency: "AUD",
+                    status: "pending"
+                  )
+
+        AnalysisRequestInvoiceEmailJob.perform_later(invoice.id)
+
+        render json: { queued: true, invoice: serialize_invoice(invoice) }, status: :accepted
+      end
+
       def add_internal_note
         authorize @analysis_request, :add_internal_note?
         body = params[:body].to_s.strip
@@ -290,9 +312,9 @@ module Api
           data[:videos] = request.analysis_request_videos.map { |v| serialize_video(v) }
           # Guests see the conversation but never internal staff notes.
           visible_messages = if for_guest
-                               request.analysis_request_messages.reject(&:internal?)
+                               request.analysis_request_messages.visible_to_submitter.to_a
                              else
-                               request.analysis_request_messages
+                               request.analysis_request_messages.order(:created_at).to_a
                              end
           data[:messages] = visible_messages.map { |m| serialize_message(m) }
           data[:deliverables] = request.analysis_request_documents.map { |d| serialize_deliverable(d) }
@@ -323,9 +345,28 @@ module Api
               author: { id: note.account_id, name: note.account.full_name }
             }
           end
+          data[:invoices] = request.analysis_request_invoices
+                                    .order(created_at: :desc)
+                                    .map { |invoice| serialize_invoice(invoice) }
         end
 
         data
+      end
+
+      def serialize_invoice(invoice)
+        {
+          id: invoice.id,
+          number: invoice.number,
+          amount_cents: invoice.amount_cents,
+          amount_aud: invoice.amount_aud,
+          currency: invoice.currency,
+          status: invoice.status,
+          external_reference: invoice.external_reference,
+          sent_at: invoice.sent_at&.iso8601,
+          paid_at: invoice.paid_at&.iso8601,
+          emailed_at: invoice.emailed_at&.iso8601,
+          created_at: invoice.created_at.iso8601
+        }
       end
 
       def staff_viewer?
