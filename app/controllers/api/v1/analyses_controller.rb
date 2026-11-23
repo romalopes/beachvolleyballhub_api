@@ -121,7 +121,8 @@ module Api
           training_session: row.training_session && { id: row.training_session_id, title: row.training_session.title },
           tournament: row.tournament && { id: row.tournament_id, name: row.tournament.name },
           participants: row.analysis_participants.map { |p| { id: p.id, player_profile_id: p.player_profile_id, name: p.player_profile.full_name, notes: p.notes } },
-          video_count: row.analysis_videos.size }
+          video_count: row.analysis_videos.size,
+          analysis_request: row.analysis_request && { id: row.analysis_request.id, reference: row.analysis_request.reference }}
         return payload unless detail
         payload.merge(videos: row.analysis_videos.map { |video| serialize_video(video) },
                       comments: row.analysis_comments.map { |comment| serialize_comment(comment) },
@@ -131,6 +132,7 @@ module Api
       def serialize_video(record)
         { id: record.id, source_type: record.source_type, title: record.title.presence || record.video&.title || record.file&.filename&.to_s,
           description: record.description, position: record.position,
+          analysis_request_video_id: record.analysis_request_video_id,
           playback_url: record.upload? && record.file.attached? ? rails_blob_path(record.file, disposition: "inline", only_path: true) : record.video&.embed_url,
           external_url: record.video&.external_url, can_embed: record.external? && record.video&.can_embed?,
           duration_seconds: record.video&.duration_seconds,

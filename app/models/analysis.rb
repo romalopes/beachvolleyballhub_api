@@ -7,6 +7,9 @@ class Analysis < ApplicationRecord
   belongs_to :group, optional: true
   belongs_to :training_session, optional: true
   belongs_to :tournament, optional: true
+  # The request this analysis was produced for, when it came from "Hire an
+  # Analysis" (IDENTITY-265). Nullable for every other analysis.
+  has_one :analysis_request
 
   has_many :analysis_participants, dependent: :destroy, inverse_of: :analysis
   has_many :player_profiles, through: :analysis_participants

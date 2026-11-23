@@ -145,16 +145,29 @@ end
 
 ---
 
+## Delivered: linked Analysis production (IDENTITY-265 follow-up)
+
+| Piece | File | Notes |
+|-------|------|-------|
+| Link | migration `AddAnalysisToAnalysisRequests` + `AnalysisRequest#analysis` | One request points at one `Analysis`; deleting the analysis only unlinks it. |
+| Video provenance | migration `AddAnalysisRequestVideoToAnalysisVideos` + `AnalysisVideo#analysis_request_video` | Every copied video keeps the id of the request video it came from; the analysis editor shows “From request ANL-…” on the card and “Request ANL-…” in the hero, both linking back to `/analysis-requests/:id`. Exposed as `analysis_request_video_id` (video) and `analysis_request` (analysis). |
+| Starter | `app/services/analysis_requests/analysis_starter.rb` | Staff/assigned coach start an approved request (`accepted`/`awaiting_payment`/`in_progress`): creates a draft `Analysis`, copies the request's catalogue videos, uploaded blobs (shared, not duplicated) and resolvable external URLs (via `Video.find_or_create_from_url!`), links it, moves the request to `in_progress`. Rejects unapproved requests and double-starts. |
+| API | `POST /api/v1/analysis_requests/:id/start_analysis` | 201 with the refreshed request (including progress); 200 + existing analysis when already started; 422 “Approve the request…”. Authorised by `start_work?` (staff or assigned coach). |
+| Processing | existing `/analyses/:id/edit` editor | Request detail links managers straight into the full analysis editor (videos, comments, assessments, annotations). |
+| Submitter view | `AnalysisRequests::AnalysisPresenter` + `AnalysisProgress` component | Detail/guest payloads carry `analysis`: steps + percent always; summary, videos and coach comments only once the analysis is shared. |
+| Delivery | `complete` action | Publishes the linked analysis in the same step, so “completed” always means the submitter can read it; guest page renders the same progress block. |
+
 ## Acceptance Criteria
 
-- [ ] Coach sees only assigned requests
-- [ ] Video playback with timestamped annotations works
-- [ ] Coach can add text/drawing/telestration annotations
-- [ ] Coach can upload deliverables (PDF, video)
-- [ ] `start_work` / `complete` transitions work
-- [ ] Notifications + emails on work_started, completed
-- [ ] Mobile-friendly (responsive)
-- [ ] `bin/rails test` + `npm run test` pass
+- [x] Coach sees only assigned requests (API scope) — coach UI still shares the request detail page
+- [ ] Video playback with timestamped annotations works (annotation models exist; no annotation UI yet)
+- [ ] Coach can add text/drawing/telestration annotations (API-side models only)
+- [ ] Coach can upload deliverables (PDF, video) (API exists; no upload UI yet)
+- [x] `start_work` / `complete` transitions work
+- [x] Starting production creates and links a real Analysis, editable in `/analyses/:id/edit`
+- [x] Submitter (account and guest) sees progress, then the finished analysis
+- [x] Notifications on work_started, completed
+- [x] `bin/rails test` + `npm run test` pass for the feature files
 
 ---
 
@@ -164,3 +177,5 @@ end
 |-----------|-----------|--------|
 | Separate annotation model | `AnalysisRequestAnnotation` (not reusing `AnalysisAnnotation`) | Scoped to request videos; cleaner |
 | Telestration | HTML5 canvas overlay | Lightweight, no external deps |
+| Analysis production | Reuses the platform `Analysis` domain instead of building a request-only editor | Team keeps comments/annotations/assessment tooling; the request only tracks progress |
+| Video copy | Uploaded blobs are shared, external URLs resolve to catalogue `Video` rows; unresolvable links stay on the request | Avoids duplicating bytes and keeps the media catalogue consistent |

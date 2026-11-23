@@ -37,6 +37,7 @@ existing project patterns reused
 - Workflow actions live on `Api::V1::AnalysisRequestsController` (routes already existed); the admin namespace keeps its own equivalents
 - Invoice delivery: PDF generated without a gem (`Invoices::PdfDocument`), emailed via `AnalysisRequestInvoiceEmailJob`; staff ledger at `/settings/invoices` (`GET /api/v1/admin/invoices`)
 - Messaging: two-way conversation (authenticated + guest token) with one email per message (`AnalysisRequestMessageEmailJob`) and in-app notifications to the other side; internal messages never leave staff
+- Analysis production: an approved request gets a real linked `Analysis` (`start_analysis`); the team edits it in `/analyses/:id/edit`, completion publishes it, and the request detail/guest pages show progress and then the shared result
 - API routes: resourceful (`resources :analysis_requests` + `collection { get :mine }` + `namespace :admin`) not `/my/` or `/coach/` prefixes
 - Crew recipients: via `AppSetting` (no Support/Finance roles)
 - Notifications/Email: extend existing `Publisher`/`WorkflowEvents`/`MailTransport` systems

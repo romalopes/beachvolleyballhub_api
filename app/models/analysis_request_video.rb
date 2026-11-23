@@ -6,6 +6,8 @@ class AnalysisRequestVideo < ApplicationRecord
   belongs_to :video, optional: true
   has_one_attached :file
   has_many :analysis_request_annotations, -> { order(:timestamp_seconds, :id) }, dependent: :destroy, inverse_of: :analysis_request_video
+  # Analysis videos created from this submission video (IDENTITY-265).
+  has_many :analysis_videos, dependent: :nullify, inverse_of: :analysis_request_video
 
   validates :source_type, inclusion: { in: SOURCE_TYPES }
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }

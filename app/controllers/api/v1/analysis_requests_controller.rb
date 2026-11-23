@@ -9,7 +9,7 @@ module Api
       # through the id lookup (there is no :id in that route).
       WORKFLOW_ACTIONS = %i[
         accept reject quote assign_coach mark_invoice_sent mark_paid
-        start_work complete cancel add_internal_note email_invoice
+        start_work complete cancel add_internal_note email_invoice start_analysis
       ].freeze
 
       before_action :set_analysis_request,
@@ -163,9 +163,29 @@ module Api
 
       def complete
         authorize @analysis_request, :complete?
+        publish_linked_analysis!
         @analysis_request.complete!
         Notifications::WorkflowEvents.analysis_request_completed(@analysis_request)
         render_workflow_result
+      end
+
+      # Creates the linked Analysis and starts production (IDENTITY-265).
+      # Idempotent: once linked, the existing analysis is returned with 200.
+      def start_analysis
+        authorize @analysis_request, :start_work?
+
+        if @analysis_request.analysis.present?
+          return render json: { analysis_request: serialize(@analysis_request, detail: true) }
+        end
+
+        AnalysisRequests::AnalysisStarter.new(
+          request: @analysis_request, actor: current_user
+        ).call
+
+        render json: { analysis_request: serialize(@analysis_request.reload, detail: true) },
+               status: :created
+      rescue AnalysisRequests::AnalysisStarter::NotApproved => e
+        render json: { errors: [ e.message ] }, status: :unprocessable_entity
       end
 
       def cancel
@@ -221,6 +241,16 @@ module Api
 
       def render_workflow_result
         render json: { analysis_request: serialize(@analysis_request.reload, detail: true) }
+      end
+
+      # Completing the request is the delivery point: the linked analysis must be
+      # shared at the same moment, otherwise the submitter would be told the work
+      # is done while the analysis stays invisible.
+      def publish_linked_analysis!
+        analysis = @analysis_request.analysis
+        return if analysis.nil? || analysis.published? || analysis.archived?
+
+        analysis.publish!
       end
 
       def set_analysis_request
@@ -348,6 +378,14 @@ module Api
           data[:invoices] = request.analysis_request_invoices
                                     .order(created_at: :desc)
                                     .map { |invoice| serialize_invoice(invoice) }
+        end
+
+        # Progress (and, once shared, the content) of the linked Analysis. Sent
+        # to every viewer of the request — submitter, guest, coach and staff.
+        if detail
+          data[:analysis] = AnalysisRequests::AnalysisPresenter.new(
+            request, blob_url: method(:rails_blob_url)
+          ).as_json
         end
 
         data

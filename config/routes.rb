@@ -412,6 +412,7 @@ Rails.application.routes.draw do
           post :email_invoice
           post :mark_paid
           post :start_work
+          post :start_analysis
           post :complete
           post :cancel
           post :internal_notes, action: :add_internal_note

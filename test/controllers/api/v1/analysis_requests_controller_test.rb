@@ -341,6 +341,98 @@ class Api::V1::AnalysisRequestsControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  # --- linked analysis -------------------------------------------------------
+
+  test "staff start the analysis and the request exposes progress" do
+    @user.add_role(:admin)
+    request = AnalysisRequest.create!(
+      title: "Serve", guest_name: "A", guest_email: "a@example.com", price_cents: 4900
+    )
+    request.accept!(price_cents: 4900)
+
+    post start_analysis_api_v1_analysis_request_path(request), headers: @headers
+
+    assert_response :created
+    payload = response.parsed_body["analysis_request"]["analysis"]
+    assert payload["id"].present?
+    assert_equal "draft", payload["status"]
+    assert_equal 25, payload["percent"]
+    assert_not payload["available"]
+    assert_nil payload["summary"]
+    assert_equal "in_progress", request.reload.workflow_status
+  end
+
+  test "starting twice returns the same analysis instead of creating another" do
+    @user.add_role(:admin)
+    request = AnalysisRequest.create!(
+      title: "Serve", guest_name: "A", guest_email: "a@example.com", price_cents: 4900
+    )
+    request.accept!(price_cents: 4900)
+
+    post start_analysis_api_v1_analysis_request_path(request), headers: @headers
+    first_id = response.parsed_body["analysis_request"]["analysis"]["id"]
+
+    assert_no_difference -> { Analysis.count } do
+      post start_analysis_api_v1_analysis_request_path(request), headers: @headers
+    end
+
+    assert_response :ok
+    assert_equal first_id, response.parsed_body["analysis_request"]["analysis"]["id"]
+  end
+
+  test "a submitter cannot start the analysis" do
+    request = @account.analysis_requests.create!(
+      title: "Mine", guest_name: "Me", guest_email: "me@example.com", price_cents: 4900
+    )
+    request.accept!(price_cents: 4900)
+
+    post start_analysis_api_v1_analysis_request_path(request), headers: @headers
+
+    assert_response :forbidden
+    assert_nil request.reload.analysis_id
+  end
+
+  test "an unapproved request cannot be started" do
+    @user.add_role(:admin)
+    request = AnalysisRequest.create!(
+      title: "Serve", guest_name: "A", guest_email: "a@example.com", price_cents: 4900
+    )
+
+    post start_analysis_api_v1_analysis_request_path(request), headers: @headers
+
+    assert_response :unprocessable_entity
+    assert_match(/Approve the request/, response.parsed_body["errors"].first)
+  end
+
+  test "completing the request publishes and shares the analysis with the guest" do
+    @user.add_role(:admin)
+    request = analysis_requests(:guest_one)
+    request.accept!(price_cents: 4900)
+    video = request.analysis_request_videos.create!(
+      source_type: "external", external_url: "https://www.youtube.com/watch?v=abc123"
+    )
+    post start_analysis_api_v1_analysis_request_path(request), headers: @headers
+    assert_response :created
+
+    request.reload.analysis.update!(summary: "Toss height and contact point improved.")
+    post complete_api_v1_analysis_request_path(request), headers: @headers
+
+    assert_response :success
+    assert_equal "published", request.analysis.reload.status
+    shared = response.parsed_body["analysis_request"]["analysis"]
+    assert shared["available"]
+    assert_equal 100, shared["percent"]
+    assert_equal "Toss height and contact point improved.", shared["summary"]
+    assert_equal video.id, shared["videos"].first["request_video_id"]
+
+    get guest_access_api_v1_analysis_requests_path(token: request.guest_access_token)
+
+    assert_response :success
+    guest_analysis = response.parsed_body["analysis_request"]["analysis"]
+    assert guest_analysis["available"]
+    assert_equal "Toss height and contact point improved.", guest_analysis["summary"]
+  end
+
   # --- pagination -----------------------------------------------------------
 
   test "index paginates" do

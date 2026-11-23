@@ -10,6 +10,9 @@ class AnalysisRequest < ApplicationRecord
 
   belongs_to :account, optional: true
   belongs_to :assigned_coach_profile, class_name: "CoachProfile", optional: true
+  # The Analysis created when the team starts working on an approved request
+  # (IDENTITY-265). Optional: older requests predate the link.
+  belongs_to :analysis, optional: true
   belongs_to :package, class_name: "AnalysisPackage", foreign_key: :package_key, primary_key: :key, optional: true
 
   has_many :analysis_request_videos, -> { order(:position, :id) }, dependent: :destroy, inverse_of: :analysis_request

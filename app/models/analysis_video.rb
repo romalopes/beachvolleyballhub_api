@@ -4,6 +4,8 @@ class AnalysisVideo < ApplicationRecord
 
   belongs_to :analysis, inverse_of: :analysis_videos
   belongs_to :video, optional: true
+  # Set when this video was copied from an analysis request submission.
+  belongs_to :analysis_request_video, optional: true
   has_one_attached :file
   has_many :analysis_annotations, -> { order(:timestamp_seconds, :id) }, dependent: :destroy, inverse_of: :analysis_video
 
