@@ -1,0 +1,23 @@
+New analysis request — <%= @request.reference %>
+
+Title: <%= @request.title %>
+Package: <%= @request.package_name %> (<%= @request.price_aud %>)
+Submitter: <%= @request.submitter_name %><% if @submitter_email %> <<%= @submitter_email %>><% end %>
+Received: <%= @submitted_at.in_time_zone(@time_zone).strftime("%A, %-d %B %Y at %-I:%M %p") %> (<%= @time_zone %>)
+
+Analysis goals
+--------------
+<%= @request.description.presence || "(none supplied)" %>
+
+Videos (<%= @videos.length %>)
+--------------------
+<% if @videos.empty? -%>
+(none supplied)
+<% else -%>
+<% @videos.each_with_index do |video, index| -%>
+<%= index + 1 %>. <% if video.external? %><%= video.external_url.presence || video.video&.source_url %><% else %>Uploaded file: <%= video.file.attached? ? video.file.filename : "(missing attachment)" %><% end %>
+<% end -%>
+<% end -%>
+
+Reply to this email to answer the submitter directly. Review, accept or reject
+the request from the Analysis Requests area of Beach Volleyball Hub.

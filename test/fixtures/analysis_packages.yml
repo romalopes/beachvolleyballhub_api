@@ -1,0 +1,51 @@
+single_match:
+  key: "single_match"
+  name: "Single Match Analysis"
+  description: "Analysis of one match with written feedback"
+  price_cents: 4900
+  max_videos: 1
+  max_duration_minutes: 60
+  includes_written_report: true
+  includes_annotated_video: false
+  includes_consultation: false
+  turnaround_days: 7
+  active: true
+  position: 1
+
+season_review:
+  key: "season_review"
+  name: "Season Review Package"
+  description: "Up to 5 matches with annotated video and consultation"
+  price_cents: 19900
+  max_videos: 5
+  max_duration_minutes: 300
+  includes_written_report: true
+  includes_annotated_video: true
+  includes_consultation: true
+  turnaround_days: 14
+  active: true
+  position: 2
+
+complimentary:
+  key: "complimentary"
+  name: "Complimentary Review"
+  description: "Free introductory analysis"
+  price_cents: 0
+  max_videos: 1
+  max_duration_minutes: 30
+  includes_written_report: true
+  includes_annotated_video: false
+  includes_consultation: false
+  turnaround_days: 14
+  active: true
+  position: 0
+
+inactive_package:
+  key: "inactive"
+  name: "Inactive Package"
+  price_cents: 9900
+  max_videos: 2
+  max_duration_minutes: 120
+  includes_written_report: true
+  active: false
+  position: 3

@@ -115,4 +115,49 @@ class Notifications::WorkflowEventsTest < ActiveSupport::TestCase
     assert_equal accounts(:three).id, notification.account_id
     assert_equal "/groups/#{group.id}", notification.target_path
   end
+
+  # --- analysis requests (IDENTITY-265) ---------------------------------------
+
+  test "a submission notifies the configured crew accounts" do
+    AppSetting.set!("analysis_request_crew_account_ids", @coach.id.to_s)
+    request = AnalysisRequest.create!(
+      title: "Serve review", guest_name: "Jane Guest", guest_email: "jane@example.com"
+    )
+
+    assert_difference("Notification.where(event_type: 'analysis_request.submitted').count", 1) do
+      Notifications::WorkflowEvents.analysis_request_submitted(request)
+    end
+
+    notification = Notification.find_by(event_type: "analysis_request.submitted")
+    assert_equal @coach.id, notification.account_id
+    assert_equal "/analysis-requests/#{request.id}", notification.target_path
+  end
+
+  test "a submission falls back to admin/curator accounts when no crew list is configured" do
+    AppSetting.where(key: "analysis_request_crew_account_ids").delete_all
+    admin = accounts(:admin) # users(:two), admin role
+
+    request = AnalysisRequest.create!(
+      title: "Serve review", guest_name: "Jane Guest", guest_email: "jane@example.com"
+    )
+
+    Notifications::WorkflowEvents.analysis_request_submitted(request)
+
+    notification = Notification.find_by(
+      account: admin, event_type: "analysis_request.submitted"
+    )
+    assert_not_nil notification, "the admin account must be notified by default"
+    assert_equal request.reference, notification.target_label
+  end
+
+  test "an authenticated submission is also acknowledged to the submitter" do
+    AppSetting.where(key: "analysis_request_crew_account_ids").delete_all
+    request = AnalysisRequest.create!(title: "My review", account: @player)
+
+    Notifications::WorkflowEvents.analysis_request_submitted(request)
+
+    assert Notification.exists?(
+      account: @player, event_type: "analysis_request.submitted"
+    )
+  end
 end

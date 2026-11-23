@@ -17,7 +17,10 @@ class AppSetting < ApplicationRecord
   DEFAULTS = {
     "logs_enabled" => true,
     "test" => false,
-    "test_email" => "romalopes@yahoo.com.br"
+    "test_email" => "romalopes@yahoo.com.br",
+    # Comma-separated Account ids that receive "new analysis request" style
+    # notifications (IDENTITY-265). Empty until an admin configures the crew.
+    "analysis_request_crew_account_ids" => ""
   }.freeze
 
   validates :key, presence: true, uniqueness: true

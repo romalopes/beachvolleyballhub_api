@@ -399,6 +399,53 @@ Rails.application.routes.draw do
         resources :analysis_comments, path: :comments, only: %i[create destroy]
       end
 
+      resources :analysis_requests, only: %i[index show create update destroy] do
+        collection do
+          get :guest_access, action: :guest_access, path: "guest_access/:token"
+        end
+        member do
+          post :accept
+          post :reject
+          post :quote
+          post :assign_coach
+          post :mark_invoice_sent
+          post :mark_paid
+          post :start_work
+          post :complete
+          post :cancel
+        end
+        member do
+          post :link_assessment_session
+          delete "assessment_sessions/:assessment_session_id", action: :unlink_assessment_session, as: :assessment_session
+        end
+        resources :analysis_request_videos, path: :videos, only: %i[create destroy]
+        resources :analysis_request_messages, path: :messages, only: %i[create index]
+        resources :analysis_request_documents, path: :deliverables, only: %i[create index] do
+          member do
+            get :download, action: :download_deliverable
+          end
+        end
+      end
+
+      resources :analysis_packages, only: [:index]
+
+      resources :analysis_request_claims, only: [:new, :create], path: "analysis-requests/claim" do
+        collection do
+          get :new, action: :new, path: ":token"
+        end
+      end
+
+      namespace :coach do
+        resources :analysis_requests, only: [:index, :show] do
+          member do
+            post :start_work
+            post :complete
+            post :annotations, action: :add_annotation
+            post :deliverables, action: :upload_deliverable
+          end
+        end
+      end
+
       resources :analysis_videos, only: [] do
         resources :analysis_annotations, path: :annotations, only: %i[create update destroy]
       end
@@ -470,6 +517,17 @@ Rails.application.routes.draw do
         # Generic app_settings rows (key/value) for the Configuration page's
         # custom-settings table. Uses the setting key as the identifier.
         resources :app_settings, param: :key, only: [ :index, :create, :update, :destroy ]
+
+        # Admin Analysis Requests (IDENTITY-265)
+        resources :analysis_requests, only: [ :index, :show ] do
+          member do
+            post :accept
+            post :reject
+            post :quote
+            post :assign_coach
+            post :internal_notes, action: :add_internal_note
+          end
+        end
 
         # Tail of the application's Rails log file
         resources :system_logs, only: [ :index ], defaults: { format: :json }

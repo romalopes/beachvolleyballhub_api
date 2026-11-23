@@ -1,0 +1,32 @@
+<p>Hi <%= @request.account&.first_name.presence || @request.guest_name.to_s.split(" ").first.presence || "there" %>,</p>
+
+<p>Thanks — we've received your analysis request.</p>
+
+<p>
+  <strong>Reference:</strong> <%= @request.reference %><br>
+  <strong>Title:</strong> <%= @request.title %><br>
+  <strong>Package:</strong> <%= @request.package_name %> (<%= @request.price_aud %>)<br>
+  <strong>Received:</strong>
+  <%= @submitted_at.in_time_zone(@time_zone).strftime("%A, %-d %B %Y at %-I:%M %p") %>
+  (<%= @time_zone %>)
+</p>
+
+<h2>What happens next</h2>
+<ol>
+  <li>A coach reviews your footage and confirms the scope.</li>
+  <li>We confirm the final price and send a separate invoice.</li>
+  <li>Once payment is received, analysis work begins.</li>
+  <li>We'll email you when your report and any annotated video are ready.</li>
+</ol>
+
+<% if @guest_access_url %>
+  <h2>Follow your request</h2>
+  <p><a href="<%= @guest_access_url %>"><%= @guest_access_url %></a></p>
+  <p>
+    Keep this link private: it gives access to your request, videos and messages.
+    You can also use it later to create an account and keep everything in one place.
+  </p>
+<% end %>
+
+<p>Questions? Just reply to this email and the team will help.</p>
+<p>Beach Volleyball Hub</p>

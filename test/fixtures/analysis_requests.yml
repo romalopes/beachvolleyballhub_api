@@ -1,0 +1,19 @@
+one:
+  reference: "ANL-2026-0001"
+  title: "Serve Analysis"
+  description: "Please review my jump serve"
+  workflow_status: "submitted"
+  payment_status: "unpaid"
+  price_cents: 4900
+  submitted_at: <%= Time.current %>
+  account: one
+
+guest_one:
+  reference: "ANL-2026-0002"
+  title: "Match Review"
+  guest_name: "Jane Guest"
+  guest_email: "jane@example.com"
+  guest_access_token: "abc123token"
+  workflow_status: "submitted"
+  payment_status: "unpaid"
+  submitted_at: <%= Time.current %>

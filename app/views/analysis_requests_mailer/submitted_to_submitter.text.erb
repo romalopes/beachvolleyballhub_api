@@ -1,0 +1,28 @@
+Hi <%= @request.account&.first_name.presence || @request.guest_name.to_s.split(" ").first.presence || "there" %>,
+
+Thanks — we've received your analysis request.
+
+Reference: <%= @request.reference %>
+Title: <%= @request.title %>
+Package: <%= @request.package_name %> (<%= @request.price_aud %>)
+Received: <%= @submitted_at.in_time_zone(@time_zone).strftime("%A, %-d %B %Y at %-I:%M %p") %> (<%= @time_zone %>)
+
+What happens next
+-----------------
+1. A coach reviews your footage and confirms the scope.
+2. We confirm the final price and send a separate invoice.
+3. Once payment is received, analysis work begins.
+4. We'll email you when your report and any annotated video are ready.
+
+<% if @guest_access_url -%>
+Follow your request
+-------------------
+<%= @guest_access_url %>
+
+Keep this link private: it gives access to your request, videos and messages.
+You can also use it later to create an account and keep everything in one place.
+<% end -%>
+
+Questions? Just reply to this email and the team will help.
+
+Beach Volleyball Hub

@@ -1,0 +1,9 @@
+one:
+  analysis_request: one
+  source_type: "upload"
+  position: 0
+
+two:
+  analysis_request: one
+  source_type: "upload"
+  position: 1

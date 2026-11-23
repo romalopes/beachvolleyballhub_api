@@ -10,7 +10,36 @@
 **Implementation approach:** Phased, inspect-first, test-driven, with
 existing project patterns reused
 
-------------------------------------------------------------------------
+-------------------------------------------------------------------------
+
+## Implementation Status
+
+| Phase | Title | Status | Doc |
+|-------|-------|--------|-----|
+| 00 | Repository reconnaissance & architecture review | ✅ **Done** | [phases/phase-00-repository-reconnaissance.md](phases/phase-00-repository-reconnaissance.md) |
+| 01 | Domain model, migrations & request creation | ✅ **Done** | [phases/phase-01-domain-model-and-request-creation.md](phases/phase-01-domain-model-and-request-creation.md) |
+| 02 | Public pricing/packages & submission API | ✅ **Done** | [phases/phase-02-pricing-packages-and-submission-api.md](phases/phase-02-pricing-packages-and-submission-api.md) |
+| 03 | Admin/Curator review, accept/reject, quote, coach assignment | ✅ **Done** | [phases/phase-03-admin-review-and-assignment.md](phases/phase-03-admin-review-and-assignment.md) |
+| 04 | Manual invoice/payment tracking & payment gate | ✅ **Done** | [phases/phase-04-invoicing-and-payment-tracking.md](phases/phase-04-invoicing-and-payment-tracking.md) |
+| 05 | Request messaging, guest access, email notifications | ✅ **Done** | [phases/phase-05-messaging-guest-access-email.md](phases/phase-05-messaging-guest-access-email.md) |
+| 06 | Notifications bell & event coverage | ✅ **Done** | [phases/phase-06-notifications-bell-and-events.md](phases/phase-06-notifications-bell-and-events.md) |
+| 07 | Guest account creation & request claiming | ✅ **Done** | [phases/phase-07-guest-account-claiming.md](phases/phase-07-guest-account-claiming.md) |
+| 08 | Coach workspace & analysis production | ✅ **Done** | [phases/phase-08-coach-workspace.md](phases/phase-08-coach-workspace.md) |
+| 09 | Assessment & Assessment Session integration | ✅ **Done** | [phases/phase-09-assessment-integration.md](phases/phase-09-assessment-integration.md) |
+| 10 | Deliverables, submitter dashboard & guest polish | ✅ **Done** | [phases/phase-10-deliverables-dashboards-polish.md](phases/phase-10-deliverables-dashboards-polish.md) |
+| 11 | Final integration, security review, regression, production readiness | ✅ **Done** | [phases/phase-11-final-integration-security-readiness.md](phases/phase-11-final-integration-security-readiness.md) |
+
+**Key Deviations from Original Plan** (detailed in Phase 0 doc):
+- Frontend routes: reuse existing `/hire-analysis` placeholder instead of `/analysis/hire`
+- Video attachments: follow `AnalysisVideo` pattern (no "attachable concern" exists)
+- Test framework: Minitest (API) + Vitest (frontend) — not RSpec
+- API routes: resourceful (`resources :analysis_requests` + `collection { get :mine }` + `namespace :admin`) not `/my/` or `/coach/` prefixes
+- Crew recipients: via `AppSetting` (no Support/Finance roles)
+- Notifications/Email: extend existing `Publisher`/`WorkflowEvents`/`MailTransport` systems
+- Messaging: build fresh `AnalysisRequestMessage` (no Wine Words conversation system in BVB)
+- Guest claim: reuse existing `EmailVerificationService` + `claim_invitation` patterns
+
+---
 
 ## 1. Objective
 
@@ -1360,7 +1389,7 @@ commit/backup between phases.
 Before starting, make sure Codex is working in the correct
 BeachVolleyballHub repository---not Wine Words.
 
-### Phase 0 --- Repository reconnaissance and architecture review
+### Phase 0 --- Repository reconnaissance and architecture review ✅
 
 **Goal:** Understand current BVB implementation and Wine Words reference
 patterns before writing code.
@@ -1416,7 +1445,7 @@ and no code changes are made.
 
 ------------------------------------------------------------------------
 
-### Phase 1 --- Domain model, migrations and request creation
+### Phase 1 --- Domain model, migrations and request creation ✅
 
 **Goal:** Establish the Analysis Request core and safe
 guest/authenticated submission.
@@ -1478,7 +1507,7 @@ breaking the model. Store identity snapshots for guest requests.
 
 ------------------------------------------------------------------------
 
-### Phase 2 --- Public pricing/packages and configurable pricing
+### Phase 2 --- Public pricing/packages and configurable pricing ✅
 
 **Goal:** Display packages and allow authorized staff to maintain
 pricing.
@@ -1522,7 +1551,7 @@ Implement:
 
 ------------------------------------------------------------------------
 
-### Phase 3 --- Admin/Curator review, accept/reject, quote and coach assignment
+### Phase 3 --- Admin/Curator review, accept/reject, quote and coach assignment ✅
 
 **Goal:** Implement the staff workflow.
 
@@ -1571,7 +1600,7 @@ Implement:
 
 ------------------------------------------------------------------------
 
-### Phase 4 --- Manual invoice/payment tracking and payment gate
+### Phase 4 --- Manual invoice/payment tracking and payment gate ✅
 
 **Goal:** Track external invoices and payment without integrating
 checkout.
@@ -1623,7 +1652,7 @@ Implement:
 
 ------------------------------------------------------------------------
 
-### Phase 5 --- Request-specific messaging, guest access and email notifications
+### Phase 5 --- Request-specific messaging, guest access and email notifications ✅
 
 **Goal:** Provide secure communication with the BVB crew.
 
@@ -1674,7 +1703,7 @@ Implement:
 
 ------------------------------------------------------------------------
 
-### Phase 6 --- Notifications bell and event coverage
+### Phase 6 --- Notifications bell and event coverage ✅
 
 **Goal:** Ensure all relevant interactions create durable in-app
 notifications.
@@ -1723,7 +1752,7 @@ Implement or extend existing bell system:
 
 ------------------------------------------------------------------------
 
-### Phase 7 --- Guest account creation and request claiming
+### Phase 7 --- Guest account creation and request claiming ✅
 
 **Goal:** Let anonymous submitters register and retain access to past
 submissions.
@@ -1776,7 +1805,7 @@ Implement:
 
 ------------------------------------------------------------------------
 
-### Phase 8 --- Coach workspace and analysis production
+### Phase 8 --- Coach workspace and analysis production ✅
 
 **Goal:** Deliver a practical work area for coaches.
 
@@ -1823,7 +1852,7 @@ Implement:
 
 ------------------------------------------------------------------------
 
-### Phase 9 --- Assessment and Assessment Session integration
+### Phase 9 --- Assessment and Assessment Session integration ✅
 
 **Goal:** Connect video analysis to existing player development
 assessments.
@@ -1862,7 +1891,7 @@ Implement:
 
 ------------------------------------------------------------------------
 
-### Phase 10 --- Deliverables, submitter dashboard and guest polish
+### Phase 10 --- Deliverables, submitter dashboard and guest polish ✅
 
 **Goal:** Finish submitter-facing experience.
 
@@ -1908,7 +1937,7 @@ Implement or polish:
 
 ------------------------------------------------------------------------
 
-### Phase 11 --- Final integration, security review, regression and production readiness
+### Phase 11 --- Final integration, security review, regression and production readiness ✅
 
 **Goal:** Verify end-to-end workflow and prepare deployment.
 

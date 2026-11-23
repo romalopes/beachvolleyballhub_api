@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_21_120232) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_042523) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -162,6 +162,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_120232) do
     t.index ["parent_id"], name: "index_analysis_comments_on_parent_id"
   end
 
+  create_table "analysis_packages", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.integer "price_cents", default: 0, null: false
+    t.integer "max_videos", default: 1, null: false
+    t.integer "max_duration_minutes", default: 30, null: false
+    t.boolean "includes_annotated_video", default: false, null: false
+    t.boolean "includes_written_report", default: true, null: false
+    t.boolean "includes_consultation", default: false, null: false
+    t.integer "turnaround_days", default: 7, null: false
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_analysis_packages_on_key", unique: true
+    t.check_constraint "price_cents >= 0", name: "analysis_packages_price_cents_check"
+  end
+
   create_table "analysis_participants", force: :cascade do |t|
     t.bigint "analysis_id", null: false
     t.bigint "player_profile_id", null: false
@@ -171,6 +190,139 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_120232) do
     t.index ["analysis_id", "player_profile_id"], name: "index_analysis_participants_unique", unique: true
     t.index ["analysis_id"], name: "index_analysis_participants_on_analysis_id"
     t.index ["player_profile_id"], name: "index_analysis_participants_on_player_profile_id"
+  end
+
+  create_table "analysis_request_annotations", force: :cascade do |t|
+    t.bigint "analysis_request_video_id", null: false
+    t.bigint "author_id", null: false
+    t.integer "timestamp_seconds", default: 0, null: false
+    t.text "body", null: false
+    t.string "annotation_type", default: "text", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["analysis_request_video_id", "timestamp_seconds"], name: "index_analysis_request_annotations_on_video_and_timestamp"
+    t.index ["analysis_request_video_id"], name: "idx_on_analysis_request_video_id_b8d17b9801"
+    t.index ["author_id"], name: "index_analysis_request_annotations_on_author_id"
+    t.check_constraint "annotation_type::text = ANY (ARRAY['text'::character varying, 'drawing'::character varying, 'telestration'::character varying]::text[])", name: "analysis_request_annotations_annotation_type_check"
+    t.check_constraint "timestamp_seconds >= 0", name: "analysis_request_annotations_timestamp_check"
+  end
+
+  create_table "analysis_request_assessment_sessions", force: :cascade do |t|
+    t.bigint "analysis_request_id", null: false
+    t.bigint "assessment_session_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["analysis_request_id", "assessment_session_id"], name: "idx_on_analysis_request_id_assessment_session_id_80eb3d8f2d", unique: true
+    t.index ["analysis_request_id"], name: "idx_on_analysis_request_id_75ba38bcae"
+    t.index ["assessment_session_id"], name: "idx_on_assessment_session_id_4523469270"
+  end
+
+  create_table "analysis_request_documents", force: :cascade do |t|
+    t.bigint "analysis_request_id", null: false
+    t.bigint "uploaded_by_id"
+    t.string "title", null: false
+    t.string "document_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["analysis_request_id", "created_at"], name: "idx_on_analysis_request_id_created_at_553babb2a3"
+    t.index ["analysis_request_id"], name: "index_analysis_request_documents_on_analysis_request_id"
+    t.index ["uploaded_by_id"], name: "index_analysis_request_documents_on_uploaded_by_id"
+    t.check_constraint "document_type::text = ANY (ARRAY['report'::character varying, 'annotated_video'::character varying, 'raw_video'::character varying, 'other'::character varying]::text[])", name: "analysis_request_documents_document_type_check"
+  end
+
+  create_table "analysis_request_internal_notes", force: :cascade do |t|
+    t.bigint "analysis_request_id", null: false
+    t.bigint "account_id", null: false
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_analysis_request_internal_notes_on_account_id"
+    t.index ["analysis_request_id", "created_at"], name: "idx_on_analysis_request_id_created_at_451001419c"
+    t.index ["analysis_request_id"], name: "index_analysis_request_internal_notes_on_analysis_request_id"
+  end
+
+  create_table "analysis_request_invoices", force: :cascade do |t|
+    t.bigint "analysis_request_id", null: false
+    t.integer "amount_cents", null: false
+    t.string "currency", default: "AUD", null: false
+    t.datetime "sent_at"
+    t.datetime "paid_at"
+    t.string "status", default: "pending", null: false
+    t.string "external_reference"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["analysis_request_id"], name: "index_analysis_request_invoices_on_analysis_request_id"
+    t.index ["sent_at"], name: "index_analysis_request_invoices_on_sent_at"
+    t.index ["status"], name: "index_analysis_request_invoices_on_status"
+    t.check_constraint "amount_cents > 0", name: "analysis_request_invoices_amount_cents_check"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'sent'::character varying, 'paid'::character varying, 'overdue'::character varying, 'cancelled'::character varying, 'refunded'::character varying]::text[])", name: "analysis_request_invoices_status_check"
+  end
+
+  create_table "analysis_request_messages", force: :cascade do |t|
+    t.bigint "analysis_request_id", null: false
+    t.bigint "account_id"
+    t.bigint "user_id"
+    t.text "body", null: false
+    t.boolean "from_submitter", default: false, null: false
+    t.boolean "internal", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_analysis_request_messages_on_account_id"
+    t.index ["analysis_request_id", "created_at"], name: "idx_on_analysis_request_id_created_at_32100fc89d"
+    t.index ["analysis_request_id"], name: "index_analysis_request_messages_on_analysis_request_id"
+    t.index ["user_id"], name: "index_analysis_request_messages_on_user_id"
+  end
+
+  create_table "analysis_request_videos", force: :cascade do |t|
+    t.bigint "analysis_request_id", null: false
+    t.bigint "video_id"
+    t.string "source_type", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "external_url"
+    t.index ["analysis_request_id", "position"], name: "idx_on_analysis_request_id_position_9a11e13c9b"
+    t.index ["analysis_request_id"], name: "index_analysis_request_videos_on_analysis_request_id"
+    t.index ["video_id"], name: "index_analysis_request_videos_on_video_id"
+    t.check_constraint "source_type::text = ANY (ARRAY['external'::character varying, 'upload'::character varying]::text[])", name: "analysis_request_videos_source_type_check"
+  end
+
+  create_table "analysis_requests", force: :cascade do |t|
+    t.bigint "account_id"
+    t.string "guest_name"
+    t.string "guest_email"
+    t.string "guest_access_token"
+    t.string "reference", null: false
+    t.string "title", limit: 160, null: false
+    t.text "description"
+    t.string "package_key"
+    t.integer "price_cents", default: 0, null: false
+    t.string "workflow_status", default: "submitted", null: false
+    t.string "payment_status", default: "unpaid", null: false
+    t.bigint "assigned_coach_profile_id"
+    t.datetime "submitted_at"
+    t.datetime "accepted_at"
+    t.datetime "rejected_at"
+    t.text "rejection_reason"
+    t.datetime "invoice_sent_at"
+    t.datetime "paid_at"
+    t.datetime "work_started_at"
+    t.datetime "completed_at"
+    t.datetime "cancelled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "crew_emailed_at"
+    t.datetime "submitter_emailed_at"
+    t.index ["account_id", "workflow_status"], name: "index_analysis_requests_on_account_id_and_workflow_status"
+    t.index ["account_id"], name: "index_analysis_requests_on_account_id"
+    t.index ["assigned_coach_profile_id"], name: "index_analysis_requests_on_assigned_coach_profile_id"
+    t.index ["guest_access_token"], name: "index_analysis_requests_on_guest_access_token", unique: true
+    t.index ["guest_email", "guest_access_token"], name: "index_analysis_requests_on_guest_email_and_guest_access_token"
+    t.index ["payment_status"], name: "index_analysis_requests_on_payment_status"
+    t.index ["reference"], name: "index_analysis_requests_on_reference", unique: true
+    t.index ["workflow_status"], name: "index_analysis_requests_on_workflow_status"
+    t.check_constraint "payment_status::text = ANY (ARRAY['unpaid'::character varying, 'invoice_sent'::character varying, 'paid'::character varying, 'overdue'::character varying, 'cancelled'::character varying, 'refunded'::character varying, 'complimentary'::character varying]::text[])", name: "analysis_requests_payment_status_check"
+    t.check_constraint "workflow_status::text = ANY (ARRAY['submitted'::character varying, 'under_review'::character varying, 'accepted'::character varying, 'rejected'::character varying, 'quoted'::character varying, 'awaiting_payment'::character varying, 'in_progress'::character varying, 'awaiting_submitter'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "analysis_requests_workflow_status_check"
   end
 
   create_table "analysis_videos", force: :cascade do |t|
@@ -1493,6 +1645,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_120232) do
   add_foreign_key "analysis_comments", "users", column: "author_id", on_delete: :restrict
   add_foreign_key "analysis_participants", "analyses", on_delete: :cascade
   add_foreign_key "analysis_participants", "player_profiles", on_delete: :restrict
+  add_foreign_key "analysis_request_annotations", "analysis_request_videos"
+  add_foreign_key "analysis_request_annotations", "users", column: "author_id"
+  add_foreign_key "analysis_request_assessment_sessions", "analysis_requests"
+  add_foreign_key "analysis_request_assessment_sessions", "assessment_sessions"
+  add_foreign_key "analysis_request_documents", "accounts", column: "uploaded_by_id"
+  add_foreign_key "analysis_request_documents", "analysis_requests"
+  add_foreign_key "analysis_request_internal_notes", "accounts"
+  add_foreign_key "analysis_request_internal_notes", "analysis_requests"
+  add_foreign_key "analysis_request_invoices", "analysis_requests"
+  add_foreign_key "analysis_request_messages", "accounts"
+  add_foreign_key "analysis_request_messages", "analysis_requests"
+  add_foreign_key "analysis_request_messages", "users"
+  add_foreign_key "analysis_request_videos", "analysis_requests"
+  add_foreign_key "analysis_request_videos", "videos"
+  add_foreign_key "analysis_requests", "accounts"
+  add_foreign_key "analysis_requests", "coach_profiles", column: "assigned_coach_profile_id"
   add_foreign_key "analysis_videos", "analyses", on_delete: :cascade
   add_foreign_key "analysis_videos", "videos", on_delete: :nullify
   add_foreign_key "assessment_categories", "assessment_definitions"

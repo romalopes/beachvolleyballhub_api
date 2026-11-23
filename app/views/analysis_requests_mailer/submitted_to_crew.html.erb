@@ -1,0 +1,41 @@
+<h1>New analysis request — <%= @request.reference %></h1>
+
+<p>
+  <strong>Title:</strong> <%= @request.title %><br>
+  <strong>Package:</strong> <%= @request.package_name %> (<%= @request.price_aud %>)<br>
+  <strong>Submitter:</strong> <%= @request.submitter_name %><% if @submitter_email %> &lt;<%= @submitter_email %>&gt;<% end %><br>
+  <strong>Received:</strong>
+  <%= @submitted_at.in_time_zone(@time_zone).strftime("%A, %-d %B %Y at %-I:%M %p") %>
+  (<%= @time_zone %>)
+</p>
+
+<h2>Analysis goals</h2>
+<%# Submitter-supplied text: escaped by ERB, whitespace preserved by CSS. %>
+<div style="white-space: pre-wrap; border-left: 3px solid #D97706; padding-left: 12px;"><%= @request.description.presence || "(none supplied)" %></div>
+
+<h2>Videos (<%= @videos.length %>)</h2>
+<% if @videos.empty? %>
+  <p>(none supplied)</p>
+<% else %>
+  <ol>
+    <% @videos.each do |video| %>
+      <li>
+        <% if video.external? %>
+          <% url = video.external_url.presence || video.video&.source_url %>
+          <% if url.present? %>
+            <a href="<%= url %>"><%= url %></a>
+          <% else %>
+            (external video without a URL)
+          <% end %>
+        <% else %>
+          Uploaded file: <%= video.file.attached? ? video.file.filename : "(missing attachment)" %>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+<% end %>
+
+<p>
+  Reply to this email to answer the submitter directly. Review, accept or reject
+  the request from the Analysis Requests area of Beach Volleyball Hub.
+</p>

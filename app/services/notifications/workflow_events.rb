@@ -138,5 +138,221 @@ module Notifications
         "/groups/#{container.id}"
       end
     end
+
+    # Analysis Request events (IDENTITY-265)
+    def analysis_request_submitted(request)
+      recipients = crew_accounts + [request.account].compact
+      Notifications::Publisher.publish(
+        recipients: recipients.uniq,
+        event_type: "analysis_request.submitted",
+        event_key: "analysis_request:#{request.id}:submitted",
+        title: "New analysis request",
+        message: "#{request.submitter_name} submitted \"#{request.title}\"",
+        actor: request.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+    end
+
+    def analysis_request_accepted(request)
+      Notifications::Publisher.publish(
+        recipients: [request.account].compact,
+        event_type: "analysis_request.accepted",
+        event_key: "analysis_request:#{request.id}:accepted",
+        title: "Request accepted",
+        message: "Your analysis request \"#{request.title}\" was accepted.",
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+      crew_notify(request, "analysis_request.accepted", "Request accepted", "Request \"#{request.title}\" was accepted.")
+    end
+
+    def analysis_request_rejected(request)
+      Notifications::Publisher.publish(
+        recipients: [request.account].compact,
+        event_type: "analysis_request.rejected",
+        event_key: "analysis_request:#{request.id}:rejected",
+        title: "Request rejected",
+        message: "Your analysis request \"#{request.title}\" was rejected: #{request.rejection_reason}",
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+    end
+
+    def analysis_request_quoted(request)
+      Notifications::Publisher.publish(
+        recipients: [request.account].compact,
+        event_type: "analysis_request.quoted",
+        event_key: "analysis_request:#{request.id}:quoted",
+        title: "Price quote",
+        message: "Your analysis request \"#{request.title}\" received a quote of #{request.price_aud}.",
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+    end
+
+    def analysis_request_coach_assigned(request)
+      return unless request.assigned_coach_profile&.account
+      Notifications::Publisher.publish(
+        recipients: [request.assigned_coach_profile.account],
+        event_type: "analysis_request.coach_assigned",
+        event_key: "analysis_request:#{request.id}:coach_assigned",
+        title: "Request assigned",
+        message: "You have been assigned to analysis request \"#{request.title}\" (#{request.reference}).",
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/coach/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+      crew_notify(request, "analysis_request.coach_assigned", "Coach assigned", "Request \"#{request.title}\" assigned to #{request.assigned_coach_profile.display_name}.")
+    end
+
+    def analysis_request_message_created(message)
+      request = message.analysis_request
+      recipients = message.from_submitter? ? crew_accounts : [request.account].compact
+      Notifications::Publisher.publish(
+        recipients: recipients.uniq,
+        event_type: "analysis_request.message",
+        event_key: "analysis_request:#{request.id}:message:#{message.id}",
+        title: "New message",
+        message: message.from_submitter? ? "New message from #{message.author_name} on request #{request.reference}" : "Reply from BVB team on request #{request.reference}",
+        actor: message.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+    end
+
+    def analysis_request_invoice_sent(request)
+      Notifications::Publisher.publish(
+        recipients: [request.account].compact,
+        event_type: "analysis_request.invoice_sent",
+        event_key: "analysis_request:#{request.id}:invoice_sent",
+        title: "Invoice sent",
+        message: "Invoice for request \"#{request.title}\" (#{request.reference}) has been sent.",
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+    end
+
+    def analysis_request_payment_received(request)
+      Notifications::Publisher.publish(
+        recipients: [request.account].compact,
+        event_type: "analysis_request.payment_received",
+        event_key: "analysis_request:#{request.id}:payment_received",
+        title: "Payment received",
+        message: "Payment for request \"#{request.title}\" (#{request.reference}) has been received.",
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+      crew_notify(request, "analysis_request.payment_received", "Payment received", "Payment received for request \"#{request.title}\".")
+    end
+
+    def analysis_request_overdue(request)
+      Notifications::Publisher.publish(
+        recipients: [request.account].compact,
+        event_type: "analysis_request.overdue",
+        event_key: "analysis_request:#{request.id}:overdue",
+        title: "Payment overdue",
+        message: "Payment for request \"#{request.title}\" (#{request.reference}) is overdue.",
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+      crew_notify(request, "analysis_request.overdue", "Payment overdue", "Payment overdue for request \"#{request.title}\".")
+    end
+
+    def analysis_request_work_started(request)
+      Notifications::Publisher.publish(
+        recipients: [request.account].compact,
+        event_type: "analysis_request.work_started",
+        event_key: "analysis_request:#{request.id}:work_started",
+        title: "Work started",
+        message: "Analysis work has started on request \"#{request.title}\" (#{request.reference}).",
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+    end
+
+    def analysis_request_completed(request)
+      Notifications::Publisher.publish(
+        recipients: [request.account].compact,
+        event_type: "analysis_request.completed",
+        event_key: "analysis_request:#{request.id}:completed",
+        title: "Analysis completed",
+        message: "Your analysis request \"#{request.title}\" (#{request.reference}) has been completed.",
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+      crew_notify(request, "analysis_request.completed", "Analysis completed", "Request \"#{request.title}\" completed.")
+    end
+
+    def analysis_request_deliverable_uploaded(request)
+      Notifications::Publisher.publish(
+        recipients: [request.account].compact,
+        event_type: "analysis_request.deliverable_uploaded",
+        event_key: "analysis_request:#{request.id}:deliverable",
+        title: "Deliverable uploaded",
+        message: "New deliverable available for request \"#{request.title}\" (#{request.reference}).",
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+    end
+
+    # Helpers below are module functions like every other rule in this module:
+    # `private` would silently drop them from the module_function set.
+    #
+    # Mirrors AnalysisRequestRecipients: an explicit crew list wins; with none
+    # configured, the platform staff (admin/curator accounts) are the team, so a
+    # new submission is never silently unannounced in the bell either.
+    def crew_accounts
+      raw = AppSetting.find_by(key: "analysis_request_crew_account_ids")&.value.to_s
+      account_ids = raw.split(",").map(&:strip).reject(&:empty?)
+      return Account.where(id: account_ids) if account_ids.any?
+
+      staff_accounts
+    end
+
+    def staff_accounts
+      Account.joins(user: { user_roles: :role })
+             .where(roles: { name: %w[admin curator] })
+             .distinct
+    end
+
+    def crew_notify(request, event_type, title, message)
+      Notifications::Publisher.publish(
+        recipients: crew_accounts,
+        event_type: event_type,
+        event_key: "analysis_request:#{request.id}:#{event_type.split('.').last}",
+        title: title,
+        message: message,
+        actor: Current.user&.account,
+        notifiable: request,
+        target_path: "/admin/analysis-requests/#{request.id}",
+        target_label: request.reference
+      )
+    end
+
+    def submitter_name(request)
+      request.account ? request.account.full_name : request.guest_name
+    end
   end
 end

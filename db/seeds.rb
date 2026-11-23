@@ -391,6 +391,60 @@ VideoTag.find_or_create_by!(name: "Intermediate") { |c| c.position = 1 }
 VideoTag.find_or_create_by!(name: "Advanced") { |c| c.position = 2 }
 puts "Seeded #{VideoTag.count} video tags"
 
+# Seed Analysis Packages (IDENTITY-265)
+packages = [
+  {
+    key: "complimentary",
+    name: "Complimentary Review",
+    description: "Free introductory analysis for new users",
+    price_cents: 0,
+    max_videos: 1,
+    max_duration_minutes: 30,
+    includes_written_report: true,
+    includes_annotated_video: false,
+    includes_consultation: false,
+    turnaround_days: 14,
+    active: true,
+    position: 0
+  },
+  {
+    key: "single_match",
+    name: "Single Match Analysis",
+    description: "Analysis of one match with written feedback",
+    price_cents: 4900,
+    max_videos: 1,
+    max_duration_minutes: 60,
+    includes_written_report: true,
+    includes_annotated_video: false,
+    includes_consultation: false,
+    turnaround_days: 7,
+    active: true,
+    position: 1
+  },
+  {
+    key: "season_review",
+    name: "Season Review Package",
+    description: "Up to 5 matches with annotated video and consultation",
+    price_cents: 19900,
+    max_videos: 5,
+    max_duration_minutes: 300,
+    includes_written_report: true,
+    includes_annotated_video: true,
+    includes_consultation: true,
+    turnaround_days: 14,
+    active: true,
+    position: 2
+  }
+]
+
+packages.each do |pkg|
+  AnalysisPackage.find_or_create_by!(key: pkg[:key]) do |p|
+    p.assign_attributes(pkg)
+  end
+end
+
+puts "Seeded #{AnalysisPackage.count} analysis packages"
+
 # user = User.find_or_create_by!(email: "6H7VX@example.com") { |u| u.password = "password" }
 # user.add_role(:admin)
 
