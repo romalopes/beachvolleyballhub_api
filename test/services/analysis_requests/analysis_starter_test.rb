@@ -20,6 +20,24 @@ class AnalysisRequests::AnalysisStarterTest < ActiveSupport::TestCase
     assert @request.work_started_at.present?
   end
 
+  test "lists the submitter's player profile as an analysis participant" do
+    @request.accept!(price_cents: 4900)
+    @request.update!(player_profile: player_profiles(:john_player))
+
+    analysis = AnalysisRequests::AnalysisStarter.new(request: @request, actor: @actor).call
+
+    assert_includes analysis.player_profiles, player_profiles(:john_player)
+  end
+
+  test "guest requests without a profile start without participants" do
+    @request.accept!(price_cents: 4900)
+    assert_nil @request.player_profile
+
+    analysis = AnalysisRequests::AnalysisStarter.new(request: @request, actor: @actor).call
+
+    assert_empty analysis.player_profiles
+  end
+
   test "copies external videos into catalogue videos" do
     @request.accept!(price_cents: 4900)
     source = @request.analysis_request_videos.create!(

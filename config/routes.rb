@@ -64,6 +64,9 @@ Rails.application.routes.draw do
       post "sessions", to: "sessions#create"
       delete "sessions", to: "sessions#destroy"
       get "me", to: "me#show"
+      # Public "is this email registered?" probe for the hire-analysis flow
+      # (IDENTITY-265): drives the login / create-account / guest prompt.
+      get "email_check", to: "email_checks#show"
 
       # The signed-in account's notifications (IDENTITY-249). Scoped to the
       # caller's account; the collection members are the badge count and the

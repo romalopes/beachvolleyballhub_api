@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -121,7 +121,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["training_session_id"], name: "index_analyses_on_training_session_id"
     t.check_constraint "status::text <> 'archived'::text OR archived_at IS NOT NULL", name: "analyses_archived_at"
     t.check_constraint "status::text <> 'published'::text OR published_at IS NOT NULL", name: "analyses_published_at"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'published'::character varying::text, 'archived'::character varying::text])", name: "analyses_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'published'::character varying, 'archived'::character varying]::text[])", name: "analyses_status"
   end
 
   create_table "analysis_annotations", force: :cascade do |t|
@@ -203,7 +203,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["analysis_request_video_id", "timestamp_seconds"], name: "index_analysis_request_annotations_on_video_and_timestamp"
     t.index ["analysis_request_video_id"], name: "idx_on_analysis_request_video_id_b8d17b9801"
     t.index ["author_id"], name: "index_analysis_request_annotations_on_author_id"
-    t.check_constraint "annotation_type::text = ANY (ARRAY['text'::character varying::text, 'drawing'::character varying::text, 'telestration'::character varying::text])", name: "analysis_request_annotations_annotation_type_check"
+    t.check_constraint "annotation_type::text = ANY (ARRAY['text'::character varying, 'drawing'::character varying, 'telestration'::character varying]::text[])", name: "analysis_request_annotations_annotation_type_check"
     t.check_constraint "timestamp_seconds >= 0", name: "analysis_request_annotations_timestamp_check"
   end
 
@@ -227,7 +227,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["analysis_request_id", "created_at"], name: "idx_on_analysis_request_id_created_at_553babb2a3"
     t.index ["analysis_request_id"], name: "index_analysis_request_documents_on_analysis_request_id"
     t.index ["uploaded_by_id"], name: "index_analysis_request_documents_on_uploaded_by_id"
-    t.check_constraint "document_type::text = ANY (ARRAY['report'::character varying::text, 'annotated_video'::character varying::text, 'raw_video'::character varying::text, 'other'::character varying::text])", name: "analysis_request_documents_document_type_check"
+    t.check_constraint "document_type::text = ANY (ARRAY['report'::character varying, 'annotated_video'::character varying, 'raw_video'::character varying, 'other'::character varying]::text[])", name: "analysis_request_documents_document_type_check"
   end
 
   create_table "analysis_request_internal_notes", force: :cascade do |t|
@@ -256,7 +256,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["sent_at"], name: "index_analysis_request_invoices_on_sent_at"
     t.index ["status"], name: "index_analysis_request_invoices_on_status"
     t.check_constraint "amount_cents > 0", name: "analysis_request_invoices_amount_cents_check"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'sent'::character varying::text, 'paid'::character varying::text, 'overdue'::character varying::text, 'cancelled'::character varying::text, 'refunded'::character varying::text])", name: "analysis_request_invoices_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'sent'::character varying, 'paid'::character varying, 'overdue'::character varying, 'cancelled'::character varying, 'refunded'::character varying]::text[])", name: "analysis_request_invoices_status_check"
   end
 
   create_table "analysis_request_messages", force: :cascade do |t|
@@ -286,7 +286,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["analysis_request_id", "position"], name: "idx_on_analysis_request_id_position_9a11e13c9b"
     t.index ["analysis_request_id"], name: "index_analysis_request_videos_on_analysis_request_id"
     t.index ["video_id"], name: "index_analysis_request_videos_on_video_id"
-    t.check_constraint "source_type::text = ANY (ARRAY['external'::character varying::text, 'upload'::character varying::text])", name: "analysis_request_videos_source_type_check"
+    t.check_constraint "source_type::text = ANY (ARRAY['external'::character varying, 'upload'::character varying]::text[])", name: "analysis_request_videos_source_type_check"
   end
 
   create_table "analysis_requests", force: :cascade do |t|
@@ -316,6 +316,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.datetime "crew_emailed_at"
     t.datetime "submitter_emailed_at"
     t.bigint "analysis_id"
+    t.bigint "player_profile_id"
     t.index ["account_id", "workflow_status"], name: "index_analysis_requests_on_account_id_and_workflow_status"
     t.index ["account_id"], name: "index_analysis_requests_on_account_id"
     t.index ["analysis_id"], name: "index_analysis_requests_on_analysis_id"
@@ -323,10 +324,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["guest_access_token"], name: "index_analysis_requests_on_guest_access_token", unique: true
     t.index ["guest_email", "guest_access_token"], name: "index_analysis_requests_on_guest_email_and_guest_access_token"
     t.index ["payment_status"], name: "index_analysis_requests_on_payment_status"
+    t.index ["player_profile_id"], name: "index_analysis_requests_on_player_profile_id"
     t.index ["reference"], name: "index_analysis_requests_on_reference", unique: true
     t.index ["workflow_status"], name: "index_analysis_requests_on_workflow_status"
-    t.check_constraint "payment_status::text = ANY (ARRAY['unpaid'::character varying::text, 'invoice_sent'::character varying::text, 'paid'::character varying::text, 'overdue'::character varying::text, 'cancelled'::character varying::text, 'refunded'::character varying::text, 'complimentary'::character varying::text])", name: "analysis_requests_payment_status_check"
-    t.check_constraint "workflow_status::text = ANY (ARRAY['submitted'::character varying::text, 'under_review'::character varying::text, 'accepted'::character varying::text, 'rejected'::character varying::text, 'quoted'::character varying::text, 'awaiting_payment'::character varying::text, 'in_progress'::character varying::text, 'awaiting_submitter'::character varying::text, 'completed'::character varying::text, 'cancelled'::character varying::text])", name: "analysis_requests_workflow_status_check"
+    t.check_constraint "payment_status::text = ANY (ARRAY['unpaid'::character varying, 'invoice_sent'::character varying, 'paid'::character varying, 'overdue'::character varying, 'cancelled'::character varying, 'refunded'::character varying, 'complimentary'::character varying]::text[])", name: "analysis_requests_payment_status_check"
+    t.check_constraint "workflow_status::text = ANY (ARRAY['submitted'::character varying, 'under_review'::character varying, 'accepted'::character varying, 'rejected'::character varying, 'quoted'::character varying, 'awaiting_payment'::character varying, 'in_progress'::character varying, 'awaiting_submitter'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "analysis_requests_workflow_status_check"
   end
 
   create_table "analysis_videos", force: :cascade do |t|
@@ -344,7 +346,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["analysis_request_video_id"], name: "index_analysis_videos_on_analysis_request_video_id"
     t.index ["video_id"], name: "index_analysis_videos_on_video_id"
     t.check_constraint "source_type::text = 'external'::text AND video_id IS NOT NULL OR source_type::text = 'upload'::text AND video_id IS NULL", name: "analysis_videos_source"
-    t.check_constraint "source_type::text = ANY (ARRAY['external'::character varying::text, 'upload'::character varying::text])", name: "analysis_videos_source_type"
+    t.check_constraint "source_type::text = ANY (ARRAY['external'::character varying, 'upload'::character varying]::text[])", name: "analysis_videos_source_type"
   end
 
   create_table "api_idempotency_keys", force: :cascade do |t|
@@ -507,8 +509,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["billable_type", "billable_id", "created_at"], name: "index_billing_checkout_sessions_on_owner_and_time"
     t.index ["stripe_checkout_session_id"], name: "index_billing_checkout_sessions_on_stripe_checkout_session_id", unique: true
     t.index ["subscription_id"], name: "index_billing_checkout_sessions_on_subscription_id"
-    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying::text, 'Organisation'::character varying::text])", name: "billing_checkout_sessions_billable_type"
-    t.check_constraint "status::text = ANY (ARRAY['open'::character varying::text, 'completed'::character varying::text, 'expired'::character varying::text, 'canceled'::character varying::text])", name: "billing_checkout_sessions_status"
+    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying, 'Organisation'::character varying]::text[])", name: "billing_checkout_sessions_billable_type"
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'completed'::character varying, 'expired'::character varying, 'canceled'::character varying]::text[])", name: "billing_checkout_sessions_status"
   end
 
   create_table "billing_customers", force: :cascade do |t|
@@ -520,7 +522,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.datetime "updated_at", null: false
     t.index ["billable_type", "billable_id"], name: "index_billing_customers_on_owner", unique: true
     t.index ["stripe_customer_id"], name: "index_billing_customers_on_stripe_customer_id", unique: true
-    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying::text, 'Organisation'::character varying::text])", name: "billing_customers_billable_type"
+    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying, 'Organisation'::character varying]::text[])", name: "billing_customers_billable_type"
   end
 
   create_table "billing_events", force: :cascade do |t|
@@ -539,7 +541,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["event_type", "created_at"], name: "index_billing_events_on_event_type_and_created_at"
     t.index ["status"], name: "index_billing_events_on_status"
     t.index ["stripe_event_id"], name: "index_billing_events_on_stripe_event_id", unique: true
-    t.check_constraint "status::text = ANY (ARRAY['received'::character varying::text, 'processed'::character varying::text, 'failed'::character varying::text, 'skipped'::character varying::text])", name: "billing_events_status"
+    t.check_constraint "status::text = ANY (ARRAY['received'::character varying, 'processed'::character varying, 'failed'::character varying, 'skipped'::character varying]::text[])", name: "billing_events_status"
   end
 
   create_table "billing_subscriptions", force: :cascade do |t|
@@ -569,8 +571,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["status"], name: "index_billing_subscriptions_on_status"
     t.index ["stripe_subscription_id"], name: "index_billing_subscriptions_on_stripe_subscription_id", unique: true
     t.index ["subscription_id"], name: "index_billing_subscriptions_on_subscription_id"
-    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying::text, 'Organisation'::character varying::text])", name: "billing_subscriptions_billable_type"
-    t.check_constraint "status::text = ANY (ARRAY['incomplete'::character varying::text, 'incomplete_expired'::character varying::text, 'trialing'::character varying::text, 'active'::character varying::text, 'past_due'::character varying::text, 'canceled'::character varying::text, 'unpaid'::character varying::text, 'paused'::character varying::text])", name: "billing_subscriptions_status"
+    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying, 'Organisation'::character varying]::text[])", name: "billing_subscriptions_billable_type"
+    t.check_constraint "status::text = ANY (ARRAY['incomplete'::character varying, 'incomplete_expired'::character varying, 'trialing'::character varying, 'active'::character varying, 'past_due'::character varying, 'canceled'::character varying, 'unpaid'::character varying, 'paused'::character varying]::text[])", name: "billing_subscriptions_status"
   end
 
   create_table "claim_invitations", force: :cascade do |t|
@@ -620,8 +622,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["status"], name: "index_coach_profiles_on_status"
     t.index ["visibility"], name: "index_coach_profiles_on_visibility"
     t.check_constraint "merged_at IS NULL OR merged_into_profile_id IS NOT NULL AND archived_at IS NOT NULL", name: "coach_profiles_merge_state_consistent"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'archived'::character varying::text])", name: "coach_profiles_status"
-    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying::text, 'private'::character varying::text])", name: "coach_profiles_visibility"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying]::text[])", name: "coach_profiles_status"
+    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying, 'private'::character varying]::text[])", name: "coach_profiles_visibility"
   end
 
   create_table "contact_details", force: :cascade do |t|
@@ -653,7 +655,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["created_at"], name: "index_contact_messages_on_created_at"
     t.index ["status", "archived_at"], name: "index_contact_messages_on_status_and_archived_at"
     t.index ["status", "created_at"], name: "index_contact_messages_on_status_and_created_at"
-    t.check_constraint "status::text = ANY (ARRAY['unread'::character varying::text, 'read'::character varying::text, 'archived'::character varying::text])", name: "contact_messages_status"
+    t.check_constraint "status::text = ANY (ARRAY['unread'::character varying, 'read'::character varying, 'archived'::character varying]::text[])", name: "contact_messages_status"
   end
 
   create_table "courts", force: :cascade do |t|
@@ -671,7 +673,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.check_constraint "(latitude IS NULL) = (longitude IS NULL)", name: "courts_coordinates_pair"
     t.check_constraint "latitude IS NULL OR latitude >= '-90'::integer::numeric AND latitude <= 90::numeric", name: "courts_latitude_range"
     t.check_constraint "longitude IS NULL OR longitude >= '-180'::integer::numeric AND longitude <= 180::numeric", name: "courts_longitude_range"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'archived'::character varying::text])", name: "courts_status"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying]::text[])", name: "courts_status"
   end
 
   create_table "criteria", force: :cascade do |t|
@@ -836,11 +838,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["status", "verification_status"], name: "index_locations_on_status_and_verification_status"
     t.index ["verified_by_account_id"], name: "index_locations_on_verified_by_account_id"
     t.check_constraint "(latitude IS NULL) = (longitude IS NULL)", name: "locations_coordinates_pair"
-    t.check_constraint "geocoding_status::text = ANY (ARRAY['not_requested'::character varying::text, 'pending'::character varying::text, 'resolved'::character varying::text, 'failed'::character varying::text, 'manual'::character varying::text])", name: "locations_geocoding_status"
+    t.check_constraint "geocoding_status::text = ANY (ARRAY['not_requested'::character varying, 'pending'::character varying, 'resolved'::character varying, 'failed'::character varying, 'manual'::character varying]::text[])", name: "locations_geocoding_status"
     t.check_constraint "latitude IS NULL OR latitude >= '-90'::integer::numeric AND latitude <= 90::numeric", name: "locations_latitude_range"
     t.check_constraint "longitude IS NULL OR longitude >= '-180'::integer::numeric AND longitude <= 180::numeric", name: "locations_longitude_range"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'archived'::character varying::text, 'merged'::character varying::text])", name: "locations_status"
-    t.check_constraint "verification_status::text = ANY (ARRAY['proposed'::character varying::text, 'verified'::character varying::text, 'rejected'::character varying::text])", name: "locations_verification_status"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying, 'merged'::character varying]::text[])", name: "locations_status"
+    t.check_constraint "verification_status::text = ANY (ARRAY['proposed'::character varying, 'verified'::character varying, 'rejected'::character varying]::text[])", name: "locations_verification_status"
   end
 
   create_table "log_objects", force: :cascade do |t|
@@ -882,7 +884,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_notification_preferences_on_account_id", unique: true
-    t.check_constraint "email_cadence::text = ANY (ARRAY['immediate'::character varying::text, 'daily'::character varying::text, 'weekly'::character varying::text, 'none'::character varying::text])", name: "notification_preferences_email_cadence"
+    t.check_constraint "email_cadence::text = ANY (ARRAY['immediate'::character varying, 'daily'::character varying, 'weekly'::character varying, 'none'::character varying]::text[])", name: "notification_preferences_email_cadence"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -1035,8 +1037,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["status"], name: "index_player_profiles_on_status"
     t.index ["visibility"], name: "index_player_profiles_on_visibility"
     t.check_constraint "merged_at IS NULL OR merged_into_profile_id IS NOT NULL AND archived_at IS NOT NULL", name: "player_profiles_merge_state_consistent"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'archived'::character varying::text])", name: "player_profiles_status"
-    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying::text, 'private'::character varying::text])", name: "player_profiles_visibility"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying]::text[])", name: "player_profiles_status"
+    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying, 'private'::character varying]::text[])", name: "player_profiles_visibility"
   end
 
   create_table "profile_merges", force: :cascade do |t|
@@ -1169,7 +1171,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.datetime "updated_at", null: false
     t.index ["billable_type", "billable_id", "created_at"], name: "index_subscription_histories_on_owner_and_time"
     t.index ["subscription_id"], name: "index_subscription_histories_on_subscription_id"
-    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying::text, 'Organisation'::character varying::text])", name: "subscription_histories_billable_type"
+    t.check_constraint "billable_type::text = ANY (ARRAY['Account'::character varying, 'Organisation'::character varying]::text[])", name: "subscription_histories_billable_type"
   end
 
   create_table "subscription_subscription_features", force: :cascade do |t|
@@ -1208,7 +1210,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.check_constraint "char_length(currency::text) = 3", name: "subscriptions_currency_iso4217"
     t.check_constraint "history_limit IS NULL OR history_limit >= 0", name: "subscriptions_history_limit_non_negative"
     t.check_constraint "included_users IS NULL OR included_users >= 0", name: "subscriptions_included_users_non_negative"
-    t.check_constraint "owner_scope::text = ANY (ARRAY['personal'::character varying::text, 'organisation'::character varying::text, 'both'::character varying::text])", name: "subscriptions_owner_scope"
+    t.check_constraint "owner_scope::text = ANY (ARRAY['personal'::character varying, 'organisation'::character varying, 'both'::character varying]::text[])", name: "subscriptions_owner_scope"
     t.check_constraint "yearly_price_cents >= 0", name: "subscriptions_price_non_negative"
   end
 
@@ -1227,7 +1229,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["tournament_id"], name: "index_tournament_divisions_on_tournament_id"
     t.check_constraint "division_number IS NULL OR division_number > 0", name: "division_number_positive"
     t.check_constraint "letter_level IS NOT NULL AND division_number IS NULL OR letter_level IS NULL AND division_number IS NOT NULL", name: "division_level_or_number"
-    t.check_constraint "letter_level IS NULL OR (letter_level::text = ANY (ARRAY['B'::character varying::text, 'BB'::character varying::text, 'BBB'::character varying::text, 'A'::character varying::text, 'AA'::character varying::text, 'AAA'::character varying::text, 'AAAA'::character varying::text]))", name: "valid_letter_level"
+    t.check_constraint "letter_level IS NULL OR (letter_level::text = ANY (ARRAY['B'::character varying, 'BB'::character varying, 'BBB'::character varying, 'A'::character varying, 'AA'::character varying, 'AAA'::character varying, 'AAAA'::character varying]::text[]))", name: "valid_letter_level"
   end
 
   create_table "tournament_follows", force: :cascade do |t|
@@ -1305,8 +1307,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["publication_state"], name: "index_tournaments_on_publication_state"
     t.index ["starts_at"], name: "index_tournaments_on_starts_at"
     t.check_constraint "ends_at > starts_at", name: "ends_after_starts"
-    t.check_constraint "publication_state::text = ANY (ARRAY['draft'::character varying::text, 'active'::character varying::text, 'cancelled'::character varying::text, 'archived'::character varying::text])", name: "valid_publication_state"
-    t.check_constraint "scope::text = ANY (ARRAY['club'::character varying::text, 'state'::character varying::text, 'national'::character varying::text, 'international'::character varying::text, 'other'::character varying::text])", name: "valid_scope"
+    t.check_constraint "publication_state::text = ANY (ARRAY['draft'::character varying, 'active'::character varying, 'cancelled'::character varying, 'archived'::character varying]::text[])", name: "valid_publication_state"
+    t.check_constraint "scope::text = ANY (ARRAY['club'::character varying, 'state'::character varying, 'national'::character varying, 'international'::character varying, 'other'::character varying]::text[])", name: "valid_scope"
   end
 
   create_table "training_focuses", force: :cascade do |t|
@@ -1356,7 +1358,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.check_constraint "duration_minutes > 0", name: "training_series_duration_positive"
     t.check_constraint "ends_on >= starts_on", name: "training_series_ends_on_after_starts_on"
     t.check_constraint "frequency::text = 'weekly'::text", name: "training_series_frequency"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'stopped'::character varying::text])", name: "training_series_status"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'stopped'::character varying]::text[])", name: "training_series_status"
     t.check_constraint "weekdays <@ ARRAY['mon'::character varying, 'tue'::character varying, 'wed'::character varying, 'thu'::character varying, 'fri'::character varying, 'sat'::character varying, 'sun'::character varying]", name: "training_series_weekdays_valid"
   end
 
@@ -1464,8 +1466,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
     t.index ["status"], name: "index_training_templates_on_status"
     t.check_constraint "capacity IS NULL OR capacity > 0", name: "training_templates_capacity_positive"
     t.check_constraint "duration_minutes > 0", name: "training_templates_duration_positive"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'archived'::character varying::text])", name: "training_templates_status"
-    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying::text, 'private'::character varying::text])", name: "training_templates_visibility"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'archived'::character varying]::text[])", name: "training_templates_status"
+    t.check_constraint "visibility::text = ANY (ARRAY['shared'::character varying, 'private'::character varying]::text[])", name: "training_templates_visibility"
   end
 
   create_table "user_roles", force: :cascade do |t|
@@ -1668,6 +1670,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_080000) do
   add_foreign_key "analysis_requests", "accounts"
   add_foreign_key "analysis_requests", "analyses", on_delete: :nullify
   add_foreign_key "analysis_requests", "coach_profiles", column: "assigned_coach_profile_id"
+  add_foreign_key "analysis_requests", "player_profiles"
   add_foreign_key "analysis_videos", "analyses", on_delete: :cascade
   add_foreign_key "analysis_videos", "analysis_request_videos", on_delete: :nullify
   add_foreign_key "analysis_videos", "videos", on_delete: :nullify

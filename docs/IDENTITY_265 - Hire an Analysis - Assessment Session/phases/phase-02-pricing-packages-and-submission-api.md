@@ -166,3 +166,48 @@ resources :analysis_packages, only: [:index] # public
 |-----------|-----------|--------|
 | Admin UI for packages | Phase 3 will add admin list/detail | Keep phases focused |
 | Stripe price_id | Not used (manual invoicing per plan) | Deferred to future |
+
+---
+
+## Addendum: Submitter identity gate (implemented post-plan)
+
+The submission flow now resolves *who* the analysis belongs to before anything
+is sent, mirroring the Wine Words trade-submission pattern:
+
+**API — `GET /api/v1/email_check?email=…`** (public, `EmailChecksController`)
+- Rate limited (20/min via `rate_limit`); response is intentionally minimal:
+  `{ email_address, registered }` — an account-existence oracle and nothing else.
+
+**Frontend — `HireAnalysisPage` review step**
+- Signed-in submitters skip the gate entirely; their submission never carries
+  guest fields.
+- Guests: on "Confirm & Submit" the email is probed.
+  - Registered email → inline **login card** ("Welcome back"); logging in
+    submits the request under the account. Pending email verification (202)
+    keeps the guest escape hatch available.
+  - Unknown email → inline **signup card** ("Create your Beach Volleyball Hub
+    account") with first/last name, password + confirmation, a "Why create an
+    account?" benefits panel (save time, manage requests, track progress, get
+    notified, access the analysis, message the team), **Continue as guest** and
+    **Create account & submit**. Registration pending verification keeps the
+    guest path open.
+  - Probe failure (network/API down) → falls through to a plain guest
+    submission; the check is advisory, never a blocker.
+- Turnstile widgets are embedded in both cards when the site key is configured.
+
+**Backend — submitter player identity**
+- `analysis_requests.player_profile_id` (nullable FK, migration
+  `20261123090000`).
+- `AnalysisRequests::SubmitterProfile.for_user(user)` reuses the account's
+  active player profile or creates one on the fly (display name falls back to
+  the user label when the account has no contact details; creation failure
+  never blocks the request).
+- `AnalysisRequests::AnalysisStarter` adds the submitter's profile as an
+  `AnalysisParticipant` of the produced Analysis, so the finished work is
+  domain-owned by the player.
+
+**Tests** — `email_checks_controller_test`, submitter-profile service tests,
+authenticated-create profile linking/reuse in `analysis_requests_controller_test`,
+participant assertions in `analysis_starter_test`; SPA flows in
+`HireAnalysisPage.test.tsx` (login card, signup card + submit, guest escape,
+probe-failure fallback).

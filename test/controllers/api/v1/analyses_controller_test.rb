@@ -2,7 +2,11 @@ require "test_helper"
 
 # Analyses created from an analysis request expose the link back (IDENTITY-265):
 # the editor needs the request reference and each video's request-video origin.
-class Api::V1::AnalysesControllerTest < ActionDispatch::IntegrationTest
+#
+# The class name deliberately differs from `Api::V1::AnalysesControllerTest`
+# (analysis_sessions_controller_test.rb): Rails setup blocks accumulate per
+# class, so a shared name would run both files' setups for every test.
+class Api::V1::AnalysesControllerProvenanceTest < ActionDispatch::IntegrationTest
   include ApiTestHelper
 
   setup do

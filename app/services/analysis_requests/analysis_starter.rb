@@ -29,6 +29,7 @@ module AnalysisRequests
       Analysis.transaction do
         analysis = create_analysis
         copy_videos(analysis)
+        link_submitter_as_participant(analysis)
         request.update!(
           analysis: analysis,
           workflow_status: "in_progress",
@@ -52,6 +53,17 @@ module AnalysisRequests
         created_by: actor,
         assigned_coach_profile: request.assigned_coach_profile
       )
+    end
+
+    # The submitter becomes a participant of the Analysis, so the analysis is
+    # theirs in the domain sense too (IDENTITY-265): their player profile
+    # travels from the request to the produced analysis. Guest requests without
+    # a resolved profile simply skip this.
+    def link_submitter_as_participant(analysis)
+      profile = request.player_profile
+      return if profile.nil?
+
+      AnalysisParticipant.find_or_create_by!(analysis: analysis, player_profile: profile)
     end
 
     # Copies what the Analysis domain can represent: a catalogue video, an

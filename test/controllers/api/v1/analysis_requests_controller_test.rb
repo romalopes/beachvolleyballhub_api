@@ -95,6 +95,48 @@ class Api::V1::AnalysisRequestsControllerTest < ActionDispatch::IntegrationTest
     assert_nil body["analysis_request"]["guest_name"]
   end
 
+  test "authenticated create links the submitter's existing player profile" do
+    post api_v1_analysis_requests_path, params: {
+      analysis_request: { title: "Profiled request", description: "Review my block" }
+    }, headers: @headers, as: :json
+
+    assert_response :created
+    row = AnalysisRequest.find(response.parsed_body.dig("analysis_request", "id"))
+    assert_equal player_profiles(:john_player).id, row.player_profile_id
+  end
+
+  test "authenticated create builds a player profile when the account has none" do
+    user = users(:six)
+    _session, headers = sign_in_with_api_token(user)
+
+    assert_difference "PlayerProfile.count", 1 do
+      post api_v1_analysis_requests_path, params: {
+        analysis_request: { title: "First request", description: "Review my serve" }
+      }, headers: headers, as: :json
+    end
+
+    assert_response :created
+    row = AnalysisRequest.find(response.parsed_body.dig("analysis_request", "id"))
+    profile = row.player_profile
+    assert_equal user.account.id, profile.account_id
+    assert_equal "six@example.com", profile.email
+    assert_equal "active", profile.status
+    assert profile.display_name.present?
+  end
+
+  test "authenticated create reuses one profile across requests" do
+    2.times do |n|
+      post api_v1_analysis_requests_path, params: {
+        analysis_request: { title: "Repeat #{n}", description: "Same player" }
+      }, headers: @headers, as: :json
+      assert_response :created
+    end
+
+    rows = AnalysisRequest.order(:id).last(2)
+    assert_equal player_profiles(:john_player).id, rows.first.player_profile_id
+    assert_equal rows.first.player_profile_id, rows.second.player_profile_id
+  end
+
   test "create with an unknown package key is rejected" do
     post api_v1_analysis_requests_path, params: {
       analysis_request: { title: "Bad package", package_key: "does_not_exist" }

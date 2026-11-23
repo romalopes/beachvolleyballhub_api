@@ -13,6 +13,11 @@ class AnalysisRequest < ApplicationRecord
   # The Analysis created when the team starts working on an approved request
   # (IDENTITY-265). Optional: older requests predate the link.
   belongs_to :analysis, optional: true
+  # The submitter's player identity (IDENTITY-265). Resolved from the signed-in
+  # user at submission time — created on the fly when the account has no
+  # profile yet — so the analysis the team later produces is tied to a real
+  # player, not just an email address.
+  belongs_to :player_profile, optional: true
   belongs_to :package, class_name: "AnalysisPackage", foreign_key: :package_key, primary_key: :key, optional: true
 
   has_many :analysis_request_videos, -> { order(:position, :id) }, dependent: :destroy, inverse_of: :analysis_request

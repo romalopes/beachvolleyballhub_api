@@ -34,6 +34,9 @@ class PlayerProfile < ApplicationRecord
 
   has_many :training_session_participants, dependent: :restrict_with_error, inverse_of: :player_profile
   has_many :assessment_session_participants, dependent: :restrict_with_error, inverse_of: :player_profile
+  # Hired analyses requested by this player (IDENTITY-265); requests carry the
+  # profile so the produced Analysis can list the player as a participant.
+  has_many :analysis_requests, dependent: :nullify
   has_many :ranking_consolidation_rows, dependent: :restrict_with_error
   has_many :player_claims, dependent: :restrict_with_error
 

@@ -267,6 +267,10 @@ module Api
           attrs[:account] = current_user.account
           attrs[:guest_name] = nil
           attrs[:guest_email] = nil
+          # The submitter's player identity: reused when the account already
+          # has one, created on the fly otherwise (IDENTITY-265). A failure to
+          # resolve must never block the request itself, so fall back to nil.
+          attrs[:player_profile] = AnalysisRequests::SubmitterProfile.for_user(current_user).profile
         end
 
         # The package price is server-authoritative; an unknown or inactive key
