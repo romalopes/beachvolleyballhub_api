@@ -1,0 +1,2373 @@
+{
+  "format": "beachvolleyballhub.tournament-staging",
+  "format_version": 1,
+  "season": "2026-2027",
+  "generated_at": "2026-11-24",
+  "sort_order": [
+    "state",
+    "organisation.name",
+    "starts_at",
+    "name"
+  ],
+  "system_model": {
+    "organisation": "Existing BeachVolleyballHub Organisation; resolve organisation.id before API creation.",
+    "scope_values": [
+      "club",
+      "state",
+      "national",
+      "international",
+      "other"
+    ],
+    "division_scheme_values": [
+      "letter",
+      "numbered"
+    ],
+    "letter_divisions": [
+      "AAAA",
+      "AAA",
+      "AA",
+      "A",
+      "BBB",
+      "BB",
+      "B"
+    ],
+    "publication_state_values": [
+      "active",
+      "cancelled",
+      "archived"
+    ],
+    "timezone_policy": "IANA timezone; all-day end is exclusive next-day midnight."
+  },
+  "import_notes": [
+    "This is a staging dataset, not a direct POST payload.",
+    "The Tournament model requires an existing organisation_id and at least one active TournamentDivision.",
+    "Organisation IDs are null because they must be resolved against the target BeachVolleyballHub database.",
+    "Divisions are empty because the source calendars did not consistently publish tournament division offerings. Do not invent divisions.",
+    "Some entries and dates were transcribed from the preceding research summary and have not been independently re-verified in this export.",
+    "The NBVA season placeholder is not a confirmed individual tournament and must be split into actual events before import.",
+    "Some prior-source dates may conflict or have incomplete venue/round details; review source.review_required before importing.",
+    "No participation, registration, results, draw or payment data is included."
+  ],
+  "tournaments": [
+    {
+      "name": "ACT Beach Series",
+      "organisation": {
+        "id": null,
+        "name": "CBR Beach Volley",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-12-19T00:00:00",
+      "ends_at": "2026-12-20T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Lyneham Beach Volleyball Centre",
+      "city": "Canberra",
+      "state": "ACT",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.cbr-beach-volley.net/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ACT Beach Series",
+      "organisation": {
+        "id": null,
+        "name": "CBR Beach Volley",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-01-09T00:00:00",
+      "ends_at": "2027-01-10T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Lyneham Beach Volleyball Centre",
+      "city": "Canberra",
+      "state": "ACT",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.cbr-beach-volley.net/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ACT Beach Series",
+      "organisation": {
+        "id": null,
+        "name": "CBR Beach Volley",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-06T00:00:00",
+      "ends_at": "2027-02-07T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Lyneham Beach Volleyball Centre",
+      "city": "Canberra",
+      "state": "ACT",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.cbr-beach-volley.net/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ACT Open",
+      "organisation": {
+        "id": null,
+        "name": "CBR Beach Volley",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-27T00:00:00",
+      "ends_at": "2027-03-01T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Lyneham Beach Volleyball Centre",
+      "city": "Canberra",
+      "state": "ACT",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.cbr-beach-volley.net/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Australian Junior Beach Volleyball Tour – Canberra",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Australia",
+        "resolution_required": true
+      },
+      "scope": "national",
+      "division_scheme": null,
+      "starts_at": "2027-01-20T00:00:00",
+      "ends_at": "2027-01-22T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Canberra",
+      "city": "Canberra",
+      "state": "ACT",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://abvt.volleyball.org.au/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Australian Beach Volleyball Tour – Canberra",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Australia",
+        "resolution_required": true
+      },
+      "scope": "national",
+      "division_scheme": null,
+      "starts_at": "2027-01-22T00:00:00",
+      "ends_at": "2027-01-25T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Canberra",
+      "city": "Canberra",
+      "state": "ACT",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://abvt.volleyball.org.au/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Maroubra Summer Mixed #1",
+      "organisation": {
+        "id": null,
+        "name": "Maroubra Beach Volleyball",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-09-12T00:00:00",
+      "ends_at": "2026-09-13T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Maroubra Beach",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.beachvolleyball.com.au/social-tournaments",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Maroubra Summer Mixed #2",
+      "organisation": {
+        "id": null,
+        "name": "Maroubra Beach Volleyball",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-10-05T00:00:00",
+      "ends_at": "2026-10-06T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Maroubra Beach",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.beachvolleyball.com.au/social-tournaments",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Maroubra Summer Mixed #3",
+      "organisation": {
+        "id": null,
+        "name": "Maroubra Beach Volleyball",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-10-31T00:00:00",
+      "ends_at": "2026-11-01T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Maroubra Beach",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.beachvolleyball.com.au/social-tournaments",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Maroubra Summer Mixed #4",
+      "organisation": {
+        "id": null,
+        "name": "Maroubra Beach Volleyball",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-12-12T00:00:00",
+      "ends_at": "2026-12-13T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Maroubra Beach",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.beachvolleyball.com.au/social-tournaments",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Maroubra Summer Mixed #5",
+      "organisation": {
+        "id": null,
+        "name": "Maroubra Beach Volleyball",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-01-16T00:00:00",
+      "ends_at": "2027-01-17T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Maroubra Beach",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.beachvolleyball.com.au/social-tournaments",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Maroubra Summer Mixed #6",
+      "organisation": {
+        "id": null,
+        "name": "Maroubra Beach Volleyball",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-02-13T00:00:00",
+      "ends_at": "2027-02-14T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Maroubra Beach",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.beachvolleyball.com.au/social-tournaments",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Maroubra Summer Mixed #7",
+      "organisation": {
+        "id": null,
+        "name": "Maroubra Beach Volleyball",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-03-13T00:00:00",
+      "ends_at": "2027-03-14T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Maroubra Beach",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.beachvolleyball.com.au/social-tournaments",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Maroubra Summer Mixed #8",
+      "organisation": {
+        "id": null,
+        "name": "Maroubra Beach Volleyball",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-04-17T00:00:00",
+      "ends_at": "2027-04-18T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Maroubra Beach",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.beachvolleyball.com.au/social-tournaments",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA 2026–27 Tournament Series – dates TBC",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-10-01T00:00:00",
+      "ends_at": "2027-05-01T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": "Season series placeholder. Individual tournament dates were not extractable; do not import as a confirmed single event.",
+      "location_name": "Northern Beaches beaches",
+      "city": "Northern Beaches",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://nbva.org.au/tournaments/",
+        "confidence": "community_sourced",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Summer Beach Tour Round 1",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-09-19T00:00:00",
+      "ends_at": "2026-09-21T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Maroubra Beach",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/competitions/beach-volleyball-tour-summer",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Summer Beach Tour Round 2",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-10-10T00:00:00",
+      "ends_at": "2026-10-12T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Woonona Beach",
+      "city": "Wollongong",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/competitions/beach-volleyball-tour-summer",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Summer Beach Tour Round 3",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-10-24T00:00:00",
+      "ends_at": "2026-10-26T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Brighton Beach",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/competitions/beach-volleyball-tour-summer",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Summer Beach Tour Round 4 – Women",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-07T00:00:00",
+      "ends_at": "2026-11-08T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Blacktown City Beach",
+      "city": "Blacktown",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/competitions/beach-volleyball-tour-summer",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Summer Beach Tour Round 4 – Men",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-14T00:00:00",
+      "ends_at": "2026-11-15T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Blacktown City Beach",
+      "city": "Blacktown",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/competitions/beach-volleyball-tour-summer",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Summer Beach Tour Round 4 – Divisions 5/6",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-21T00:00:00",
+      "ends_at": "2026-11-23T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Blacktown City Beach",
+      "city": "Blacktown",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/competitions/beach-volleyball-tour-summer",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NSW Youth Beach Series Round 3",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-28T00:00:00",
+      "ends_at": "2026-11-30T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Blacktown City Beach",
+      "city": "Blacktown",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NSW Championships",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-12-05T00:00:00",
+      "ends_at": "2026-12-07T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Manly Beach",
+      "city": "Manly",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/competitions/beach-volleyball-tour-summer",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NSW Youth Beach Camp & Championships",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-01-15T00:00:00",
+      "ends_at": "2027-01-19T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Woonona Beach",
+      "city": "Wollongong",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Summer Beach Tour Round 5",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-06T00:00:00",
+      "ends_at": "2027-02-08T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Port Macquarie Beach",
+      "city": "Port Macquarie",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/competitions/beach-volleyball-tour-summer",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Summer Beach Tour Round 6",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-20T00:00:00",
+      "ends_at": "2027-02-22T00:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": true,
+      "description": null,
+      "location_name": "Avoca Beach",
+      "city": "Avoca",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballnsw.com.au/competitions/beach-volleyball-tour-summer",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Australian Beach Volleyball Tour – Coolangatta",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Australia",
+        "resolution_required": true
+      },
+      "scope": "national",
+      "division_scheme": null,
+      "starts_at": "2027-03-12T00:00:00",
+      "ends_at": "2027-03-15T00:00:00",
+      "timezone": "Australia/Brisbane",
+      "all_day": true,
+      "description": null,
+      "location_name": "Coolangatta Beach",
+      "city": "Coolangatta",
+      "state": "QLD",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://abvt.volleyball.org.au/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Sandstorm QBVT",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Queensland",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-27T00:00:00",
+      "ends_at": "2026-11-30T00:00:00",
+      "timezone": "Australia/Brisbane",
+      "all_day": true,
+      "description": null,
+      "location_name": "Sandstorm Beach Club",
+      "city": "Gold Coast",
+      "state": "QLD",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.vq.org.au/competitions/tournaments/queensland-beach-volleyball-tour/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "QBVT Round 11 – Redcliffe",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Queensland",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-12-12T00:00:00",
+      "ends_at": "2026-12-14T00:00:00",
+      "timezone": "Australia/Brisbane",
+      "all_day": true,
+      "description": null,
+      "location_name": "Suttons Beach",
+      "city": "Redcliffe",
+      "state": "QLD",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.vq.org.au/competitions/tournaments/queensland-beach-volleyball-tour/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "QBVT Round 12 – Surfers Paradise",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Queensland",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-01-09T00:00:00",
+      "ends_at": "2027-01-11T00:00:00",
+      "timezone": "Australia/Brisbane",
+      "all_day": true,
+      "description": null,
+      "location_name": "Surfers Paradise",
+      "city": "Gold Coast",
+      "state": "QLD",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.vq.org.au/competitions/tournaments/queensland-beach-volleyball-tour/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "QBVT Round 13 – Sandstorm Juniors",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Queensland",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-01-30T00:00:00",
+      "ends_at": "2027-02-01T00:00:00",
+      "timezone": "Australia/Brisbane",
+      "all_day": true,
+      "description": null,
+      "location_name": "Sandstorm Beach Club",
+      "city": "Gold Coast",
+      "state": "QLD",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.vq.org.au/competitions/tournaments/queensland-beach-volleyball-tour/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "QBVT Round 14 – Tangalooma",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Queensland",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-06T00:00:00",
+      "ends_at": "2027-02-08T00:00:00",
+      "timezone": "Australia/Brisbane",
+      "all_day": true,
+      "description": null,
+      "location_name": "Tangalooma",
+      "city": "Moreton Island",
+      "state": "QLD",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.vq.org.au/competitions/tournaments/queensland-beach-volleyball-tour/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "QBVT Round 15 – Sandstorm Seniors",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Queensland",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-12T00:00:00",
+      "ends_at": "2027-02-15T00:00:00",
+      "timezone": "Australia/Brisbane",
+      "all_day": true,
+      "description": null,
+      "location_name": "Sandstorm Beach Club",
+      "city": "Gold Coast",
+      "state": "QLD",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.vq.org.au/competitions/tournaments/queensland-beach-volleyball-tour/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Queensland Open",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Queensland",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-03-05T00:00:00",
+      "ends_at": "2027-03-08T00:00:00",
+      "timezone": "Australia/Brisbane",
+      "all_day": true,
+      "description": null,
+      "location_name": "Coolangatta Beach",
+      "city": "Coolangatta",
+      "state": "QLD",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.vq.org.au/competitions/tournaments/queensland-beach-volleyball-tour/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Beachside Mixed Pairs",
+      "organisation": {
+        "id": null,
+        "name": "Beachside",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-11-08T00:00:00",
+      "ends_at": "2026-11-09T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Beachside Mixed Pairs",
+      "organisation": {
+        "id": null,
+        "name": "Beachside",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-11-22T00:00:00",
+      "ends_at": "2026-11-23T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Pelligra SA Open",
+      "organisation": {
+        "id": null,
+        "name": "Beachside",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-01-08T00:00:00",
+      "ends_at": "2027-01-11T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Beachside Mixed Pairs",
+      "organisation": {
+        "id": null,
+        "name": "Beachside",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-01-31T00:00:00",
+      "ends_at": "2027-02-01T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Beachside Championships",
+      "organisation": {
+        "id": null,
+        "name": "Beachside",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-02-28T00:00:00",
+      "ends_at": "2027-03-01T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Australian Beach Volleyball Tour – Glenelg",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Australia",
+        "resolution_required": true
+      },
+      "scope": "national",
+      "division_scheme": null,
+      "starts_at": "2027-02-12T00:00:00",
+      "ends_at": "2027-02-15T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://abvt.volleyball.org.au/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Round 1",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-10-18T00:00:00",
+      "ends_at": "2026-10-19T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Round 2",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-01T00:00:00",
+      "ends_at": "2026-11-02T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Round 3",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-07T00:00:00",
+      "ends_at": "2026-11-08T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Round 4",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-21T00:00:00",
+      "ends_at": "2026-11-22T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Round 5",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-29T00:00:00",
+      "ends_at": "2026-11-30T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Round 6",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-12-19T00:00:00",
+      "ends_at": "2026-12-20T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Round 7",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-01-17T00:00:00",
+      "ends_at": "2027-01-18T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Round 8",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-01-30T00:00:00",
+      "ends_at": "2027-01-31T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Round 9",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-07T00:00:00",
+      "ends_at": "2027-02-08T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Round 10",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-27T00:00:00",
+      "ends_at": "2027-02-28T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "SABVS Championships",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball SA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-03-06T00:00:00",
+      "ends_at": "2027-03-08T00:00:00",
+      "timezone": "Australia/Adelaide",
+      "all_day": true,
+      "description": null,
+      "location_name": "Glenelg / metropolitan beach venue",
+      "city": "Adelaide",
+      "state": "SA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballsa.com.au/beach/calendar",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Tasmania Open",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Tasmania",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-01-16T00:00:00",
+      "ends_at": "2027-01-18T00:00:00",
+      "timezone": "Australia/Hobart",
+      "all_day": true,
+      "description": null,
+      "location_name": "Kingston Beach",
+      "city": "Kingston",
+      "state": "TAS",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://abvt.volleyball.org.au/mikasa-cup/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Australian Junior Beach Volleyball Tour – Cobram",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Australia",
+        "resolution_required": true
+      },
+      "scope": "national",
+      "division_scheme": null,
+      "starts_at": "2027-04-07T00:00:00",
+      "ends_at": "2027-04-09T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "Cobram",
+      "city": "Cobram",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://abvt.volleyball.org.au/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Australian Beach Volleyball Tour – Cobram",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Australia",
+        "resolution_required": true
+      },
+      "scope": "national",
+      "division_scheme": null,
+      "starts_at": "2027-04-09T00:00:00",
+      "ends_at": "2027-04-12T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "Cobram",
+      "city": "Cobram",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://abvt.volleyball.org.au/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Ranking Series Round 1",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-10-04T00:00:00",
+      "ends_at": "2026-10-05T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Ranking Series Round 2",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-10-25T00:00:00",
+      "ends_at": "2026-10-26T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Ranking Series Round 3",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-08T00:00:00",
+      "ends_at": "2026-11-09T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Ranking Series Round 4",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-29T00:00:00",
+      "ends_at": "2026-11-30T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Ranking Series Round 5",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-12-13T00:00:00",
+      "ends_at": "2026-12-14T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Ranking Series Round 6",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-01-17T00:00:00",
+      "ends_at": "2027-01-18T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Ranking Series Round 7",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-01-31T00:00:00",
+      "ends_at": "2027-02-01T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Ranking Series Round 8",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-07T00:00:00",
+      "ends_at": "2027-02-08T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Ranking Series Round 10",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-04-04T00:00:00",
+      "ends_at": "2027-04-05T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "King of the Beach",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria / VicBeach",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-10-11T00:00:00",
+      "ends_at": "2026-10-12T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Charity Dress Up Fours",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria / VicBeach",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-22T00:00:00",
+      "ends_at": "2026-11-23T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Mixed Pairs #1",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria / VicBeach",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-12-20T00:00:00",
+      "ends_at": "2026-12-21T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Vic Open",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria / VicBeach",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-20T00:00:00",
+      "ends_at": "2027-02-22T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach / St Kilda",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Mixed Pairs #2",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria / VicBeach",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-28T00:00:00",
+      "ends_at": "2027-03-01T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "VicBeach Futures",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria / VicBeach",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-03-07T00:00:00",
+      "ends_at": "2027-03-08T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "South Melbourne Beach",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Vic Masters",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria / VicBeach",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-03-20T00:00:00",
+      "ends_at": "2027-03-22T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "Melbourne beach venue TBC",
+      "city": "Melbourne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "Lorne Classic",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball Victoria / VicBeach",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-04-17T00:00:00",
+      "ends_at": "2027-04-19T00:00:00",
+      "timezone": "Australia/Melbourne",
+      "all_day": true,
+      "description": null,
+      "location_name": "Lorne Main Beach",
+      "city": "Lorne",
+      "state": "VIC",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://www.volleyballvictoria.org.au/competitions-and-events/beach-volley",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ATABT Round 1 – Open",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball WA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-10-10T00:00:00",
+      "ends_at": "2026-10-12T00:00:00",
+      "timezone": "Australia/Perth",
+      "all_day": true,
+      "description": null,
+      "location_name": "City Beach",
+      "city": "Perth",
+      "state": "WA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://volleyballwa.com.au/vwa-events/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ATABT Round 2 – Graded",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball WA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-10-24T00:00:00",
+      "ends_at": "2026-10-26T00:00:00",
+      "timezone": "Australia/Perth",
+      "all_day": true,
+      "description": null,
+      "location_name": "Inner City Beach",
+      "city": "Perth",
+      "state": "WA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://volleyballwa.com.au/vwa-events/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ATABT Round 3 – Graded",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball WA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-07T00:00:00",
+      "ends_at": "2026-11-09T00:00:00",
+      "timezone": "Australia/Perth",
+      "all_day": true,
+      "description": null,
+      "location_name": "Leighton Beach",
+      "city": "Perth",
+      "state": "WA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://volleyballwa.com.au/vwa-events/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ATABT Round 4 – Graded",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball WA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-11-21T00:00:00",
+      "ends_at": "2026-11-22T00:00:00",
+      "timezone": "Australia/Perth",
+      "all_day": true,
+      "description": null,
+      "location_name": "City Beach",
+      "city": "Perth",
+      "state": "WA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://volleyballwa.com.au/vwa-events/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ATABT Round 5 – Open",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball WA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2026-12-05T00:00:00",
+      "ends_at": "2026-12-07T00:00:00",
+      "timezone": "Australia/Perth",
+      "all_day": true,
+      "description": null,
+      "location_name": "Mandurah Beach",
+      "city": "Mandurah",
+      "state": "WA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://volleyballwa.com.au/vwa-events/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ATABT Round 6 – Open",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball WA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-01-16T00:00:00",
+      "ends_at": "2027-01-18T00:00:00",
+      "timezone": "Australia/Perth",
+      "all_day": true,
+      "description": null,
+      "location_name": "Bunbury Beach",
+      "city": "Bunbury",
+      "state": "WA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://volleyballwa.com.au/vwa-events/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ATABT Round 7 – WA Open",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball WA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-06T00:00:00",
+      "ends_at": "2027-02-08T00:00:00",
+      "timezone": "Australia/Perth",
+      "all_day": true,
+      "description": null,
+      "location_name": "Scarborough Beach",
+      "city": "Perth",
+      "state": "WA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://volleyballwa.com.au/vwa-events/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ATABT Round 8 – Graded",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball WA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-20T00:00:00",
+      "ends_at": "2027-02-22T00:00:00",
+      "timezone": "Australia/Perth",
+      "all_day": true,
+      "description": null,
+      "location_name": "Venue TBC",
+      "city": "TBC",
+      "state": "WA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://volleyballwa.com.au/vwa-events/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "ATABT Round 9 – Open",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball WA",
+        "resolution_required": true
+      },
+      "scope": "state",
+      "division_scheme": null,
+      "starts_at": "2027-02-27T00:00:00",
+      "ends_at": "2027-03-01T00:00:00",
+      "timezone": "Australia/Perth",
+      "all_day": true,
+      "description": null,
+      "location_name": "Middleton Beach",
+      "city": "Albany",
+      "state": "WA",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": "https://volleyballwa.com.au/vwa-events/",
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-24",
+        "review_required": true
+      },
+      "import_ready": false
+    }
+  ]
+}

@@ -20,7 +20,14 @@ class AppSetting < ApplicationRecord
     "test_email" => "romalopes@yahoo.com.br",
     # Comma-separated Account ids that receive "new analysis request" style
     # notifications (IDENTITY-265). Empty until an admin configures the crew.
-    "analysis_request_crew_account_ids" => ""
+    "analysis_request_crew_account_ids" => "",
+    # Bank account details for invoice payments (IDENTITY-265).
+    # Fall back to ENV for initial deploy; admins can override via the
+    # Configuration page without redeploying.
+    "bank_name" => ENV["BANK_NAME"]&.presence || "Beach Volleyball Hub Bank",
+    "bank_account_name" => ENV["BANK_ACCOUNT_NAME"]&.presence || "Beach Volleyball Hub",
+    "bank_bsb" => ENV["BANK_BSB"]&.presence || "062-000",
+    "bank_account" => ENV["BANK_ACCOUNT"]&.presence || "12345678"
   }.freeze
 
   validates :key, presence: true, uniqueness: true
@@ -85,5 +92,37 @@ class AppSetting < ApplicationRecord
   rescue ActiveRecord::StatementInvalid
     # Table may not exist yet (e.g. mid-migration boot); default safely.
     DEFAULTS[key.to_s]
+  end
+
+  # --- Bank account settings for invoices (IDENTITY-265) ------------------
+
+  # Bank name as it should appear on invoices.
+  def self.bank_name
+    string("bank_name")
+  end
+
+  # Account holder name as it should appear on invoices.
+  def self.bank_account_name
+    string("bank_account_name")
+  end
+
+  # BSB (Bank State Branch) number for Australian bank transfers.
+  def self.bank_bsb
+    string("bank_bsb")
+  end
+
+  # Account number for the bank account.
+  def self.bank_account
+    string("bank_account")
+  end
+
+  # Returns all bank account details as a hash for easy passing to the PDF generator.
+  def self.bank_details
+    {
+      name: bank_name,
+      account_name: bank_account_name,
+      bsb: bank_bsb,
+      account: bank_account
+    }
   end
 end

@@ -118,7 +118,7 @@ module Api
         end
 
         def serialize_assessment_session(s)
-          { id: s.id, title: s.title, status: s.status, date: s.session_date&.iso8601 }
+          { id: s.id, title: s.name, status: s.status, date: s.scheduled_on&.iso8601 }
         end
 
         def serialize_internal_note(n)

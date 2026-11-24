@@ -29,6 +29,10 @@ module Api
             AppSetting.set!(:test, settings[:test].presence || settings[:use_test_email].presence)
           end
           AppSetting.set!(:test_email, settings[:test_email]) if settings.key?(:test_email)
+          AppSetting.set!(:bank_name, settings[:bank_name]) if settings.key?(:bank_name)
+          AppSetting.set!(:bank_account_name, settings[:bank_account_name]) if settings.key?(:bank_account_name)
+          AppSetting.set!(:bank_bsb, settings[:bank_bsb]) if settings.key?(:bank_bsb)
+          AppSetting.set!(:bank_account, settings[:bank_account]) if settings.key?(:bank_account)
 
           render json: configuration_json
         rescue ActiveRecord::RecordInvalid => e
@@ -42,14 +46,19 @@ module Api
         # 0/1 so JSON and form-encoded clients both work. Accepts both "test"
         # (used by tests) and "use_test_email" (sent by the React SPA).
         def configuration_params
-          params.permit(:logs_saved_to_database, :test, :use_test_email, :test_email)
+          params.permit(:logs_saved_to_database, :test, :use_test_email, :test_email,
+                        :bank_name, :bank_account_name, :bank_bsb, :bank_account)
         end
 
         def configuration_json
           {
             logs_saved_to_database: AppSetting.logs_enabled?,
             use_test_email: AppSetting.use_test_email?,
-            test_email: AppSetting.test_email
+            test_email: AppSetting.test_email,
+            bank_name: AppSetting.bank_name,
+            bank_account_name: AppSetting.bank_account_name,
+            bank_bsb: AppSetting.bank_bsb,
+            bank_account: AppSetting.bank_account
           }
         end
       end

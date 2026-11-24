@@ -34,10 +34,10 @@ class AppSettingTest < ActiveSupport::TestCase
 
   test "ordered_all includes unset built-in defaults sorted by key" do
     rows = AppSetting.ordered_all
-    assert_equal %w[logs_enabled test test_email], rows.map(&:key)
+    assert_equal %w[analysis_request_crew_account_ids bank_account bank_account_name bank_bsb bank_name logs_enabled test test_email], rows.map(&:key)
     AppSetting.set!(:custom_b, "x")
     AppSetting.set!(:custom_a, "y")
-    assert_equal %w[custom_a custom_b logs_enabled test test_email],
+    assert_equal %w[analysis_request_crew_account_ids bank_account bank_account_name bank_bsb bank_name custom_a custom_b logs_enabled test test_email],
                  AppSetting.ordered_all.map(&:key)
   end
 

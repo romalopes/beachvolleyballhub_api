@@ -14,10 +14,11 @@ module Invoices
     PAGE_HEIGHT = 842
     MARGIN = 56
 
-    def initialize(invoice, logo: LogoImage.load)
+    def initialize(invoice, logo: LogoImage.load, bank: AppSetting.bank_details)
       @invoice = invoice
       @request = invoice.analysis_request
       @logo = logo
+      @bank = bank
     end
 
     def render
@@ -123,6 +124,9 @@ module Invoices
       y -= 46
       lines.concat(notes(y))
 
+      # Bank account details for payment
+      lines.concat(bank_details(y))
+
       lines << text(MARGIN, 64, "Thank you for choosing Beach Volleyball Hub.", size: 9)
       lines << text(MARGIN, 50, "Questions about this invoice? Reply to the email it arrived with.", size: 8)
 
@@ -157,6 +161,26 @@ module Invoices
       notes.each_with_index.map do |line, index|
         text(MARGIN, y - (index * 13), fit(line, 9, PAGE_WIDTH - (MARGIN * 2)), size: 9)
       end
+    end
+
+    def bank_details(y)
+      return [] unless @bank.present? && @bank[:name].present?
+
+      lines = []
+      lines << rule(y + 10)
+      lines << text(MARGIN, y - 4, "BANK ACCOUNT DETAILS", size: 8, bold: true)
+      
+      bank_lines = []
+      bank_lines << "Bank: #{@bank[:name]}"
+      bank_lines << "Account: #{@bank[:account_name]}"
+      bank_lines << "BSB: #{@bank[:bsb]}"
+      bank_lines << "Account #: #{@bank[:account]}"
+
+      bank_lines.each_with_index do |line, index|
+        lines << text(MARGIN, y - 20 - (index * 13), fit(line, 9, PAGE_WIDTH - (MARGIN * 2)), size: 9)
+      end
+
+      lines
     end
 
     def description_lines
