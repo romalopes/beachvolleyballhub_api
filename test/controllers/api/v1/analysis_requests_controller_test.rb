@@ -139,9 +139,23 @@ class Api::V1::AnalysisRequestsControllerTest < ActionDispatch::IntegrationTest
 
   # --- assessment session deliverables ---------------------------------------
 
+  # Assessment sessions live on the request's Analysis, so every deliverable
+  # test seeds an analysis and links through it.
+  def request_with_analysis(title:)
+    request_row = @account.analysis_requests.create!(title: title, guest_name: "Me", guest_email: "me@example.com")
+    analysis = Analysis.create!(
+      title: "Analysis for #{title}",
+      status: :draft,
+      created_by: users(:six),
+      assigned_coach_profile: coach_profiles(:maria_coach),
+    )
+    request_row.update!(analysis: analysis)
+    request_row
+  end
+
   test "staff can link an assessment session as a deliverable" do
     _session, headers = sign_in_with_api_token(users(:two)) # admin
-    request_row = @account.analysis_requests.create!(title: "Linked deliverables", guest_name: "Me", guest_email: "me@example.com")
+    request_row = request_with_analysis(title: "Linked deliverables")
 
     assert_difference -> { request_row.reload.assessment_sessions.count }, 1 do
       post link_assessment_session_api_v1_analysis_request_path(request_row),
@@ -158,8 +172,8 @@ class Api::V1::AnalysisRequestsControllerTest < ActionDispatch::IntegrationTest
 
   test "linking the same session twice does not duplicate it" do
     _session, headers = sign_in_with_api_token(users(:two))
-    request_row = @account.analysis_requests.create!(title: "Idempotent link", guest_name: "Me", guest_email: "me@example.com")
-    request_row.assessment_sessions << assessment_sessions(:draft_squad)
+    request_row = request_with_analysis(title: "Idempotent link")
+    request_row.analysis.assessment_sessions << assessment_sessions(:draft_squad)
 
     assert_no_difference -> { request_row.reload.assessment_sessions.count } do
       post link_assessment_session_api_v1_analysis_request_path(request_row),
@@ -170,7 +184,7 @@ class Api::V1::AnalysisRequestsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "linking is forbidden for the submitter" do
-    request_row = @account.analysis_requests.create!(title: "Owner link", guest_name: "Me", guest_email: "me@example.com")
+    request_row = request_with_analysis(title: "Owner link")
 
     assert_no_difference -> { request_row.reload.assessment_sessions.count } do
       post link_assessment_session_api_v1_analysis_request_path(request_row),
@@ -181,7 +195,7 @@ class Api::V1::AnalysisRequestsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "linking requires authentication" do
-    request_row = @account.analysis_requests.create!(title: "Anon link", guest_name: "Me", guest_email: "me@example.com")
+    request_row = request_with_analysis(title: "Anon link")
 
     post link_assessment_session_api_v1_analysis_request_path(request_row),
          params: { assessment_session_id: assessment_sessions(:draft_squad).id }, as: :json
@@ -190,17 +204,41 @@ class Api::V1::AnalysisRequestsControllerTest < ActionDispatch::IntegrationTest
 
   test "linking an unknown session is a 404" do
     _session, headers = sign_in_with_api_token(users(:two))
-    request_row = @account.analysis_requests.create!(title: "Unknown session", guest_name: "Me", guest_email: "me@example.com")
+    request_row = request_with_analysis(title: "Unknown session")
 
     post link_assessment_session_api_v1_analysis_request_path(request_row),
          params: { assessment_session_id: 0 }, headers: headers, as: :json
     assert_response :not_found
   end
 
+  test "linking before the analysis exists is unprocessable" do
+    _session, headers = sign_in_with_api_token(users(:two))
+    request_row = @account.analysis_requests.create!(title: "No analysis yet", guest_name: "Me", guest_email: "me@example.com")
+
+    post link_assessment_session_api_v1_analysis_request_path(request_row),
+         params: { assessment_session_id: assessment_sessions(:draft_squad).id },
+         headers: headers, as: :json
+    assert_response :unprocessable_entity
+    assert_empty request_row.reload.assessment_sessions
+  end
+
+  test "request assessment sessions flow through the analysis" do
+    request_row = request_with_analysis(title: "Delegated read")
+    request_row.analysis.assessment_sessions << assessment_sessions(:draft_squad)
+
+    assert_equal [assessment_sessions(:draft_squad).id], request_row.assessment_sessions.map(&:id)
+  end
+
+  test "a request without an analysis has no assessment sessions" do
+    request_row = @account.analysis_requests.create!(title: "No analysis", guest_name: "Me", guest_email: "me@example.com")
+
+    assert_empty request_row.assessment_sessions
+  end
+
   test "staff can unlink an assessment session" do
     _session, headers = sign_in_with_api_token(users(:two))
-    request_row = @account.analysis_requests.create!(title: "Unlink me", guest_name: "Me", guest_email: "me@example.com")
-    request_row.assessment_sessions << assessment_sessions(:draft_squad)
+    request_row = request_with_analysis(title: "Unlink me")
+    request_row.analysis.assessment_sessions << assessment_sessions(:draft_squad)
 
     assert_difference -> { request_row.reload.assessment_sessions.count }, -1 do
       delete assessment_session_api_v1_analysis_request_path(request_row, assessment_sessions(:draft_squad).id),
@@ -215,7 +253,9 @@ class Api::V1::AnalysisRequestsControllerTest < ActionDispatch::IntegrationTest
     _session, headers = sign_in_with_api_token(users(:two))
     # Guest requests carry the secure token; account-backed ones do not.
     request_row = AnalysisRequest.create!(title: "Guest deliverable", guest_name: "Jane", guest_email: "jane@example.com")
-    request_row.assessment_sessions << assessment_sessions(:draft_squad)
+    analysis = Analysis.create!(title: "Guest analysis", status: :draft, created_by: users(:six), assigned_coach_profile: coach_profiles(:maria_coach))
+    request_row.update!(analysis: analysis)
+    analysis.assessment_sessions << assessment_sessions(:draft_squad)
 
     get guest_access_api_v1_analysis_requests_path(token: request_row.guest_access_token)
     assert_response :success

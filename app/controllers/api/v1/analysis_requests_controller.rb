@@ -76,16 +76,27 @@ module Api
         render json: { analysis_request: serialize(@analysis_request, detail: true, for_guest: true) }
       end
 
+      # Assessment sessions are owned by the Analysis the request produced, so
+      # linking writes the analysis-side join. A request without an analysis
+      # (work not started yet) cannot carry deliverables yet.
       def link_assessment_session
         authorize @analysis_request, :link_assessment_session?
+        # Resolve the session first so an unknown id is a 404 regardless of
+        # whether the request has an analysis yet.
         session = AssessmentSession.find(params[:assessment_session_id])
-        @analysis_request.assessment_sessions << session unless @analysis_request.assessment_sessions.include?(session)
+        analysis = @analysis_request.analysis
+        return render json: { errors: ["Start the analysis before linking assessment sessions"] }, status: :unprocessable_entity if analysis.nil?
+
+        analysis.assessment_sessions << session unless analysis.assessment_sessions.include?(session)
         render json: { analysis_request: serialize(@analysis_request.reload, detail: true) }
       end
 
       def unlink_assessment_session
         authorize @analysis_request, :link_assessment_session?
-        @analysis_request.assessment_sessions.delete(params[:assessment_session_id])
+        analysis = @analysis_request.analysis
+        return render json: { errors: ["Start the analysis before unlinking assessment sessions"] }, status: :unprocessable_entity if analysis.nil?
+
+        analysis.analysis_assessment_sessions.where(assessment_session_id: params[:assessment_session_id]).destroy_all
         render json: { analysis_request: serialize(@analysis_request.reload, detail: true) }
       end
 

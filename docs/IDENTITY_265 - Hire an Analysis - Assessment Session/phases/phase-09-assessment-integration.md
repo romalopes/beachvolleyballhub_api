@@ -78,3 +78,12 @@ Policy: only admin/curator can link/unlink (coach can view).
 |-----------|-----------|--------|
 | Link to Assessment definitions | Only link to Assessment Sessions (which reference definitions) | Sessions are the scheduled events; definitions are templates |
 | Bidirectional | `AssessmentSession` gets `analysis_requests` via `has_many :through` | Consistent with existing patterns |
+## Addendum (24 Nov 2026): assessment sessions are analysis-owned
+
+The direct analysis_request_assessment_sessions join was removed. Ownership now:
+
+- Analysis has_many :assessment_sessions through analysis_assessment_sessions (the only write path).
+- AnalysisRequest#assessment_sessions delegates: analysis ? analysis.assessment_sessions : AssessmentSession.none.
+- AssessmentSession has_many :analyses through analysis_assessment_sessions (request-side join + model deleted).
+- Migration 20261124100000 copies existing request-side links onto the request analysis (ON CONFLICT DO NOTHING), then drops the join table; down recreates it.
+- Request link action resolves the session first (unknown id 404), then requires an analysis (422 otherwise); UI: analysis main panel list + clickable deliverable rows on request/guest pages.

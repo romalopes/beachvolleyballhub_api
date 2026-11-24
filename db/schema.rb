@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -205,16 +205,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_090000) do
     t.index ["author_id"], name: "index_analysis_request_annotations_on_author_id"
     t.check_constraint "annotation_type::text = ANY (ARRAY['text'::character varying, 'drawing'::character varying, 'telestration'::character varying]::text[])", name: "analysis_request_annotations_annotation_type_check"
     t.check_constraint "timestamp_seconds >= 0", name: "analysis_request_annotations_timestamp_check"
-  end
-
-  create_table "analysis_request_assessment_sessions", force: :cascade do |t|
-    t.bigint "analysis_request_id", null: false
-    t.bigint "assessment_session_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["analysis_request_id", "assessment_session_id"], name: "idx_on_analysis_request_id_assessment_session_id_80eb3d8f2d", unique: true
-    t.index ["analysis_request_id"], name: "idx_on_analysis_request_id_75ba38bcae"
-    t.index ["assessment_session_id"], name: "idx_on_assessment_session_id_4523469270"
   end
 
   create_table "analysis_request_documents", force: :cascade do |t|
@@ -1655,8 +1645,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_090000) do
   add_foreign_key "analysis_participants", "player_profiles", on_delete: :restrict
   add_foreign_key "analysis_request_annotations", "analysis_request_videos"
   add_foreign_key "analysis_request_annotations", "users", column: "author_id"
-  add_foreign_key "analysis_request_assessment_sessions", "analysis_requests"
-  add_foreign_key "analysis_request_assessment_sessions", "assessment_sessions"
   add_foreign_key "analysis_request_documents", "accounts", column: "uploaded_by_id"
   add_foreign_key "analysis_request_documents", "analysis_requests"
   add_foreign_key "analysis_request_internal_notes", "accounts"

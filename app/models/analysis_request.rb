@@ -25,8 +25,6 @@ class AnalysisRequest < ApplicationRecord
   has_many :analysis_request_documents, -> { order(:created_at, :id) }, dependent: :destroy, inverse_of: :analysis_request
   has_many :analysis_request_internal_notes, -> { order(:created_at, :id) }, dependent: :destroy, inverse_of: :analysis_request
   has_many :analysis_request_invoices, dependent: :destroy, inverse_of: :analysis_request
-  has_many :analysis_request_assessment_sessions, dependent: :destroy, inverse_of: :analysis_request
-  has_many :assessment_sessions, through: :analysis_request_assessment_sessions
   has_many :analysis_request_notifications, class_name: "Notification", as: :notifiable, dependent: :destroy
 
   validates :reference, presence: true, uniqueness: true
@@ -117,6 +115,13 @@ class AnalysisRequest < ApplicationRecord
 
   def guest? = account_id.nil?
   def authenticated? = account_id.present?
+
+  # Assessment sessions delivered with this request live on the Analysis the
+  # team produced (IDENTITY-265). The direct request-side join was removed;
+  # everything flows request -> analysis -> assessment_sessions now.
+  def assessment_sessions
+    analysis ? analysis.assessment_sessions : AssessmentSession.none
+  end
 
   # Human-readable submitter label for notifications and API payloads.
   def submitter_name
