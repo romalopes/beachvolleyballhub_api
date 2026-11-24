@@ -23,6 +23,13 @@ class AssessmentSession < ApplicationRecord
   # see when they retract a session and wonder what it affects.
   has_many :ranking_consolidations, through: :consolidation_sessions
 
+  # Hired-analysis requests that deliver this session (IDENTITY-265). The join
+  # row is meaningless without both sides, so it goes with the session.
+  has_many :analysis_request_assessment_sessions,
+           dependent: :destroy,
+           inverse_of: :assessment_session
+  has_many :analysis_requests, through: :analysis_request_assessment_sessions
+
   # A draft is a work in progress, not history, so deleting one takes its own
   # draft results with it — otherwise a discarded screen leaves unrated rows
   # floating in the catalogue attached to no session at all.

@@ -137,6 +137,94 @@ class Api::V1::AnalysisRequestsControllerTest < ActionDispatch::IntegrationTest
     assert_equal rows.first.player_profile_id, rows.second.player_profile_id
   end
 
+  # --- assessment session deliverables ---------------------------------------
+
+  test "staff can link an assessment session as a deliverable" do
+    _session, headers = sign_in_with_api_token(users(:two)) # admin
+    request_row = @account.analysis_requests.create!(title: "Linked deliverables", guest_name: "Me", guest_email: "me@example.com")
+
+    assert_difference -> { request_row.reload.assessment_sessions.count }, 1 do
+      post link_assessment_session_api_v1_analysis_request_path(request_row),
+           params: { assessment_session_id: assessment_sessions(:draft_squad).id },
+           headers: headers, as: :json
+    end
+
+    assert_response :success
+    linked = response.parsed_body.dig("analysis_request", "assessment_sessions")
+    assert_equal [assessment_sessions(:draft_squad).id], linked.map { |s| s["id"] }
+    assert_equal "Tuesday squad screening", linked.first["title"]
+    assert linked.first["status"].present?
+  end
+
+  test "linking the same session twice does not duplicate it" do
+    _session, headers = sign_in_with_api_token(users(:two))
+    request_row = @account.analysis_requests.create!(title: "Idempotent link", guest_name: "Me", guest_email: "me@example.com")
+    request_row.assessment_sessions << assessment_sessions(:draft_squad)
+
+    assert_no_difference -> { request_row.reload.assessment_sessions.count } do
+      post link_assessment_session_api_v1_analysis_request_path(request_row),
+           params: { assessment_session_id: assessment_sessions(:draft_squad).id },
+           headers: headers, as: :json
+    end
+    assert_response :success
+  end
+
+  test "linking is forbidden for the submitter" do
+    request_row = @account.analysis_requests.create!(title: "Owner link", guest_name: "Me", guest_email: "me@example.com")
+
+    assert_no_difference -> { request_row.reload.assessment_sessions.count } do
+      post link_assessment_session_api_v1_analysis_request_path(request_row),
+           params: { assessment_session_id: assessment_sessions(:draft_squad).id },
+           headers: @headers, as: :json
+    end
+    assert_response :forbidden
+  end
+
+  test "linking requires authentication" do
+    request_row = @account.analysis_requests.create!(title: "Anon link", guest_name: "Me", guest_email: "me@example.com")
+
+    post link_assessment_session_api_v1_analysis_request_path(request_row),
+         params: { assessment_session_id: assessment_sessions(:draft_squad).id }, as: :json
+    assert_response :unauthorized
+  end
+
+  test "linking an unknown session is a 404" do
+    _session, headers = sign_in_with_api_token(users(:two))
+    request_row = @account.analysis_requests.create!(title: "Unknown session", guest_name: "Me", guest_email: "me@example.com")
+
+    post link_assessment_session_api_v1_analysis_request_path(request_row),
+         params: { assessment_session_id: 0 }, headers: headers, as: :json
+    assert_response :not_found
+  end
+
+  test "staff can unlink an assessment session" do
+    _session, headers = sign_in_with_api_token(users(:two))
+    request_row = @account.analysis_requests.create!(title: "Unlink me", guest_name: "Me", guest_email: "me@example.com")
+    request_row.assessment_sessions << assessment_sessions(:draft_squad)
+
+    assert_difference -> { request_row.reload.assessment_sessions.count }, -1 do
+      delete assessment_session_api_v1_analysis_request_path(request_row, assessment_sessions(:draft_squad).id),
+             headers: headers, as: :json
+    end
+
+    assert_response :success
+    assert_empty response.parsed_body.dig("analysis_request", "assessment_sessions")
+  end
+
+  test "linked assessment sessions reach the guest payload" do
+    _session, headers = sign_in_with_api_token(users(:two))
+    # Guest requests carry the secure token; account-backed ones do not.
+    request_row = AnalysisRequest.create!(title: "Guest deliverable", guest_name: "Jane", guest_email: "jane@example.com")
+    request_row.assessment_sessions << assessment_sessions(:draft_squad)
+
+    get guest_access_api_v1_analysis_requests_path(token: request_row.guest_access_token)
+    assert_response :success
+
+    linked = response.parsed_body.dig("analysis_request", "assessment_sessions")
+    assert_equal [assessment_sessions(:draft_squad).id], linked.map { |s| s["id"] }
+    assert_equal "Tuesday squad screening", linked.first["title"]
+  end
+
   test "create with an unknown package key is rejected" do
     post api_v1_analysis_requests_path, params: {
       analysis_request: { title: "Bad package", package_key: "does_not_exist" }

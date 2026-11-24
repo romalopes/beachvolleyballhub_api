@@ -13,7 +13,8 @@ module Api
       ].freeze
 
       before_action :set_analysis_request,
-                    only: [ :show, :update, :destroy, *WORKFLOW_ACTIONS ]
+                    only: [ :show, :update, :destroy, :link_assessment_session,
+                            :unlink_assessment_session, *WORKFLOW_ACTIONS ]
       before_action :authorize_analysis_request!, only: [:show, :update, :destroy]
 
       allow_unauthenticated_access only: [:create]
@@ -76,12 +77,14 @@ module Api
       end
 
       def link_assessment_session
+        authorize @analysis_request, :link_assessment_session?
         session = AssessmentSession.find(params[:assessment_session_id])
         @analysis_request.assessment_sessions << session unless @analysis_request.assessment_sessions.include?(session)
         render json: { analysis_request: serialize(@analysis_request.reload, detail: true) }
       end
 
       def unlink_assessment_session
+        authorize @analysis_request, :link_assessment_session?
         @analysis_request.assessment_sessions.delete(params[:assessment_session_id])
         render json: { analysis_request: serialize(@analysis_request.reload, detail: true) }
       end
@@ -449,7 +452,7 @@ module Api
       end
 
       def serialize_assessment_session(s)
-        { id: s.id, title: s.title, status: s.status, date: s.session_date&.iso8601 }
+        { id: s.id, title: s.name, status: s.status, date: s.scheduled_on&.iso8601 }
       end
 
       def format_price(cents)
