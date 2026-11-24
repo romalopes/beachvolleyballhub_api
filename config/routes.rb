@@ -439,7 +439,11 @@ Rails.application.routes.draw do
            to: "analysis_request_messages#guest_create",
            as: :guest_analysis_request_messages
 
-      resources :analysis_packages, only: [:index]
+      resources :analysis_packages, only: [:index, :show, :create, :update, :destroy] do
+        collection do
+          get :admin_index
+        end
+      end
 
       resources :analysis_request_claims, only: [:new, :create], path: "analysis-requests/claim" do
         collection do
