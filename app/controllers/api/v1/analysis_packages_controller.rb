@@ -61,7 +61,7 @@ module Api
         params.require(:analysis_package).permit(
           :key, :name, :description, :price_cents, :max_videos,
           :max_duration_minutes, :includes_annotated_video, :includes_written_report,
-          :includes_consultation, :turnaround_days, :position, :active
+          :includes_assessment, :includes_consultation, :turnaround_days, :position, :active
         )
       end
 
@@ -77,6 +77,7 @@ module Api
           max_duration_minutes: p.max_duration_minutes,
           includes_annotated_video: p.includes_annotated_video,
           includes_written_report: p.includes_written_report,
+          includes_assessment: p.includes_assessment,
           includes_consultation: p.includes_consultation,
           turnaround_days: p.turnaround_days,
           active: p.active,
