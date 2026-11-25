@@ -41,6 +41,11 @@ services:
       # Set the actual key in Render dashboard (sync: false)
       - key: WEATHERAPI_API_KEY
         sync: false
+      # Weather share image renderer - internal hostname for private network access
+      - key: WEATHER_SHARE_RENDERER_URL
+        value: http://bvb-api-renderer:3001
+      - key: WEATHER_SHARE_IMAGE_STORAGE_SERVICE
+        value: cloudflare_r2
       - key: WEB_CONCURRENCY
         value: "1" # keep at 2 — 10 workers OOM a starter instance
       - key: SOLID_QUEUE_IN_PUMA
@@ -77,6 +82,20 @@ services:
         sync: false
       - key: TURNSTILE_EXPECTED_HOSTNAME
         sync: false
+
+  # ──────────────────────────────────────────────
+  # Node.js Image Renderer (private service, no public URL)
+  # ──────────────────────────────────────────────
+  - type: web
+    name: bvb-api-renderer
+    runtime: docker
+    dockerfilePath: ../beachvolleyballhub/image-renderer/Dockerfile
+    # No public URL - only accessible via internal hostname from API service
+    envVars:
+      - key: PORT
+        value: "3001"
+      - key: NODE_ENV
+        value: production
 
   # Solid Queue does not run in the Puma process. This continuously running
   # worker consumes every queue configured in config/queue.yml, including the
@@ -147,6 +166,11 @@ services:
       # Set the actual key in Render dashboard (sync: false)
       - key: WEATHERAPI_API_KEY
         sync: false
+      # Weather share image renderer - internal hostname for private network access
+      - key: WEATHER_SHARE_RENDERER_URL
+        value: http://bvb-api-renderer:3001
+      - key: WEATHER_SHARE_IMAGE_STORAGE_SERVICE
+        value: cloudflare_r2
       # Billing reconciliation (IDENTITY-116) runs from this worker and calls
       # Stripe, so it needs the secret key and the Price mapping.
       - key: STRIPE_SECRET_KEY
