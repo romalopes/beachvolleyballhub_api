@@ -325,6 +325,14 @@ Rails.application.routes.draw do
         end
       end
 
+      # Slug-based lookup (authenticated, uses public_slug instead of id)
+      # Must come BEFORE resources :assessment_sessions to avoid :id conflict
+      get "assessment_sessions/:public_slug", to: "assessment_sessions#show_by_slug", as: :assessment_session_by_slug
+
+      # Share-token lookup (UNAUTHENTICATED, uses raw share token)
+      # Must be placed before the resources :assessment_sessions to avoid conflicts with :id
+      get "assessment_sessions/share/:share_token", to: "assessment_sessions#show_by_share_token", as: :assessment_session_by_share_token
+
       # `destroy` is scoped to drafts only (a published session is archival, and
       # the controller refuses it with 422 rather than offering a silent delete).
       resources :assessment_sessions, only: %i[index show create update destroy] do
@@ -339,6 +347,7 @@ Rails.application.routes.draw do
           post :withdraw
           post :restore
           get :ranking
+          post :regenerate_share_link
         end
       end
 

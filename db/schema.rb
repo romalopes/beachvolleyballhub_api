@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_24_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -438,14 +438,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_100000) do
     t.timestamptz "published_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "visibility", default: "internal", null: false
+    t.string "public_slug", null: false
+    t.string "share_token_digest"
     t.index ["assessment_definition_id"], name: "index_assessment_sessions_on_assessment_definition_id"
     t.index ["coach_profile_id"], name: "index_assessment_sessions_on_coach_profile_id"
     t.index ["created_by_id"], name: "index_assessment_sessions_on_created_by_id"
     t.index ["group_id"], name: "index_assessment_sessions_on_group_id"
+    t.index ["public_slug"], name: "index_assessment_sessions_on_public_slug", unique: true
     t.index ["scheduled_on"], name: "index_assessment_sessions_on_scheduled_on"
+    t.index ["share_token_digest"], name: "index_assessment_sessions_on_share_token_digest", unique: true
     t.index ["status"], name: "index_assessment_sessions_on_status"
+    t.index ["visibility"], name: "index_assessment_sessions_on_visibility"
     t.check_constraint "status::text <> 'published'::text OR published_at IS NOT NULL", name: "assessment_sessions_published_requires_timestamp"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'published'::character varying::text, 'withdrawn'::character varying::text])", name: "assessment_sessions_status"
+    t.check_constraint "visibility::text = ANY (ARRAY['public'::character varying, 'unlisted'::character varying, 'internal'::character varying, 'private'::character varying]::text[])", name: "assessment_sessions_visibility_check"
   end
 
   create_table "assessments", force: :cascade do |t|

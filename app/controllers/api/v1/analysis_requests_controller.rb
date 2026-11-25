@@ -463,7 +463,7 @@ module Api
       end
 
       def serialize_assessment_session(s)
-        { id: s.id, title: s.name, status: s.status, date: s.scheduled_on&.iso8601 }
+        { id: s.id, public_slug: s.public_slug, title: s.name, status: s.status, date: s.scheduled_on&.iso8601 }
       end
 
       def format_price(cents)

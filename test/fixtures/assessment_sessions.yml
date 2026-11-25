@@ -15,6 +15,7 @@ draft_squad:
   created_by: six
   status: draft
   scheduled_on: <%= 1.week.from_now.to_date %>
+  public_slug: tuesday-squad-screening-test
   notes: First pass with the U19 squad, no prior ratings to compare against.
 
 published_squad:
@@ -25,4 +26,5 @@ published_squad:
   status: published
   published_at: <%= 2.days.ago %>
   scheduled_on: <%= 2.days.ago.to_date %>
+  public_slug: spring-evaluation-test
   notes: End of season, used as the baseline for the club ranking.

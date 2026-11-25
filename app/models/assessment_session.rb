@@ -1,5 +1,6 @@
 class AssessmentSession < ApplicationRecord
   STATUSES = %w[draft published withdrawn].freeze
+  VISIBILITIES = %w[public unlisted internal private].freeze
 
   belongs_to :assessment_definition
   belongs_to :coach_profile
@@ -51,12 +52,24 @@ class AssessmentSession < ApplicationRecord
   # on fewer sessions, so it is told why.
   before_destroy :detach_from_consolidations, prepend: true
 
+  # Visibility & sharing
+  before_validation :ensure_public_slug, on: :create
+  before_validation :ensure_visibility_default
+  # Clear share token when leaving unlisted
+  before_save :clear_share_token_if_not_unlisted, if: :visibility_changed?
+
   validates :status, inclusion: { in: STATUSES }
+  validates :visibility, inclusion: { in: VISIBILITIES }
+  validates :public_slug, presence: true, uniqueness: true
+  validates :share_token_digest, uniqueness: true, allow_nil: true
   validates :assessment_definition, :coach_profile, presence: true
   validate :definition_must_be_active, on: :create
   validate :published_at_must_be_present, if: :published?
 
   scope :ordered, -> { order(scheduled_on: :desc, created_at: :desc) }
+  scope :visible_to_public, -> { where(visibility: "public") }
+  scope :visible_to_internal, -> { where(visibility: %w[public internal]) }
+  scope :unlisted, -> { where(visibility: "unlisted") }
 
   def draft?
     status == "draft"
@@ -68,6 +81,22 @@ class AssessmentSession < ApplicationRecord
 
   def withdrawn?
     status == "withdrawn"
+  end
+
+  def public?
+    visibility == "public"
+  end
+
+  def unlisted?
+    visibility == "unlisted"
+  end
+
+  def internal?
+    visibility == "internal"
+  end
+
+  def private?
+    visibility == "private"
   end
 
   # A withdrawal is a retraction, so it is only reachable from published: a draft
@@ -89,7 +118,65 @@ class AssessmentSession < ApplicationRecord
     participants.included
   end
 
+  # ---- Share token handling -------------------------------------------------
+
+  # Generate a new share token, store its SHA-256 digest, return the raw token once.
+  # Caller must persist the record. Atomic replacement: invalidates any previous token.
+  def regenerate_share_token!
+    raw_token = SecureRandom.urlsafe_base64(24)
+    self.share_token_digest = Digest::SHA256.hexdigest(raw_token)
+    raw_token
+  end
+
+  # Clear the share token (used when visibility leaves unlisted).
+  def clear_share_token!
+    self.share_token_digest = nil
+  end
+
+  # Verify a raw token against the stored digest.
+  def valid_share_token?(raw_token)
+    return false if share_token_digest.blank?
+    Digest::SHA256.hexdigest(raw_token) == share_token_digest
+  end
+
+  # Class method: find unlisted session by raw token (constant-time digest compare).
+  def self.find_by_share_token!(raw_token)
+    digest = Digest::SHA256.hexdigest(raw_token)
+    find_by!(share_token_digest: digest, visibility: "unlisted")
+  end
+
   private
+
+  # Ensure visibility defaults to 'internal' at model level (DB also has default).
+  def ensure_visibility_default
+    self.visibility ||= "internal"
+  end
+
+  # Generate a stable, human-readable slug from the name with a random suffix.
+  # Kept stable after creation — does NOT change when name changes.
+  def ensure_public_slug
+    return if public_slug.present?
+    generate_unique_public_slug
+  end
+
+  def generate_unique_public_slug
+    base = name.presence || "assessment"
+    # parameterize: lowercase, alphanumeric + hyphens, no leading/trailing hyphens
+    base_slug = base.parameterize
+    base_slug = "assessment" if base_slug.blank?
+
+    loop do
+      suffix = SecureRandom.urlsafe_base64(6).tr("_-", "ab") # 6 chars, url-safe
+      candidate = "#{base_slug}-#{suffix}"
+      break self.public_slug = candidate unless self.class.exists?(public_slug: candidate)
+    end
+  end
+
+  # Called before_save when visibility changes: clear token if no longer unlisted.
+  def clear_share_token_if_not_unlisted
+    return if unlisted?
+    self.share_token_digest = nil
+  end
 
   # A draft session's results are drafts by construction: publishing is what
   # activates them. So removing the session removes them, and nothing that was
