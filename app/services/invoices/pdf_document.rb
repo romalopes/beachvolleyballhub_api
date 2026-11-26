@@ -168,8 +168,8 @@ module Invoices
 
       lines = []
       lines << rule(y + 10)
-      lines << text(MARGIN, y - 4, "BANK ACCOUNT DETAILS", size: 8, bold: true)
-      
+      lines << text(MARGIN, y - 30, "BANK ACCOUNT DETAILS", size: 8, bold: true)
+
       bank_lines = []
       bank_lines << "Bank: #{@bank[:name]}"
       bank_lines << "Account: #{@bank[:account_name]}"
@@ -177,7 +177,7 @@ module Invoices
       bank_lines << "Account #: #{@bank[:account]}"
 
       bank_lines.each_with_index do |line, index|
-        lines << text(MARGIN, y - 20 - (index * 13), fit(line, 9, PAGE_WIDTH - (MARGIN * 2)), size: 9)
+        lines << text(MARGIN, y - 43 - (index * 13), fit(line, 9, PAGE_WIDTH - (MARGIN * 2)), size: 9)
       end
 
       lines
