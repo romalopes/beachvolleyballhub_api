@@ -23,18 +23,34 @@ location_cache = {}
 
 # Step 1: Ensure organisations exist
 org_names.each do |org_name|
+  # Collect all acronyms associated with this org name from tournament data
+  acronyms = tournaments_data
+    .select { |t| t['organisation']['name'] == org_name }
+    .map { |t| t['organisation']['acronym'] }
+    .compact
+    .uniq
+
+  # Use first acronym if available
+  acronym = acronyms.first
+
   org = Organisation.find_or_create_by!(name: org_name) do |o|
-    o.acronym = nil
+    o.acronym = acronym
     o.organisation_type = 'state_federation'
     o.description = "Organisation for #{org_name} beach volleyball tournaments"
     o.status = 'active'
     o.website = nil
   end
+
+  # Cache by both name and acronym (if available)
   organisation_cache[org_name] = org
+  organisation_cache[acronym] = org if acronym.present?
 end
 
 # Step 2: Ensure locations exist and are approved
 loc_names.each do |loc_name|
+  # Skip nil/blank location names
+  next if loc_name.blank?
+
   # Guess administrative area from location name
   admin_area = case loc_name
                when /ACT|Canberra/ then 'ACT'
@@ -93,16 +109,34 @@ tournaments_data.each do |t|
   org_name = t['organisation']['name']
   loc_name = t['location_name']
 
+  # Skip tournaments with blank location names
+  # next if loc_name.blank?
+
+  # Try cache lookup by name first
   org = organisation_cache[org_name]
+
+  # If not in cache, try to find existing organisation by acronym (in case JSON name is an acronym like "NBVA")
+  if org.nil?
+    existing_by_acronym = Organisation.find_by(acronym: org_name)
+    if existing_by_acronym
+      org = existing_by_acronym
+      # Add to cache for future lookups
+      organisation_cache[org_name] = org
+      organisation_cache[org.acronym] = org if org.acronym.present?
+    end
+  end
+
   loc = location_cache[loc_name]
 
-  next unless org && loc
-
+  puts "Processing tournament: #{t['name']} (Organisation: #{org_name}, Location: #{loc_name})"
+  puts "Organisation found: #{org.present? ? org.name : 'Not found'}"
+  puts "Location found: #{loc.present? ? loc.name : 'Not found'}"
+  next unless org # && loc
   # Use 'letter' as default division scheme if not specified (valid values: 'letter', 'numbered')
   division_scheme = t['division_scheme'] || 'letter'
 
   begin
-    Tournament.create!(
+    tournament = Tournament.create!(
       name: t['name'],
       organisation: org,
       location: loc,
@@ -118,6 +152,9 @@ tournaments_data.each do |t|
       created_by_account: Account.first
     )
     created_tournaments << t['name']
+    tournament.errors.full_messages.each do |msg|
+      puts "Warning: Tournament '#{t['name']}' created with warning: #{msg}"
+    end
   rescue => e
     failed_tournaments << { name: t['name'], error: e.message, class: e.class.name }
   end

@@ -272,6 +272,7 @@ class Organisation < ApplicationRecord
   def deletable_blocker
     return "It still has child organisations" if child_organisations.exists?
     return "It still has members" if organisation_memberships.exists?
+    return "It still has tournaments" if tournaments.exists?
 
     nil
   end
