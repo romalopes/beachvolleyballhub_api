@@ -3,39 +3,13 @@
   "format_version": 1,
   "season": "2026-2027",
   "generated_at": "2026-11-24",
-  "sort_order": [
-    "state",
-    "organisation.name",
-    "starts_at",
-    "name"
-  ],
+  "sort_order": ["state", "organisation.name", "starts_at", "name"],
   "system_model": {
     "organisation": "Existing BeachVolleyballHub Organisation; resolve organisation.id before API creation.",
-    "scope_values": [
-      "club",
-      "state",
-      "national",
-      "international",
-      "other"
-    ],
-    "division_scheme_values": [
-      "letter",
-      "numbered"
-    ],
-    "letter_divisions": [
-      "AAAA",
-      "AAA",
-      "AA",
-      "A",
-      "BBB",
-      "BB",
-      "B"
-    ],
-    "publication_state_values": [
-      "active",
-      "cancelled",
-      "archived"
-    ],
+    "scope_values": ["club", "state", "national", "international", "other"],
+    "division_scheme_values": ["letter", "numbered"],
+    "letter_divisions": ["AAAA", "AAA", "AA", "A", "BBB", "BB", "B"],
+    "publication_state_values": ["active", "cancelled", "archived"],
     "timezone_policy": "IANA timezone; all-day end is exclusive next-day midnight."
   },
   "import_notes": [
@@ -456,7 +430,7 @@
       "import_ready": false
     },
     {
-      "name": "NBVA 2026–27 Tournament Series – dates TBC",
+      "name": "NBVA Youth Beach Series",
       "organisation": {
         "id": null,
         "name": "NBVA",
@@ -464,22 +438,457 @@
       },
       "scope": "club",
       "division_scheme": null,
-      "starts_at": "2026-10-01T00:00:00",
-      "ends_at": "2027-05-01T00:00:00",
+      "starts_at": "2026-10-02T08:00:00",
+      "ends_at": "2026-10-02T18:00:00",
       "timezone": "Australia/Sydney",
-      "all_day": true,
-      "description": "Season series placeholder. Individual tournament dates were not extractable; do not import as a confirmed single event.",
-      "location_name": "Northern Beaches beaches",
-      "city": "Northern Beaches",
+      "all_day": false,
+      "description": "Courts 1-8",
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
       "state": "NSW",
       "country": "Australia",
       "website_url": null,
       "publication_state": "active",
       "divisions": [],
       "source": {
-        "url": "https://nbva.org.au/tournaments/",
-        "confidence": "community_sourced",
-        "verified_at": "2026-11-24",
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Youth Beach Series U14 & U15",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-10-03T11:00:00",
+      "ends_at": "2026-10-03T12:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": "Courts 6-8",
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Tournament #2",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-10-17T07:00:00",
+      "ends_at": "2026-10-18T07:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": null,
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Tournament #3",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-11-28T07:00:00",
+      "ends_at": "2026-11-29T07:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": null,
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NSW Champs Manly (VNSW)",
+      "organisation": {
+        "id": null,
+        "name": "Volleyball NSW",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-12-04T07:00:00",
+      "ends_at": "2026-12-06T07:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": null,
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Tournament #4",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-12-19T07:00:00",
+      "ends_at": "2026-12-20T07:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": null,
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "AUS/NZ vs The Rest of the World",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2026-12-31T08:00:00",
+      "ends_at": "2026-12-31T18:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": "Courts 3 & 4",
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Junior Camp",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-01-12T09:00:00",
+      "ends_at": "2027-01-13T09:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": "Courts 3-6",
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Junior Camp",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-01-19T09:00:00",
+      "ends_at": "2027-01-20T09:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": "Courts 3-6",
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Junior Youth Beach Series",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-01-22T07:00:00",
+      "ends_at": "2027-01-22T17:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": "Courts 1-8",
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Junior Youth Beach Series",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-01-23T10:00:00",
+      "ends_at": "2027-01-23T18:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": "Courts 6-8",
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Tournament #5",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-01-30T07:00:00",
+      "ends_at": "2027-01-31T07:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": null,
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Tournament #6",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-03-06T07:00:00",
+      "ends_at": "2027-03-07T07:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": null,
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Championships",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-03-20T07:00:00",
+      "ends_at": "2027-03-21T07:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": null,
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Junior Camp",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-04-13T10:00:00",
+      "ends_at": "2027-04-14T10:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": "Courts 3-6",
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
+        "review_required": true
+      },
+      "import_ready": false
+    },
+    {
+      "name": "NBVA Junior Camp",
+      "organisation": {
+        "id": null,
+        "name": "NBVA",
+        "resolution_required": true
+      },
+      "scope": "club",
+      "division_scheme": null,
+      "starts_at": "2027-07-06T10:00:00",
+      "ends_at": "2027-07-07T10:00:00",
+      "timezone": "Australia/Sydney",
+      "all_day": false,
+      "description": "Courts 3-6",
+      "location_name": "Manly Beach Volleyball Courts",
+      "city": "Sydney",
+      "state": "NSW",
+      "country": "Australia",
+      "website_url": null,
+      "publication_state": "active",
+      "divisions": [],
+      "source": {
+        "url": null,
+        "confidence": "partially_verified",
+        "verified_at": "2026-11-26",
         "review_required": true
       },
       "import_ready": false

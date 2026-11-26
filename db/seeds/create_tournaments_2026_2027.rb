@@ -1,6 +1,8 @@
 # Seeding file to create tournaments from beachvolleyballhub_tournaments_2026_2027.json
 # Ensures organisations and locations exist (creating/approving if missing)
 # Creates tournaments and reports what wasn't uploaded
+# Run with:
+#   bin/rails runner db/seeds/create_tournaments_2026_2027.rb
 
 require 'json'
 
