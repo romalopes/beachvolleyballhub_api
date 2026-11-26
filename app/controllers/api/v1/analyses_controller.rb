@@ -126,7 +126,7 @@ module Api
         return payload unless detail
         payload.merge(videos: row.analysis_videos.map { |video| serialize_video(video) },
                       comments: row.analysis_comments.map { |comment| serialize_comment(comment) },
-                      assessment_sessions: row.assessment_sessions.map { |s| { id: s.id, public_slug: s.public_slug, name: s.name, status: s.status, scheduled_on: s.scheduled_on, assessment_definition: { id: s.assessment_definition_id, name: s.assessment_definition.name } } })
+                      assessment_sessions: row.assessment_sessions.includes(:participants).map { |s| { id: s.id, public_slug: s.public_slug, name: s.name, status: s.status, scheduled_on: s.scheduled_on, assessment_definition: { id: s.assessment_definition_id, name: s.assessment_definition.name }, participant_player_profile_ids: s.participants.map(&:player_profile_id) } })
       end
 
       def serialize_video(record)
