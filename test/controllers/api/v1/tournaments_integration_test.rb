@@ -347,6 +347,14 @@ class Api::V1::TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal false, json["organisation"]["can_edit"]
   end
 
+  test "unauthorized user cannot update tournament" do
+    sign_in_as(accounts(:three).user)
+
+    patch "/api/v1/tournaments/#{@tournament.id}", params: { tournament: { name: "Hacked Name" } }.to_json, headers: { "Content-Type" => "application/json" }
+
+    assert_response :forbidden
+  end
+
   # --- follow (the watching-list bookmark) ------------------------------------
 
   test "unauthenticated follow is rejected" do

@@ -11,11 +11,11 @@ password = ENV.fetch("DB_PASSWORD") do
 end
 
 account_definitions = [
-  { email_address: "romalopes@yahoo.com.br",     role: "admin" },
-  { email_address: "kasia@mywineadviser.com.au", role: "curator" },
-  { email_address: "romalopes@gmail.com",        role: "coach" },
-  { email_address: "coach@yahoo.com.br",         role: "coach" },
-  { email_address: "player@yahoo.com.br",        role: "player" }
+  { email_address: "romalopes@yahoo.com.br",     role: "admin",     first_name: "Anderson Yahoo",    last_name: "Lopes" },
+  { email_address: "kasia@mywineadviser.com.au", role: "curator",   first_name: "Kasia",     last_name: "Sobiesiak" },
+  { email_address: "romalopes@gmail.com",        role: "coach",     first_name: "Anderson Gmail",    last_name: "Lopes" },
+  { email_address: "coach@yahoo.com.br",         role: "coach",     first_name: "Coach",     last_name: "Account" },
+  { email_address: "player@yahoo.com.br",        role: "player",    first_name: "Player",    last_name: "Account" }
 ]
 
 account_definitions.each do |attributes|
@@ -28,7 +28,15 @@ account_definitions.each do |attributes|
   user.user_roles.where.not(role_id: role.id).delete_all
   user.add_role(role.name)
 
-  puts "#{user.email_address} -> #{role.name}"
+  # Create or update the associated Account with contact details
+  account = user.account || user.build_account
+  account.save! if account.new_record? # Create the account first if new
+  account.first_name = attributes[:first_name]
+  account.last_name = attributes[:last_name]
+  account.email = attributes[:email_address] # Sync email to contact_detail
+  account.save!
+
+  puts "#{user.email_address} -> #{role.name} (Account: #{account.full_name})"
 end
 
 puts "Created or updated #{account_definitions.size} accounts."

@@ -324,11 +324,21 @@ australia = Organisation.find_by(name: "Volleyball Australia")
 def seed_member(organisation, full_name, role:, status: "active")
   return if organisation.nil?
 
-  first_name, last_name = full_name.split(" ", 2)
-  person = Person.find_or_create_by!(first_name: first_name, last_name: last_name) do |candidate|
-    candidate.creation_source = "system"
+    # Use PlayerProfile for most roles, CoachProfile for coach role
+  if role == "coach"
+    memberable = CoachProfile.find_or_create_by!(display_name: full_name) do |candidate|
+      candidate.coaching_level = "level_1"
+      candidate.status = "active"
+    end
+  else
+    memberable = PlayerProfile.find_or_create_by!(display_name: full_name) do |candidate|
+      candidate.preferred_position = "outside"
+      candidate.level = "intermediate"
+      candidate.status = "active"
+    end
   end
-  membership = OrganisationMembership.find_or_initialize_by(organisation: organisation, person: person)
+
+  membership = OrganisationMembership.find_or_initialize_by(organisation: organisation, memberable: memberable)
   membership.role = role
   membership.status = status
   membership.save!

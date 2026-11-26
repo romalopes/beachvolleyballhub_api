@@ -18,7 +18,7 @@ The audit (Phase 0) confirmed the relevant facts but **not** the operational one
 |---|---|
 | Solid Queue is installed | ✅ `Gemfile`, `config/environments/production.rb:79` (`config.active_job.queue_adapter = :solid_queue`) |
 | Brevo HTTP adapter exists | ✅ `lib/brevo_delivery.rb`, `lib/mail_transport.rb` |
-| A Render **worker service** is documented as required | ✅ `docs/LOCAL_VERCEL_RENDER_SETUP.md` §4 states the worker must run for queued mail |
+| A Render **worker service** is documented as required | ✅ `docs/LOCAL_CLOUDFLARE_RENDER_SETUP.md` §4 states the worker must run for queued mail |
 | A worker is **actually running in production** | ❓ **not verifiable from this repository** |
 
 Because that last fact cannot be verified from source, enabling notification email would risk the

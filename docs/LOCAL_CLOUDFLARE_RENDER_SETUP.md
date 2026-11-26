@@ -1,4 +1,4 @@
-# Local development, Vercel, Cloudflare and Render configuration
+# Local development, Cloudflare and Render configuration
 
 For system architecture, models and lifecycles, see [System architecture, models and lifecycles](architecture/architecture.md).
 
@@ -115,11 +115,11 @@ curl http://localhost:5174/api/v1/health
 
 `-k` is only for the local self-signed certificate. Local file emails appear in API `tmp/mails/`. Enable the email flags below to exercise verification/invitation flows. Development uses the default in-process Active Job adapter; production needs the worker described below.
 
-## 3. Vercel and Cloudflare frontend
+## 3. Cloudflare Workers frontend
 
-The frontend runs on both Vercel and Cloudflare Workers. Cloudflare deployment: [Cloudflare frontend](https://beachvolleyballhub.romalopes.workers.dev/).
+The frontend runs on Cloudflare Workers. Deployment: [Cloudflare frontend](https://beachvolleyballhub.romalopes.workers.dev/).
 
-### Vercel configuration
+### Cloudflare Workers deployment
 
 Import the frontend repository. If importing a combined repository instead, set Root Directory to `beachvolleyballproject`; for the standalone frontend repository, use its root.
 
@@ -131,39 +131,29 @@ Import the frontend repository. If importing a combined repository instead, set 
 | Build command    | `npm run build` |
 | Output directory | `dist`          |
 
-Set this in Project Settings → Environment Variables:
+Set this in the Cloudflare Workers build environment (Environment Variables):
 
-| Variable            | Local     | Vercel Production                                                   | Vercel Preview                              |
-| ------------------- | --------- | ------------------------------------------------------------------- | ------------------------------------------- |
+| Variable            | Local     | Production                                                 | Preview / Staging                           |
+| ------------------- | --------- | ---------------------------------------------------------- | ------------------------------------------- |
 | `VITE_API_BASE_URL` | `/api/v1` | `https://<production-api>.onrender.com/api/v1` or custom API domain | URL of the staging API, including `/api/v1` |
 
-This is the only application-defined frontend environment variable currently read by the source. Vite's `import.meta.env.DEV` is automatic. Do not set database, mail, Rails or storage secrets on the frontend. Redeploy after changing the API URL: Vite embeds it during the build. The local dev proxy is not deployed to Vercel. See [Vercel's Vite guide](https://vercel.com/docs/frameworks/frontend/vite).
+This is the only application-defined frontend environment variable currently read by the source. Vite's `import.meta.env.DEV` is automatic. Do not set database, mail, Rails or storage secrets on the frontend. Redeploy after changing the API URL: Vite embeds it during the build. See [Cloudflare's Vite guide](https://developers.cloudflare.com/pages/framework-guides/deploy-a-vite-site/).
 
 ### Required routing for organisation logos
 
-The API returns relative `/rails/active_storage/...` logo URLs, and React renders them unchanged. The existing `vercel.json` only rewrites everything to `index.html`; that is insufficient for these images. Before deployment, update it to proxy `/rails` **before** the SPA fallback, replacing the example host:
+The API returns relative `/rails/active_storage/...` logo URLs, and React renders them unchanged. Cloudflare Workers requires routing configuration to proxy `/rails` **before** the SPA fallback. Add a route in the Cloudflare dashboard (or via `wrangler.toml`):
 
-```json
-{
-  "rewrites": [
-    {
-      "source": "/rails/:path*",
-      "destination": "https://<production-api>.onrender.com/rails/:path*"
-    },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
+```toml
+# wrangler.toml
+routes = [
+  { pattern = "*.beachvolleyballhub.romalopes.workers.dev/rails/*", zone_name = "your-domain.com" },
+  { pattern = "*.beachvolleyballhub.romalopes.workers.dev/*", zone_name = "your-domain.com" }
+]
 ```
 
-This is a required manual configuration change, not applied by this guide. The destination is a literal URL, independent of `VITE_API_BASE_URL`. For previews backed by a different API, also provide matching routing; otherwise their logos would be requested from production.
+For custom domains, configure the route to proxy `/rails` to the API before the SPA fallback. The destination is a literal URL, independent of `VITE_API_BASE_URL`.
 
-### Cloudflare Workers deployment
-
-The existing Cloudflare frontend is available at [Cloudflare frontend](https://beachvolleyballhub.romalopes.workers.dev/), alongside the Vercel deployment. Set `VITE_API_BASE_URL` in its build environment to the intended API URL, including `/api/v1`, and rebuild after changes.
-
-Verify SPA fallback for nested routes and forwarding of `/rails/active_storage/...` to the API on Cloudflare as well. The Vercel rewrite example above is specific to Vercel; check the equivalent routing in the Cloudflare deployment.
-
-If restricting Rails CORS or authentication origin allowlists, include `https://beachvolleyballhub.romalopes.workers.dev` alongside the Vercel origin. `FRONTEND_URL` selects the frontend used in email links; set it to the chosen canonical frontend origin.
+If restricting Rails CORS or authentication origin allowlists, include `https://beachvolleyballhub.romalopes.workers.dev` (or your custom domain). `FRONTEND_URL` selects the frontend used in email links; set it to the canonical frontend origin.
 
 ## 4. Render API and worker
 
@@ -237,7 +227,7 @@ All variables here belong on the API/worker, never in the Vercel or Cloudflare b
 | `RAILS_ENV`                           | Unset or `development`                                                                      | `production` on web service and worker.                                                                                                                                                                    |
 | `RAILS_MASTER_KEY`                    | Existing `config/master.key`, or matching environment key if encrypted credentials are used | Secret matching the deployed credentials; do not generate an unrelated key.                                                                                                                                |
 | `SECRET_KEY_BASE`                     | Rails can generate a development secret                                                     | Stable secret from `bin/rails secret`, or configured encrypted credentials. Changing it invalidates signed credentials/tokens.                                                                             |
-| `FRONTEND_URL`                        | `http://localhost:5174`                                                                     | Public frontend origin, including `https://`, without `/api/v1`; used for email links. Production fallback is `https://beachvolleyballproject.vercel.app`.                                                 |
+| `FRONTEND_URL`                        | `http://localhost:5174`                                                                     | Public frontend origin, including `https://`, without `/api/v1`; used for email links. Production value is the Cloudflare Workers origin (e.g., `https://beachvolleyballhub.romalopes.workers.dev` or your custom domain).                                                 |
 | `APP_HOST`                            | Development mailer currently hardcodes localhost:3001                                       | API hostname only, no protocol/path; production mailer URL host, default `example.com`.                                                                                                                    |
 | `ALLOWED_HOSTS`                       | Usually unnecessary locally                                                                 | Comma-separated hostnames accepted by Rails Host Authorization. Include the Render default hostname for Render health checks and the custom API hostname when configured.                                  |
 | `APP_VERSION`                         | Optional; default `0.0.23`                                                                  | API health/version value; keep aligned with frontend `src/constants/versions.ts`.                                                                                                                          |
@@ -326,4 +316,4 @@ Troubleshooting:
 - **CORS settings appear ineffective:** current `config/initializers/cors.rb` allows `*`; `FRONTEND_URL` does not control CORS. Restrict origins by editing that initializer if needed.
 - **No application logs in Render's log stream:** production currently writes to `log/production.log`. Edit the final logger assignment to use stdout for platform log capture; `RAILS_LOG_LEVEL` alone cannot fix this.
 
-Source checkpoints: `config/database.yml`, `config/puma.rb`, `config/storage.yml`, `config/environments/*.rb`, `config/initializers/`, `config/queue.yml`, `lib/mail_transport.rb`, `lib/mail_sender.rb`, `bin/render-build.sh`; frontend `src/api.ts`, `vite.config.ts`, `vercel.json`, `package.json` and `package-lock.json`.
+Source checkpoints: `config/database.yml`, `config/puma.rb`, `config/storage.yml`, `config/environments/*.rb`, `config/initializers/`, `config/queue.yml`, `lib/mail_transport.rb`, `lib/mail_sender.rb`, `bin/render-build.sh`; frontend `src/api.ts`, `vite.config.ts`, `wrangler.toml`, `package.json` and `package-lock.json`.

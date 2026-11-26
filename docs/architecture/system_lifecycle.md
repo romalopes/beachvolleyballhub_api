@@ -141,5 +141,5 @@ replacement database, validate business records and migrations, then update ever
 web/worker connection before resuming writes. Review restored queued jobs before
 running them again. Database recovery does not recover attachment bytes.
 
-Use the [setup guide](../LOCAL_VERCEL_RENDER_SETUP.md) and
+Use the [setup guide](../LOCAL_CLOUDFLARE_RENDER_SETUP.md) and
 [backup runbook](../DATABASE_BACKUP_AND_RESTORE.md) for the executable procedures.

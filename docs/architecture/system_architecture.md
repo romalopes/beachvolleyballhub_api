@@ -83,5 +83,5 @@ command handles both environments.
 
 Database backup workflows are independent of runtime traffic. They read the selected
 provider database, encrypt dumps with age and store them in a backup R2 bucket.
-They do not back up attachment bytes. See the [setup guide](../LOCAL_VERCEL_RENDER_SETUP.md)
+They do not back up attachment bytes. See the [setup guide](../LOCAL_CLOUDFLARE_RENDER_SETUP.md)
 and [recovery runbook](../DATABASE_BACKUP_AND_RESTORE.md) for commands and limitations.
